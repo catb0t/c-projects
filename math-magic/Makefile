@@ -10,20 +10,22 @@ MEM_OPTS := -fstack-protector -fsanitize=address -fsanitize=undefined -fno-omit-
 
 OPTS := -std=gnu11 -lm
 
+CMD_ARGS ?=
+
 FILES := $(FILENAME).c $(FILENAME).h
 
 all: normal debug mem
 
 normal: $(FILES)
-	$(CC) $(OPTS) -o $(FILENAME) $(FILENAME).c
+	$(CC) $(CMD_ARGS) $(OPTS) -o $(FILENAME) $(FILENAME).c
 	@echo
 
 debug: $(FILES)
-	$(CC) $(DEBUG_OPTS) $(OPTS) -o debug_$(FILENAME) $(FILENAME).c
+	$(CC) $(CMD_ARGS) $(DEBUG_OPTS) $(OPTS) -o debug_$(FILENAME) $(FILENAME).c
 	@echo
 
 mem: $(FILES)
-	$(CC) $(MEM_OPTS) $(DEBUG_OPTS) $(OPTS) -o memdebug_$(FILENAME) $(FILENAME).c
+	$(CC) $(CMD_ARGS) $(MEM_OPTS) $(DEBUG_OPTS) $(OPTS) -o memdebug_$(FILENAME) $(FILENAME).c
 	@echo
 
 clean:

@@ -24,20 +24,22 @@ MEM_OPTS := -fstack-protector -fsanitize=address -fsanitize=undefined -fno-omit-
 
 OPTS := -std=gnu11 -lm
 
+CMD_ARGS ?=
+
 FILES := $(FILENAME).c $(FILENAME).h
 
 all: normal debug mem
 
 normal: $(FILES)
-	$(CC) $(OPTS) -o $(FILENAME) $(FILENAME).c
+	$(CC) $(CMD_ARGS) $(OPTS) -o $(FILENAME) $(FILENAME).c
 	@echo
 
 debug: $(FILES)
-	$(CC) $(DEBUG_OPTS) $(OPTS) -o debug_$(FILENAME) $(FILENAME).c
+	$(CC) $(CMD_ARGS) $(DEBUG_OPTS) $(OPTS) -o debug_$(FILENAME) $(FILENAME).c
 	@echo
 
 mem: $(FILES)
-	$(CC) $(MEM_OPTS) $(DEBUG_OPTS) $(OPTS) -o memdebug_$(FILENAME) $(FILENAME).c
+	$(CC) $(CMD_ARGS) $(MEM_OPTS) $(DEBUG_OPTS) $(OPTS) -o memdebug_$(FILENAME) $(FILENAME).c
 	@echo
 
 clean:
@@ -48,7 +50,7 @@ EOF
 
 DIRS=$(find . -regextype sed -type d -iregex '\./[^\.].*' -exec echo {} +)
 
-function build_all () {
+function build_targets () {
 
   targets="$1"
   # if there are none, set some defaults
@@ -104,4 +106,4 @@ TARGETS_ARR=($TARGETS)
 MAKE_ARGS=$(echo "$ARGS" | tail -1)
 MAKE_ARGS_ARR=($MAKE_ARGS)
 
-build_all "${TARGETS_ARR[*]}" "${MAKE_ARGS_ARR[*]}"
+build_targets "${TARGETS_ARR[*]}" "${MAKE_ARGS_ARR[*]}"
