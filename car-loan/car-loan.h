@@ -12,7 +12,7 @@ void runCarLoanMain(void) {
   }
 
   printf("Enter the loan's length! ");
-  while ( ( !getint64(&loan_length ) ) || (loan_length < 0) ) {
+  while ( ( !getint64(&loan_length) ) || (loan_length < 0) ) {
     printf("BOB says: that timespan is negative!\nEnter another! ");
   }
 

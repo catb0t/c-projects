@@ -8,6 +8,11 @@ COLOR_YLW=$ESC"33;1m"
 COLOR_MGN=$ESC"35;1m"
 COLOR_CYN=$ESC"36;1m"
 
+ASAN_OPTIONS=symbolize=1
+ASAN_SYMBOLIZER_PATH=$(which llvm-symbolizer)
+export ASAN_SYMBOLIZER_PATH
+export ASAN_OPTIONS
+
 function ee () { echo -e "$@"; }
 
 # if you think this makefile is scary, wait til you see a real project's one
@@ -15,7 +20,7 @@ read -rd '' SKELE_MAKE << 'EOF'
 
 FILENAME := $(shell basename `pwd`)
 ARCH := $(shell uname -m)
-OUT_FILENAME := $(FILENAME)_$(ARCH)
+OUT_FILENAME := $(FILENAME)
 
 DEBUG_OPTS := -Wall -Wextra -Wfloat-equal -Wundef -Werror -fverbose-asm -Wint-to-pointer-cast -Wshadow -Wpointer-arith -Wcast-align -Wstrict-prototypes -Wcast-qual -Wmissing-prototypes -Wstrict-overflow=5 -Wwrite-strings -Wconversion --pedantic-errors -std=gnu11 -ggdb
 
@@ -23,10 +28,12 @@ MEM_OPTS := -fstack-protector -fsanitize=address -fsanitize=undefined -fno-omit-
 
 OPTS := -std=gnu11 -lm
 
-ifeq ($(shell readlink $(CC)), $(shell readlink gcc))
+ifeq ($(CC), gcc)
   MEM_OPTS += -static-libasan -static-libtsan -static-liblsan -static-libubsan -lasan -lubsan
 endif
-
+ifeq ($(CC), cc)
+  MEM_OPTS += -static-libasan -static-libtsan -static-liblsan -static-libubsan -lasan -lubsan
+endif
 
 CMD_ARGS ?=
 
@@ -35,19 +42,20 @@ FILES := $(FILENAME).c $(FILENAME).h
 all: normal debug mem
 
 normal: $(FILES)
-	$(CC) $(CMD_ARGS) $(OPTS) -o $(FILENAME) $(FILENAME).c
+	$(CC) $(CMD_ARGS) $(OPTS) -o $(OUT_FILENAME) $(FILENAME).c
 	@echo
 
 debug: $(FILES)
-	$(CC) $(CMD_ARGS) $(DEBUG_OPTS) $(OPTS) -o debug_$(FILENAME) $(FILENAME).c
+	$(CC) $(CMD_ARGS) $(DEBUG_OPTS) $(OPTS) -o debug_$(OUT_FILENAME) $(FILENAME).c
 	@echo
 
 mem: $(FILES)
-	$(CC) $(CMD_ARGS) $(MEM_OPTS) $(DEBUG_OPTS) $(OPTS) -o memdebug_$(FILENAME) $(FILENAME).c
+	$(CC) $(CMD_ARGS) $(MEM_OPTS) $(DEBUG_OPTS) $(OPTS) -o memdebug_$(OUT_FILENAME) $(FILENAME).c
 	@echo
 
 clean:
-	(rm $(FILENAME) debug_$(FILENAME) memdebug_$(FILENAME) core; echo)
+	(rm core a.out 2>/dev/null; echo)
+	$(shell find . -type f -executable -regextype sed -iregex '\./[^.]*' | xargs rm) 
 	@echo
 
 EOF
