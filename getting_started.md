@@ -1,0 +1,4 @@
+- [ ] Clone this repository.
+- [ ] Install the dependencies.
+- [ ] Type `./build.sh` and watch the pretty colours.
+- [ ] Run the programs as you please.

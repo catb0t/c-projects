@@ -1,14 +1,17 @@
-CC ?= clang
-
 FILENAME := $(shell basename `pwd`)
 ARCH := $(shell uname -m)
 OUT_FILENAME := $(FILENAME)_$(ARCH)
 
 DEBUG_OPTS := -Wall -Wextra -Wfloat-equal -Wundef -Werror -fverbose-asm -Wint-to-pointer-cast -Wshadow -Wpointer-arith -Wcast-align -Wstrict-prototypes -Wcast-qual -Wmissing-prototypes -Wstrict-overflow=5 -Wwrite-strings -Wconversion --pedantic-errors -std=gnu11 -ggdb
 
-MEM_OPTS := -static-libasan -static-libtsan -static-liblsan -static-libubsan -lasan -lubsan -fstack-protector -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer
+MEM_OPTS := -fstack-protector -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer
 
 OPTS := -std=gnu11 -lm
+
+ifeq ($(shell readlink $(CC)), $(shell readlink gcc))
+  MEM_OPTS += -static-libasan -static-libtsan -static-liblsan -static-libubsan -lasan -lubsan
+endif
+
 
 CMD_ARGS ?=
 

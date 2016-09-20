@@ -27,5 +27,5 @@ void runCarLoanMain(void) {
     printf("BOB says: that payment is negative!\nEnter another! ");
   }
 
-  
+
 }
