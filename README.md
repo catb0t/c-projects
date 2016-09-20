@@ -2,11 +2,11 @@
 
 ---
 
-## `build.sh` usage
+## `build.bash` usage
 
 ```
-usage: build.sh [ <targets> ] [ -- <make-options> ]
-  <targets> is any number of targets in the Makefile in build.sh.
+usage: build.bash [ <targets> ] [ -- <make-options> ]
+  <targets> is any number of targets in the Makefile in build.bash.
     default targets are: all, normal, debug, mem, clean.
     targets are built in the order in which they are specified.
 
@@ -22,18 +22,18 @@ usage: build.sh [ <targets> ] [ -- <make-options> ]
 
 To:
 
-* Remove all binaries and make exercises: `./build.sh`
+* Remove all binaries and make exercises: `./build.bash`
 
-* Build all the exercises: `./build.sh all`.
+* Build all the exercises: `./build.bash all`.
 
-* Remove all binaries: `./build.sh clean`
+* Remove all binaries: `./build.bash clean`
 
-* Make one target in all directories: `./build.sh <target>`
+* Make one target in all directories: `./build.bash <target>`
 
-* Remove all binaries and make exercises, giving arguments to make: `./build.sh -- CC=gcc NOOP=0`
+* Remove all binaries and make exercises, giving arguments to make: `./build.bash -- CC=gcc NOOP=0`
 * etc...
 
-Read `build.sh` and the Makefile contained within for more information.
+Read `build.bash` and the Makefile contained within for more information.
 
 ---
 
@@ -49,7 +49,7 @@ other gnu coreutils (rm, pwd, basename, head / tail)
 ```
 
 The `mem` target requires GCC's or clang's AddressSanitizer, and `/usr/bin/llvm-symbolizer` to be installed and symlinked to `/usr/bin/llvm-symbolizer-3.8`.
-if you don't want to or can't install these, just remove the `mem` target from the Makefile in `build.sh`. You will need these if you want to verify that there are no memory
+if you don't want to or can't install these, just remove the `mem` target from the Makefile in `build.bash`. You will need these if you want to verify that there are no memory
 leaks. Alternatively, you can just run the given `memdebug_*` binaries I build if you are using 64-bit linux.
 
 You may be able to install the needed tools using

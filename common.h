@@ -212,10 +212,9 @@ size_t str_count (
   const size_t  len_needles
 ) {
   size_t s = 0;
-  char c;
-
+  
   for (size_t i = 0; i < len_haystack; i++) {
-    c = haystack[i];
+    char c = haystack[i];
     for (size_t h = 0; h < len_needles; h++) {
       if (c == needles[h]) {
          s++;
