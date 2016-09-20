@@ -1,4 +1,6 @@
+#include "if-continents.h"
+
 int main(void) {
-  /* code */
-  return 0;
+  if_continents();
+  return EXIT_SUCCESS;
 }

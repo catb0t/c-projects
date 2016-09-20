@@ -26,9 +26,11 @@ It would be helpful to describe to other developers what this small Java program
 
 1.
 Choose a number. Add 3. Multiply by 2. Add 4. Divide by 2. Subtract the number you started with. The result is ??
+**The result is always 5**.
 
 2.
 Choose a number. Double it. Add 9. Add the number you started with. Divide by 3. Add 4. Subtract the number you started with. The result is ??
+**The result is always 7**.
 
 3.
-Create a trick of your own. You must prove, using algebra, that your trick will always work.
+Create a trick of your own. You must prove, using algebra, that your trick will always work. **Choose a number, add 10. Subtract 5 and add 7. Multiply this by zero, then add 6 and divide by 3.** The result is always 2 because anything * 0 is 0 and 6 / 3 is always 2. Can I go back to programming now?

@@ -1,4 +1,6 @@
+#include "car-loan.h"
+
 int main(void) {
-  /* code */
-  return 0;
+  runCarLoanMain();
+  return EXIT_SUCCESS;
 }
