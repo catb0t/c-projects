@@ -1,3 +1,5 @@
+#pragma once
+
 #include <assert.h>
 #include <inttypes.h>
 #include <limits.h>
@@ -35,12 +37,17 @@ char**  str_split (
   const char    delim,
         size_t* out_len
 );
+char*  str_repeat (
+  const char* const str,
+  const size_t      times,
+  size_t*           out_len
+);
 
 bool     isEOL (const char* const str);
 bool  getint64 (int64_t*    restrict dest);
 bool getuint64 (uint64_t*   restrict dest);
 
-uint64_t pow_uint64 (uint64_t in, uint64_t power);
+uint64_t        pow_uint64 (uint64_t in, uint64_t power);
 uint64_t* str_to_ull_array (
   const char* const str,
   const size_t      len,
@@ -63,10 +70,6 @@ void*   _safemalloc (size_t len, uint64_t lineno);
 
 #define safefree(x)   _safefree(x, __LINE__)
 #define safemalloc(x) _safemalloc(x, __LINE__)
-
-
-// IMPLEMENTATIONS
-void   runMathMagic (void);
 
 
 /*
@@ -212,7 +215,7 @@ size_t str_count (
   const size_t  len_needles
 ) {
   size_t s = 0;
-  
+
   for (size_t i = 0; i < len_haystack; i++) {
     char c = haystack[i];
     for (size_t h = 0; h < len_needles; h++) {
@@ -222,6 +225,27 @@ size_t str_count (
     }
   }
   return s;
+}
+
+char*  str_repeat (
+  const char* const in_str,
+  const size_t      times,
+  size_t*           out_len
+) {
+  size_t in_len;
+  char* out_buf;
+
+  in_len   = safestrnlen(in_str);
+  *out_len = in_len * times;
+
+  out_buf  = malloc( ( sizeof (char) * *out_len) );
+
+  for (size_t i = 0; i < *out_len; i++) {
+    out_buf[i] = in_str[ i % in_len ];
+  }
+  out_buf[ *out_len ] = '\0';
+
+  return out_buf;
 }
 
 // safestrnlen -- find the length of a string, defaulting to MAX_STR_LEN, without segfaulting

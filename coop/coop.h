@@ -19,7 +19,8 @@ element_t* new_element (
   char*         full_name,
   el_category_t el_type
 );
-bool get_long (unsigned long* out);
+bool get_ulong (unsigned long* out);
+void prompt_ulong (unsigned long* out, const char* const prompt);
 
 element_t* new_element (
   short   atomic_number,

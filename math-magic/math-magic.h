@@ -1,5 +1,7 @@
 #include "../common.h"
 
+void runMathMagic(void);
+
 void runMathMagic(void) {
   int64_t input = 0;
   uint64_t starting, squared, plus_orig, div_orig, add_17, sub_orig, div_6;
