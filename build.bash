@@ -42,20 +42,20 @@ FILES := $(FILENAME).c $(FILENAME).h
 all: normal debug mem
 
 normal: $(FILES)
-	$(CC) $(CMD_ARGS) $(OPTS) -o $(OUT_FILENAME) $(FILENAME).c
+	$(CC) $(FILENAME).c $(CMD_ARGS) $(OPTS) -o $(OUT_FILENAME)
 	@echo
 
 debug: $(FILES)
-	$(CC) $(CMD_ARGS) $(DEBUG_OPTS) $(OPTS) -o debug_$(OUT_FILENAME) $(FILENAME).c
+	$(CC) $(FILENAME).c $(CMD_ARGS) $(DEBUG_OPTS) $(OPTS) -o debug_$(OUT_FILENAME)
 	@echo
 
 mem: $(FILES)
-	$(CC) $(CMD_ARGS) $(MEM_OPTS) $(DEBUG_OPTS) $(OPTS) -o memdebug_$(OUT_FILENAME) $(FILENAME).c
+	$(CC) $(FILENAME).c $(CMD_ARGS) $(MEM_OPTS) $(DEBUG_OPTS) $(OPTS) -o memdebug_$(OUT_FILENAME)
 	@echo
 
 clean:
 	(rm core a.out 2>/dev/null; echo)
-	$(shell find . -type f -executable -regextype sed -iregex '\./[^.]*' | xargs rm) 
+	$(shell find . -type f -executable -regextype sed -iregex '\./[^.]*' | xargs rm)
 	@echo
 
 EOF
