@@ -16,8 +16,8 @@ bool get_double (double* out) {
   return true;
 }
 
-void prompt_positive_double (double* out, const char* const firstp) {
-  printf("%s", firstp);
+void prompt_positive_double (double* out, const char* const prompt) {
+  printf("%s", prompt);
   while ( (!get_double(out)) || (*out < 0) ) {
     printf("BOB says: that value is junk!\nEnter another! ");
   }

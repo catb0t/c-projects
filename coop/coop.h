@@ -12,13 +12,14 @@ struct s_element_t {
 
 typedef struct s_element_t element_t;
 
-void runCOOP     (void);
+void runCOOP           (void);
 element_t* new_element (
   short         atomic_number,
   char*         symbol,
   char*         full_name,
   el_category_t el_type
 );
+bool get_long (unsigned long* out);
 
 element_t* new_element (
   short   atomic_number,
@@ -34,18 +35,34 @@ element_t* new_element (
   return el;
 }
 
+bool get_ulong (unsigned long* out) {
+  char* in = readln(SHORT_INSTR);
+  if (!in) {
+    return false;
+  }
+  *out = strtoul(in, NULL, DEC_BASE);
+  safefree(in);
+  assert(out != NULL);
+  return true;
+}
+
+void prompt_ulong (unsigned long* out, const char* const prompt) {
+  printf("%s", prompt);
+  while ( !get_ulong(out) ) {
+    printf("BOB says: that value is junk!\nEnter another! ");
+  }
+}
+
 void runCOOP (void) {
   printf("Building element...\n");
   short amass;
-  char *in,
-       *sym,
+  unsigned long out;
+  char *sym,
        *fname;
   bool type;
 
-  printf("Atomic mass: ");
-  in = readln(SHORT_INSTR);
-  amass = (short) strtol(in, NULL, DEC_BASE);
-  safefree(in);
+  prompt_ulong(&out, "Atomic mass: ");
+  amass = (short) out;
 
   printf("Symbol: ");
   sym = (char *) readln(SHORT_INSTR);
@@ -53,10 +70,8 @@ void runCOOP (void) {
   printf("Full name: ");
   fname = (char *) readln(SHORT_INSTR);
 
-  printf("1 for noble gas or 0 for metalloid: ");
-  in = readln(SHORT_INSTR);
-  type = (bool) strtol(in, NULL, DEC_BASE);
-  safefree(in);
+  prompt_ulong(&out, "1 for noble gas or 0 for metalloid: ");
+  type = (bool) out;
 
   element_t* user_element = new_element(amass, sym, fname, type ? noble_gas : metalloid);
 
