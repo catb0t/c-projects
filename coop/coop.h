@@ -4,7 +4,7 @@ enum         el_category {noble_gas, metalloid};
 typedef enum el_category el_category_t;
 
 struct s_element_t {
-  short         atomic_number;
+  short   atomic_number;
   char*   symbol;
   char*   full_name;
   el_category_t el_type;
@@ -28,7 +28,7 @@ element_t* new_element (
   char*   full_name,
   el_category_t el_type
 ) {
-  element_t* el = malloc(sizeof(element_t));
+  element_t* el = safemalloc(sizeof(element_t));
   el -> atomic_number = atomic_number;
   el -> symbol        = symbol;
   el -> full_name     = full_name;

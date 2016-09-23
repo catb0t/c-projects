@@ -143,24 +143,40 @@ char** str_split (
         size_t* out_len
 ) {
   char delim_str[2],
-      *str_copy = strndup(str, MAX_STR_LEN);
+       *str_copy = strndup(str, MAX_STR_LEN);
 
-  sprintf(delim_str, "%c%c", delim, 0);
+  sprintf(delim_str, "%c", delim);
 
   size_t num_delim = str_count(str, len, delim_str, 1);
 
   char** new;
 
-  if (num_delim < 2) {
+
+  if (0 == num_delim) {
     // no separator found
-    new      = safemalloc( sizeof(char*) * 2 );
+    new      = safemalloc( sizeof (char *) * 2 );
     new[0]   = str_copy;
-    new[1]   = 0;
+    new[1]   = NULL;
     *out_len = 1;
 
+  } else if (1 == num_delim) {
+
+    // one separator
+    new = safemalloc( sizeof (char *) * 2 );
+    size_t i;
+    for (
+      i = 0;
+      (i < len) && str[i] != delim;
+      i++
+    );
+    str_copy[i] = '\0';
+    new[0] = str_copy;
+    new[1] = &(str_copy[i + 1]);
+    *out_len = 2;
+
   } else {
-    // separator found
-    new = safemalloc( ( sizeof(char*) * num_delim ) + 1 );
+    // separators found
+    new = safemalloc( ( sizeof (char *) * num_delim ) + 1 );
 
     size_t i;
     char* token;
@@ -171,6 +187,7 @@ char** str_split (
 
     new[i + 1] = 0;
     *out_len   = i;
+    safefree(str_copy);
   }
 
   assert(out_len != NULL);
@@ -238,7 +255,7 @@ char*  str_repeat (
   in_len   = safestrnlen(in_str);
   *out_len = in_len * times;
 
-  out_buf  = malloc( ( sizeof (char) * *out_len) );
+  out_buf  = safemalloc( ( sizeof (char) * *out_len) );
 
   for (size_t i = 0; i < *out_len; i++) {
     out_buf[i] = in_str[ i % in_len ];
