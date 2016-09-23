@@ -19,6 +19,7 @@ CMD_ARGS ?=
 
 FILES := $(FILENAME).c $(FILENAME).h
 
+
 all: normal debug mem
 
 normal: $(FILES)
@@ -31,6 +32,10 @@ debug: $(FILES)
 
 mem: $(FILES)
 	$(CC) $(FILENAME).c $(CMD_ARGS) $(MEM_OPTS) $(DEBUG_OPTS) $(OPTS) -o memdebug_$(OUT_FILENAME)
+	@echo
+
+test: test_$(FILENAME).c
+	$(CC) test_$(FILENAME).c $(CMD_ARGS) $(OPTS) -o test_$(OUT_FILENAME) -lcriterion
 	@echo
 
 clean:

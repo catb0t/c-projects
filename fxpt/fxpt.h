@@ -41,7 +41,7 @@ bool     fxpt_lt (const fixed_point_t lhs, const fixed_point_t rhs);
 bool    fxpt_gte (const fixed_point_t lhs, const fixed_point_t rhs);
 bool    fxpt_lte (const fixed_point_t lhs, const fixed_point_t rhs);
 
-fixed_point_t fxpt_f_tofrac (const double val);
+fixed_point_t fxpt_f_tofxpt (const double val);
 fixed_point_t    fxpt_floor (const fixed_point_t val);
 fixed_point_t     fxpt_ceil (const fixed_point_t val);
 
@@ -176,7 +176,7 @@ double fxpt_frac_tof (const fixed_point_t val) {
 }
 
 // turn the whole value to fixed
-fixed_point_t fxpt_f_tofrac (double val) {
+fixed_point_t fxpt_f_tofxpt (double val) {
 
   fixed_point_t out;
   out.sign = val < 0;
@@ -218,9 +218,7 @@ fixed_point_t fxpt_add (const fixed_point_t lhs, const fixed_point_t rhs) {
   new_fc = (lhs_fsigned + rhs_fsigned) % INT32_MAX;
   new_ig += (new_fc / 10);
   new_fc %= 10;
-  if ( (lhs.sign || rhs.sign) && !(lhs.sign && rhs.sign) ) {
-    new_ig = -new_ig;
-  }
+
 
   // set the sign
   if (new_ig < 0) {
@@ -248,7 +246,7 @@ fixed_point_t fxpt_mul (const fixed_point_t lhs, const fixed_point_t rhs) {
     final = -final;
   }
 
-  return fxpt_f_tofrac(final);
+  return fxpt_f_tofxpt(final);
 }
 
 fixed_point_t fxpt_sub (const fixed_point_t lhs, const fixed_point_t rhs) {
