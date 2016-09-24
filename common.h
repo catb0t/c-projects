@@ -124,8 +124,9 @@ char* str_chomp (const char* str) {
 char* readln (const size_t len) {
   char *chomped_buf,
        *buf = safemalloc( sizeof(char) * len );
-  fgets(buf, MAX_STR_LEN, stdin);
+  fgets(buf, (int) len, stdin);
   chomped_buf = str_chomp(buf);
+
   safefree(buf);
   if (!isEOL(chomped_buf)) {
     return chomped_buf;
