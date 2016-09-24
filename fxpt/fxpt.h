@@ -154,7 +154,7 @@ fixed_point_t fxpt_new_fromstring (char* str) {
     printf("else\n" );
 
     size_t len;
-    spl_str = str_split(str, safestrnlen(str), '.', &len);
+    spl_str = str_split(str, '.', &len);
     s_igrl = spl_str[0],
     s_frac = spl_str[1];
     //printf("%s %s\n", s_igrl, s_frac);

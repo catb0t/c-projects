@@ -39,8 +39,9 @@ CMD_ARGS ?=
 
 FILES := $(FILENAME).c $(FILENAME).h
 
+OPTIONAL = $(if $(wildcard test_$(FILENAME).c), test, )
 
-all: normal debug mem
+all: normal debug mem $(OPTIONAL)
 
 normal: $(FILES)
 	$(CC) $(FILENAME).c $(CMD_ARGS) $(OPTS) -o $(OUT_FILENAME)

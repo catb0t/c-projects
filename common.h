@@ -22,18 +22,15 @@
 
 // utils
 char* str_reverse (const char*  const str);
-char*   str_chomp (const char*  const str);
+char* str_chomp   (const char* str);
 char*      readln (const size_t len);
-char*      str_rm (
-  const char* const str,
-  const size_t      len_str,
-  const char* const omit,
-  const size_t      len_omit,
-        size_t*     out_len
+char*     str_rm (
+  const char*   str,
+  const char*   omit,
+        size_t* out_len
 );
-char**  str_split (
-  const char*   const str,
-  const size_t  len,
+char** str_split (
+  const char*   str,
   const char    delim,
         size_t* out_len
 );
@@ -118,8 +115,8 @@ char* str_reverse (const char* const str) {
 
 // chomp -- cuts the last char (a newline?) from a string
 char* str_chomp (const char* str) {
-  char* new = strndup(str, MAX_STR_LEN);
-  new[ safestrnlen(new) - 1 ] = 0;
+  char* new = strndup(str, safestrnlen(str) - 1);
+
   return new;
 }
 
@@ -132,13 +129,16 @@ char* readln (const size_t len) {
   safefree(buf);
   if (!isEOL(chomped_buf)) {
     return chomped_buf;
+
+  } else if (chomped_buf != NULL) {
+    safefree(chomped_buf);
   }
+
   return NULL;
 }
 
 char** str_split (
   const char*   str,
-  const size_t  len,
   const char    delim,
         size_t* out_len
 ) {
@@ -147,6 +147,7 @@ char** str_split (
 
   sprintf(delim_str, "%c", delim);
 
+  size_t len = safestrnlen(str);
   size_t num_delim = str_count(str, len, delim_str, 1);
 
   char** new;
@@ -200,11 +201,10 @@ char** str_split (
 */
 char*     str_rm (
   const char*   str,
-  const size_t  len_str,
   const char*   omit,
-  const size_t  len_omit,
         size_t* out_len
 ) {
+  size_t len_str = safestrnlen(str), len_omit = safestrnlen(omit);
   // malloc one more than exactly enough for the new string
   const size_t len_new = ( ( ( sizeof(char) * len_str ) - str_count(str, len_str, omit, len_omit) ) );
   char*            new = safemalloc( len_new + 1 );
@@ -265,18 +265,15 @@ char*  str_repeat (
   return out_buf;
 }
 
-// safestrnlen -- find the length of a string, defaulting to MAX_STR_LEN, without segfaulting
+// safestrnlen -- find the length of a string, defaulting to SHORT_INSTR, without segfaulting
 size_t safestrnlen (const char* str) {
-  // it seems gnu strnlen segfaults on null pointer (aka empty string), so let's fix that
-  if (!str) { return 0; }
-  return strnlen(str, MAX_STR_LEN);
+  // it seems gnu strnlen segfaults on null pointer
+  return str != NULL? strnlen(str, SHORT_INSTR) : 0;
 }
 
 
 bool isEOL (const char* str) {
-  return !str
-    || !safestrnlen(str)
-    || str[0] == '\n';
+  return !str || !safestrnlen(str) || str[0] == '\n';
 }
 
 bool getint64 (int64_t* restrict dest) {
