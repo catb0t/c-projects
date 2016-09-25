@@ -1,3 +1,6 @@
+#ifdef GCC
+#line 2 "common"
+#endif
 #pragma once
 
 #include <assert.h>
@@ -20,11 +23,17 @@
 #define MAX_STR_LEN 1024
 #define SHORT_INSTR 256
 
+#ifdef DEBUG
+  #define pfn(file, line, func) printf("\n%s#%d:%s\n", file, line, func);
+#else
+  #define pfn(file, line, func)
+#endif
+
 // utils
 char* str_reverse (const char*  const str);
-char* str_chomp   (const char* str);
+void    str_chomp (char* str);
 char*      readln (const size_t len);
-char*     str_rm (
+char*      str_rm (
   const char*   str,
   const char*   omit,
         size_t* out_len
@@ -55,9 +64,7 @@ uint64_t* str_to_ull_array (
 
 size_t   str_count (
   const char* const haystack,
-  const size_t      len_haystack,
-  const char* const needle,
-  const size_t      len_needle
+  const char* const needle
 );
 size_t safestrnlen (const char* const str);
 size_t   safe_usub (size_t x, size_t y);
@@ -75,6 +82,8 @@ void*   _safemalloc (size_t len, uint64_t lineno);
 */
 // _safefree -- free a pointer to allocated memory or die freeing NULL
 void _safefree (void* ptr, uint64_t lineno) {
+  pfn(__FILE__, __LINE__, __func__);
+
   if (!ptr) {
     printf("You fool! You have tried to free() a null pointer! (line %" PRIu64 ")\n", lineno);
     assert(ptr);
@@ -85,6 +94,8 @@ void _safefree (void* ptr, uint64_t lineno) {
 
 // _safemalloc -- allocate memory or die
 void* _safemalloc (size_t len, uint64_t lineno) {
+  pfn(__FILE__, __LINE__, __func__);
+
   void* mem = malloc(len);
   if (!mem) {
     printf("Couldn't malloc() %zu bytes (perhaps you have run out of memory?) (line %" PRIu64 ")\n", len, lineno);
@@ -96,10 +107,14 @@ void* _safemalloc (size_t len, uint64_t lineno) {
 
 // safe_usub -- perform safe unsigned subtraction
 size_t safe_usub (size_t x, size_t y) {
+  pfn(__FILE__, __LINE__, __func__);
+
   return x > y ? x - y : y - x ;
 }
 
 char* str_reverse (const char* const str) {
+  pfn(__FILE__, __LINE__, __func__);
+
   if (!str) { return NULL; }
 
   size_t len = safestrnlen(str);
@@ -114,25 +129,25 @@ char* str_reverse (const char* const str) {
 }
 
 // chomp -- cuts the last char (a newline?) from a string
-char* str_chomp (const char* str) {
-  char* new = strndup(str, safestrnlen(str) - 1);
+void str_chomp (char* str) {
+  pfn(__FILE__, __LINE__, __func__);
 
-  return new;
+  str[ strcspn(str, "\n") ] = 0;
 }
 
 // readln -- returns a line of chomped STDIN, or NULL on blank line / EOF
 char* readln (const size_t len) {
-  char *chomped_buf,
-       *buf = safemalloc( sizeof(char) * len );
+  pfn(__FILE__, __LINE__, __func__);
+
+  char *buf = safemalloc( sizeof(char) * len );
   fgets(buf, (int) len, stdin);
-  chomped_buf = str_chomp(buf);
+  str_chomp(buf);
 
-  safefree(buf);
-  if (!isEOL(chomped_buf)) {
-    return chomped_buf;
+  if (!isEOL(buf)) {
+    return buf;
 
-  } else if (chomped_buf != NULL) {
-    safefree(chomped_buf);
+  } else if (buf != NULL) {
+    safefree(buf);
   }
 
   return NULL;
@@ -143,13 +158,15 @@ char** str_split (
   const char    delim,
         size_t* out_len
 ) {
+  pfn(__FILE__, __LINE__, __func__);
+
   char delim_str[2],
        *str_copy = strndup(str, MAX_STR_LEN);
 
   sprintf(delim_str, "%c", delim);
 
   size_t len = safestrnlen(str);
-  size_t num_delim = str_count(str, len, delim_str, 1);
+  size_t num_delim = str_count(str, delim_str);
 
   char** new;
 
@@ -205,9 +222,11 @@ char*     str_rm (
   const char*   omit,
         size_t* out_len
 ) {
-  size_t len_str = safestrnlen(str), len_omit = safestrnlen(omit);
+  pfn(__FILE__, __LINE__, __func__);
+
+  size_t len_str = safestrnlen(str);
   // malloc one more than exactly enough for the new string
-  const size_t len_new = ( ( ( sizeof(char) * len_str ) - str_count(str, len_str, omit, len_omit) ) );
+  const size_t len_new = ( ( ( sizeof(char) * len_str ) - str_count(str, omit) ) );
   char*            new = safemalloc( len_new + 1 );
 
   char c[2];
@@ -215,7 +234,7 @@ char*     str_rm (
   size_t i, j;
   for (i = 0, j = 0; j < len_new; i++) {
     sprintf(c, "%c%c", str[i], 0);
-    if (!str_count(omit, len_omit, c, 1)) {
+    if (!str_count(omit, c)) {
       new[j] = str[i];
       j++;
     }
@@ -228,11 +247,13 @@ char*     str_rm (
 
 size_t str_count (
   const char*   haystack,
-  const size_t  len_haystack,
-  const char*   needles,
-  const size_t  len_needles
+  const char*   needles
 ) {
+  pfn(__FILE__, __LINE__, __func__);
+
   size_t s = 0;
+  size_t len_haystack = safestrnlen(haystack),
+         len_needles = safestrnlen(needles);
 
   for (size_t i = 0; i < len_haystack; i++) {
     char c = haystack[i];
@@ -250,6 +271,8 @@ char*  str_repeat (
   const size_t      times,
   size_t*           out_len
 ) {
+  pfn(__FILE__, __LINE__, __func__);
+
   size_t in_len;
   char* out_buf;
 
@@ -268,16 +291,22 @@ char*  str_repeat (
 
 // safestrnlen -- find the length of a string, defaulting to SHORT_INSTR, without segfaulting
 size_t safestrnlen (const char* str) {
+  pfn(__FILE__, __LINE__, __func__);
+
   // it seems gnu strnlen segfaults on null pointer
   return str != NULL? strnlen(str, SHORT_INSTR) : 0;
 }
 
 
 bool isEOL (const char* str) {
+  pfn(__FILE__, __LINE__, __func__);
+
   return !str || !safestrnlen(str) || str[0] == '\n';
 }
 
 bool getint64 (int64_t* restrict dest) {
+  pfn(__FILE__, __LINE__, __func__);
+
   char* in = readln(ULL_DIGITS);
   if (!in) {
     return false;
@@ -289,6 +318,8 @@ bool getint64 (int64_t* restrict dest) {
 }
 
 bool getuint64 (uint64_t* restrict dest) {
+  pfn(__FILE__, __LINE__, __func__);
+
   char* in = readln(ULL_DIGITS);
   if (!in) {
     return false;
@@ -300,6 +331,8 @@ bool getuint64 (uint64_t* restrict dest) {
 }
 
 uint64_t pow_uint64 (uint64_t in, uint64_t power) {
+  pfn(__FILE__, __LINE__, __func__);
+
   uint64_t out = 1;
   for (uint64_t i = 0; i < power; i++) {
     out *= in;
