@@ -1,6 +1,7 @@
 #ifdef GCC
 #line 2 "common"
 #endif
+
 #pragma once
 
 #include <assert.h>
@@ -132,25 +133,30 @@ char* str_reverse (const char* const str) {
 void str_chomp (char* str) {
   pfn(__FILE__, __LINE__, __func__);
 
-  str[ strcspn(str, "\n") ] = 0;
+  if (str && str_count(str, "\n")) {
+    str[ strcspn(str, "\n") ] = 0;
+  }
 }
 
 // readln -- returns a line of chomped STDIN, or NULL on blank line / EOF
 char* readln (const size_t len) {
   pfn(__FILE__, __LINE__, __func__);
 
-  char *buf = safemalloc( sizeof(char) * len );
-  fgets(buf, (int) len, stdin);
-  str_chomp(buf);
+  char *ret,
+       *buf = safemalloc( sizeof(char) * len );
 
-  if (!isEOL(buf)) {
-    return buf;
+  ret = fgets(buf, (int) len, stdin);
 
-  } else if (buf != NULL) {
+  if ( ret == NULL ) {
     safefree(buf);
+    char* out = safemalloc(2);
+    snprintf(out, 2, "%c", '\04');
+    return out;
   }
 
-  return NULL;
+  str_chomp(buf);
+
+  return buf;
 }
 
 char** str_split (

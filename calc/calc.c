@@ -1,6 +1,7 @@
 #ifdef GCC
 #line 2 "calcmain"
 #endif
+
 #define DEBUG
 #include "calc.h"
 

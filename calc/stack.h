@@ -1,6 +1,7 @@
 #ifdef GCC
 #line 2 "stack"
 #endif
+
 #include <errno.h>
 #include "../common.h"
 
@@ -113,7 +114,7 @@ void stack_incr (stack_t* stk) {
     return;
   }
 
-  ++stk->ptr;
+  ++(stk->ptr);
 }
 
 void stack_decr (stack_t* stk) {
@@ -143,7 +144,7 @@ number_t stack_top (const stack_t* stk) {
 number_t stack_pop (stack_t* stk) {
   pfn(__FILE__, __LINE__, __func__);
 
-  number_t out = stk->data[stk->ptr];
+  number_t out = stack_top(stk);
   stack_decr(stk);
   return out;
 }
@@ -179,7 +180,7 @@ char* stack_see (const stack_t* stk) {
     new_len += needed;
   }
 
-  printf("new_len: %zu\n", new_len);  
+  printf("new_len: %zu\n", new_len);
   output = safemalloc(sizeof (char) * new_len);
   char* bufptr = output;
 
@@ -251,12 +252,12 @@ void    stack_op_swp (stack_t* stk) {
 void    stack_op_prn (stack_t* stk) {
   pfn(__FILE__, __LINE__, __func__);
 
-  printf("%Lf\n", stack_top(stk));
+  printf("%LG", stack_top(stk));
 }
 void    stack_op_prn_dispose (stack_t* stk) {
   pfn(__FILE__, __LINE__, __func__);
 
-  printf("%Lf", stack_pop(stk));
+  printf("%LG", stack_pop(stk));
 }
 void    stack_op_prc (stack_t* stk) {
   pfn(__FILE__, __LINE__, __func__);
@@ -324,9 +325,7 @@ size_t atoi_strlen (number_t val) {
   pfn(__FILE__, __LINE__, __func__);
 
   char* buf = safemalloc(100);
-  size_t len = (size_t) snprintf(buf, 99, "%LG", val);
-
-  // safestrnlen(buf);
+  size_t len = (size_t) snprintf(buf, 100, "%LG", val);
 
   safefree(buf);
   return len;
@@ -337,7 +336,7 @@ bool is_base10 (const char *str) {
 
   // quickly invalidate str
   if (
-    (!str_count(str, "0123456789"))
+    (!str_count(str, DEC_DIGITS))
     || (str_count(str, "+-") > 1)
     || (str_count(str, ".") > 1)
   ) {
@@ -346,9 +345,8 @@ bool is_base10 (const char *str) {
 
   size_t len = safestrnlen(str);
 
-  //
   static const char misc_numeric_chars[] = { '-', '.', '+' };
-
+  
   char tmpbuf[2];
 
   for (size_t i = 0; i < len; i++) {

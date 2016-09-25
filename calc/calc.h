@@ -18,16 +18,21 @@ void interpret (void) {
   stack_t* stk = stack_new();
 
   while (true) {
-    char* in;
+
     printf("> ");
 
-    in = readln(MAX_STR_LEN);
-    if (!in) {
-      break;
-    }
-    run_str(in, stk);
-    safefree(in);
+    char* in = readln(MAX_STR_LEN);
 
+    if (!safestrnlen(in)) {
+      safefree(in);
+      continue;
+    } else if (in[0] == 4) {
+      safefree(in);
+      break;
+    } else {
+      run_str(in, stk);
+      safefree(in);
+    }
   }
 
   char* o = stack_see(stk);
@@ -39,6 +44,12 @@ void interpret (void) {
 void run_str(const char* const prog, stack_t* stk) {
   pfn(__FILE__, __LINE__, __func__);
 
+  if (prog == NULL) { return; }
+
+  for (size_t i = 0; i < safestrnlen(prog); i++) {
+    printf("%d ", prog[i]);
+  }
+
   size_t len;
   number_t tmp = 0;
   char* error = NULL;
@@ -48,16 +59,19 @@ void run_str(const char* const prog, stack_t* stk) {
 
   for (size_t i = 0; i < len; i++) {
     val = spl_prog[i];
+    for (size_t z = 0; z < safestrnlen(val); z++) {
+      printf("chr %zu: %d\n", z, val[z]);
+    }
 
     tmp = strtold(val, &error);
-    if ( error != NULL ) {
+    if ( error == NULL ) {
       stack_push(stk, tmp);
 
     } else {
       //perform_op(stk, val);
-      ssize_t opidx;
+      ssize_t opidx = get_stackop(val);
 
-      if ( ( opidx = get_stackop(val) ) != -1 ) {
+      if ( opidx > -1 ) {
         stack_ops[opidx](stk);
 
       } else {
