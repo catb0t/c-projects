@@ -41,30 +41,34 @@ void interpret (void) {
   stack_destruct(stk);
 }
 
-void run_str(const char* const prog, stack_t* stk) {
+void run_str (const char* const prog, stack_t* stk) {
   pfn(__FILE__, __LINE__, __func__);
 
-  if (prog == NULL) { return; }
+  if (prog == NULL) {
+    return;
+  }
 
   for (size_t i = 0; i < safestrnlen(prog); i++) {
-    printf("%d ", prog[i]);
+    dbg_prn("%d ", prog[i]);
   }
 
   size_t len;
   number_t tmp = 0;
-  char* error = NULL;
 
   char *val,
+       *error = NULL,
        **spl_prog = str_split(prog, ' ', &len);
 
   for (size_t i = 0; i < len; i++) {
     val = spl_prog[i];
+
     for (size_t z = 0; z < safestrnlen(val); z++) {
-      printf("chr %zu: %d\n", z, val[z]);
+      dbg_prn("chr %zu: %d\n", z, val[z]);
     }
 
     tmp = strtold(val, &error);
-    if ( error == NULL ) {
+
+    if ( !safestrnlen(error) ) {
       stack_push(stk, tmp);
 
     } else {
@@ -85,6 +89,7 @@ void run_str(const char* const prog, stack_t* stk) {
   for (size_t i = 0; i < len; i++) {
     safefree(spl_prog[i]);
   }
+
   safefree(spl_prog);
 
   char* o = stack_see(stk);
