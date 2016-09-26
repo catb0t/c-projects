@@ -9,25 +9,26 @@
 #include "calc.h"
 
 int main (void) {
-  interpret();
-/*
-  while (true) {
-    printf("> ");
-    char* in = readln(MAX_STR_LEN);
-    number_t told = strtold(in, NULL);
-    printf(
-       "%s is %zu length\n"
-      "%LG is %zu length\nlengths match: %s\n",
-      in, safestrnlen(in),
-      told, atoi_strlen(told),
-      atoi_strlen(told) == safestrnlen(in) ? "yes" : "no"
-    );
+//  interpret();
+
+  stack_t* stk = stack_new();
+
+  for (size_t i = 1; i < 4; i++) {
+
+    stack_push(stk, (number_t) i);
+
+  }
+  printf("len: %zu\n", stack_size(stk));
+
+  for (size_t i = 0; i < stack_size(stk) + 2; i++) {
+    printf("idx: %zu value: %LG\n", i, stack_get(stk, i));
   }
 
-  char* in = readln(MAX_STR_LEN);
-  printf("%d\n", in[safestrnlen(in)-1]);
-  number_t x = strtold(in, NULL);
-  printf("%Lf\n", x);
-*/
+  //char* o = stack_see(stk);
+  //printf("stk: %s\n", o);
+  //safefree(o);
+
+  stack_destruct(stk);
+
   return 0;
 }

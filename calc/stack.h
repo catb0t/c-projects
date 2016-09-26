@@ -45,6 +45,7 @@ void stack_drop (stack_t* stk);
 stack_t* stack_new (void);
 number_t stack_top (const stack_t* stk);
 number_t stack_pop (stack_t* stk);
+number_t stack_get (const stack_t* skt, size_t idx);
 
 void stack_op_divmod (stack_t* stk);
 void  stack_destruct (stack_t* stk);
@@ -83,15 +84,19 @@ void (* stack_ops[]) (stack_t *) = {
   stack_op_prc,
 };
 
-// TODO: better language
 const char* ops_tostring[] = {
+  // # is arith related
   "#+", // add
   "#*", // mul
   "#/", // divmod
   "#-", // sub
   "#^", // pow
+
+  // $ is stack related
   "$%", // swap
   "$,", // drop
+
+  // ! is io related
   "!!", // prn
   "!.", // see
   "!,", // prc
@@ -104,7 +109,7 @@ const char* ops_tostring[] = {
 
   data is 512 * (long double)0.0f, and ptr points to element 0.
 
-  TODO: grow
+  TODO: grow (?)
 */
 stack_t* stack_new (void) {
   pfn(__FILE__, __LINE__, __func__);
@@ -170,13 +175,44 @@ void stack_decr (stack_t* stk) {
 
   since the stack pointer always points to the top element, not past it,
   it is important the pointer is incremented before the new value is
-  assigned.
+  assigned except when ptr is 0.
 */
 void stack_push (stack_t* stk, number_t val) {
   pfn(__FILE__, __LINE__, __func__);
 
-  stack_incr(stk);
-  stk->data[stk->ptr] = val;
+#undef dbg_prn
+#define dbg_prn(...) printf(__VA_ARGS__)
+  // set once at first run
+  // keeps track of whether the index was 0 last time
+  static bool was_zero = false;
+  dbg_prn("was_zero: %d\n", was_zero);
+
+  // pre-increment because it wasn't last time
+  if ( was_zero ) {
+    stack_incr(stk);
+    dbg_prn("incremented stack to %zu b/c was_zero\n", stk->ptr );
+  }
+
+  // if this time is 0, just set data[0] to val
+  if ( (stk->ptr) == 0 ) {
+    dbg_prn("ptr is 0\n");
+
+    was_zero = true;
+    // no increment
+    stk->data[stk->ptr] = val;
+    dbg_prn("stk[0] is: %LG == %LG\n", stack_top(stk), val);
+
+  } else {
+    dbg_prn("ptr is not 0\n");
+
+    was_zero = false;
+    //stack_incr(stk);
+    stk->data[stk->ptr] = val;
+    dbg_prn("stk[%zu] is: %LG == %LG\n", stk->ptr, stack_top(stk), val);
+
+  }
+#undef dbg_prn
+#define dbg_prn(...)
 }
 
 /*
@@ -190,6 +226,14 @@ number_t stack_top (const stack_t* stk) {
   return stk->data[stk->ptr];
 }
 
+number_t stack_get (const stack_t* stk, size_t idx) {
+  pfn(__FILE__, __LINE__, __func__);
+
+  assert(idx <= INITIAL_STACKSIZE);
+
+  return stk->data[idx];
+}
+
 /*
   stack_pop: pops the top item from the stack pointed to by *stk,
   returning it.
@@ -200,6 +244,7 @@ number_t stack_pop (stack_t* stk) {
   pfn(__FILE__, __LINE__, __func__);
 
   number_t out = stack_top(stk);
+  stk->data[stk->ptr] = 0;
   stack_decr(stk);
   return out;
 }
@@ -244,6 +289,80 @@ void stack_drop (stack_t* stk) {
     * ...
 */
 char* stack_see (const stack_t* stk) {
+  pfn(__FILE__, __LINE__, __func__);
+
+  size_t num_elts = stk->ptr,
+         new_len = 0;
+
+  if (!num_elts) {
+    char* output = safemalloc(1);
+    snprintf(output, 1, "%s", "");
+    return output;
+  }
+
+  dbg_prn("elts: %zu\n", num_elts);
+  for (size_t i = 0; i < num_elts; i++) {
+    dbg_prn("elt %zu: %LG\n", i, stk->data[i]);
+  }
+
+  char** tos = safemalloc(sizeof (char *) * num_elts);
+
+  for (size_t i = num_elts; i != 0; i--) {
+    number_t val = stk->data[i];
+    dbg_prn("val: %LG", val);
+
+    size_t needed = atoi_strlen(val);
+    dbg_prn("len: %zu", needed);
+
+    tos[i] = safemalloc(needed + 1);
+
+    //snprintf(tos[i], needed, "%LG ", val);
+    //dbg_prn("snpd: %s", tos[i]);
+
+    new_len += needed;
+  }
+
+  char* output = safemalloc(sizeof (char) * new_len);
+
+  return output;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+char* stack_ccc (const stack_t* stk);
+char* stack_ccc (const stack_t* stk) {
   pfn(__FILE__, __LINE__, __func__);
 
   size_t num_elts = stk->ptr,
@@ -331,8 +450,8 @@ void    stack_op_mul (stack_t* stk) {
 void stack_op_divmod (stack_t* stk) {
   pfn(__FILE__, __LINE__, __func__);
 
-  number_t a = (long double) stack_pop(stk);
-  number_t b = (long double) stack_pop(stk);
+  number_t a = stack_pop(stk);
+  number_t b = stack_pop(stk);
 
   stack_push(
     stk,
@@ -527,8 +646,7 @@ bool is_base10 (const char *str) {
   pfn(__FILE__, __LINE__, __func__);
 
   // quickly invalidate str
-  if (
-    (!str_count(str, DEC_DIGITS))
+  if ( (!str_count(str, DEC_DIGITS))
     || (str_count(str, "+-") > 1)
     || (str_count(str, ".") > 1)
   ) {

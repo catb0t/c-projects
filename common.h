@@ -23,7 +23,6 @@
 #define NUM_PROBS   5
 #define MAX_STR_LEN 1024
 #define SHORT_INSTR 256
-#define FL __FILE__
 
 #ifdef DEBUG
   #define dbg_prn(...) printf(__VA_ARGS__)
