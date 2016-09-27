@@ -9,26 +9,25 @@
 #include "calc.h"
 
 int main (void) {
-//  interpret();
+  //interpret();
 
   stack_t* stk = stack_new();
 
-  for (size_t i = 1; i < 4; i++) {
+  stack_push(stk, 34);
 
-    stack_push(stk, (number_t) i);
+  stack_push(stk, 67);
+  stack_dbgp(stk);
 
-  }
-  dbg_prn("len: %zu\n", stack_size(stk));
+  printf("1 ptr: %zu\n", stk->ptr);
 
-  for (size_t i = 0; i < stack_size(stk); i++) {
-    printf("idx: %zu value: %LG\n", i, stack_get(stk, i));
-  }
+  printf("1 pop: %LG\n", stack_pop(stk));
 
-  char* o = stack_see(stk);
-  printf("stk: %s\n", o);
-  safefree(o);
+  printf("2 ptr: %zu\n", stk->ptr);
+  stack_dbgp(stk);
 
-  stack_destruct(stk);
+  printf("2 pop: %LG\n", stack_pop(stk));
+  stack_dbgp(stk);
+
 
   return 0;
 }

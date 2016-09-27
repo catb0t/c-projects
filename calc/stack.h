@@ -6,7 +6,7 @@
 #include "../common.h"
 
 // maybe it will grow in the future
-#define INITIAL_STACKSIZE 512
+#define INITIAL_STACKSIZE 50
 
 // pretty useless for now, we'll see
 enum errortypes {
@@ -21,22 +21,25 @@ enum errortypes {
 // handy types
 // may change number_t to object_t or so in the future
 typedef long double number_t;
-typedef struct stack stack_t;
+typedef struct s_stack stack_t;
 
 // subject to change -- maybe to be an array of other things too
-struct stack {
+struct s_stack {
   // list of long doubles
   number_t* data;
   // points to the top
-  size_t    ptr;
+  ssize_t    ptr;
 };
 
 size_t      atoi_strlen (const number_t val);
 size_t       stack_size (const stack_t* stk);
+void     free_ptr_array (void** ptr, const size_t len);
 void              error (const size_t err, const char* const info);
 bool          is_base10 (const char *nptr);
+bool      stack_isempty (const stack_t* stk);
 
 char* stack_see (const stack_t* stk);
+void stack_dbgp (const stack_t* stk);
 void stack_incr (stack_t* stk);
 void stack_decr (stack_t* stk);
 void stack_push (stack_t* stk, const number_t val);
@@ -45,8 +48,8 @@ void stack_drop (stack_t* stk);
 stack_t* stack_new (void);
 number_t stack_top (const stack_t* stk);
 number_t stack_pop (stack_t* stk);
-number_t stack_get (const stack_t* skt, size_t idx);
-
+number_t stack_get (const stack_t* skt, const size_t idx);
+void     stack_set (stack_t* stk, const size_t idx, const number_t val);
 void stack_op_divmod (stack_t* stk);
 void  stack_destruct (stack_t* stk);
 void    stack_op_add (stack_t* stk);
@@ -84,7 +87,7 @@ void (* stack_ops[]) (stack_t *) = {
   stack_op_prc,
 };
 
-const char* ops_tostring[] = {
+const char* ops_to_strtring[] = {
   // # is arith related
   "#+", // add
   "#*", // mul
@@ -102,12 +105,12 @@ const char* ops_tostring[] = {
   "!,", // prc
 };
 
-#define NUM_STACKOPS (size_t) (sizeof ops_tostring) / (sizeof (char *))
+#define NUM_STACKOPS (size_t) (sizeof ops_to_strtring) / (sizeof (char *))
 
 /*
   stack_new: returns a new stack_t* object, heap allocated
 
-  data is 512 * (long double)0.0f, and ptr points to element 0.
+  data is INITIAL_STACKSIZE * (long double)0.0f, and ptr points to element 0.
 
   TODO: grow (?)
 */
@@ -116,7 +119,7 @@ stack_t* stack_new (void) {
 
   stack_t* out = safemalloc(sizeof (stack_t));
   out->data    = calloc(INITIAL_STACKSIZE, sizeof (number_t));
-  out->ptr     = 0;
+  out->ptr     = -1;
   return out;
 }
 
@@ -132,6 +135,10 @@ void stack_destruct (stack_t* stk) {
   safefree(stk->data), safefree(stk);
 }
 
+bool stack_isempty (const stack_t* stk) {
+  return (stk->ptr) == -1;
+}
+
 /*
   stack_incr: increment the stack pointer by one, as long as it is less
   than INITIAL_STACKSIZE.
@@ -145,7 +152,9 @@ void stack_destruct (stack_t* stk) {
 void stack_incr (stack_t* stk) {
   pfn(__FILE__, __LINE__, __func__);
 
-  if (( stk->ptr + 1 ) >= INITIAL_STACKSIZE) {
+  ssize_t newval = (stk->ptr) + 1;
+
+  if (newval >= INITIAL_STACKSIZE) {
     error(ERROR_STACK_OVERFLOW, "stack_incr");
     return;
   }
@@ -162,13 +171,30 @@ void stack_incr (stack_t* stk) {
 void stack_decr (stack_t* stk) {
   pfn(__FILE__, __LINE__, __func__);
 
-  if (( ( (ssize_t) stk->ptr ) - 1 ) < 0) {
+  if ( stack_isempty(stk) ) {
     error(ERROR_STACK_UNDERFLOW, "stack_decr");
     return;
   }
 
   --(stk->ptr);
 }
+
+number_t stack_get (const stack_t* stk, const size_t idx) {
+  pfn(__FILE__, __LINE__, __func__);
+
+  assert(idx <= INITIAL_STACKSIZE);
+
+  return stk->data[idx];
+}
+
+void stack_set (stack_t* stk, const size_t idx, const number_t val) {
+  pfn(__FILE__, __LINE__, __func__);
+
+  assert(idx <= INITIAL_STACKSIZE);
+
+  stk->data[idx] = val;
+}
+
 
 /*
   stack_push: appends a new object to the stack, and points to it.
@@ -180,41 +206,8 @@ void stack_decr (stack_t* stk) {
 void stack_push (stack_t* stk, number_t val) {
   pfn(__FILE__, __LINE__, __func__);
 
-  // set once at first run
-  // keeps track of whether the index was 0 last time
-  static bool was_zero = false;
-  bool incrd_yet = false;
-  dbg_prn("was_zero: %d\n", was_zero);
-
-  // pre-increment because it wasn't last time
-  if ( was_zero ) {
-    incrd_yet = true;
-    stack_incr(stk);
-    dbg_prn("incremented stack to %zu b/c was_zero\n", stk->ptr );
-  }
-
-  // if this time is 0, just set data[0] to val
-  if ( (stk->ptr) == 0 ) {
-    dbg_prn("ptr is 0\n");
-
-    was_zero = true;
-    // no increment
-    stk->data[stk->ptr] = val;
-    dbg_prn("stk[0] is: %LG == %LG\n", stack_top(stk), val);
-
-  } else {
-    dbg_prn("ptr is not 0\n");
-
-    was_zero = false;
-
-    if ( ! incrd_yet ) {
-      stack_incr(stk);
-    }
-
-    stk->data[stk->ptr] = val;
-    dbg_prn("stk[%zu] is: %LG == %LG\n", stk->ptr, stack_top(stk), val);
-
-  }
+  stack_incr(stk);
+  stack_set(stk, (size_t) stk->ptr, val);
 
 }
 
@@ -226,15 +219,11 @@ void stack_push (stack_t* stk, number_t val) {
 number_t stack_top (const stack_t* stk) {
   pfn(__FILE__, __LINE__, __func__);
 
-  return stk->data[stk->ptr];
-}
+  if ( stack_isempty(stk) ) {
+    return 0.f;
+  }
 
-number_t stack_get (const stack_t* stk, size_t idx) {
-  pfn(__FILE__, __LINE__, __func__);
-
-  assert(idx <= INITIAL_STACKSIZE);
-
-  return stk->data[idx];
+  return stack_get(stk, (size_t) stk->ptr);
 }
 
 /*
@@ -246,8 +235,13 @@ number_t stack_get (const stack_t* stk, size_t idx) {
 number_t stack_pop (stack_t* stk) {
   pfn(__FILE__, __LINE__, __func__);
 
+  if ( stack_isempty(stk) ) {
+    error(ERROR_STACK_OVERFLOW, "stack_pop (empty stack)");
+    return 0.f;
+  }
+
   number_t out = stack_top(stk);
-  stk->data[stk->ptr] = 0;
+  stack_set(stk, (size_t) stk->ptr, 0);
   stack_decr(stk);
   return out;
 }
@@ -266,7 +260,7 @@ number_t stack_pop (stack_t* stk) {
 size_t stack_size (const stack_t* stk) {
   pfn(__FILE__, __LINE__, __func__);
 
-  return (stk->ptr) + 1;
+  return (size_t) ((stk->ptr) + 1);
 }
 
 /*
@@ -284,129 +278,48 @@ void stack_drop (stack_t* stk) {
   space-separated long doubles using format specifier %LG from
   left to right.
 
-  BUG: all of them.
-  TODO:
-    * rewrite(?) to fix the many bugs
-    * print in the other direction
-    * improve memory safety...
-    * ...
 */
 char* stack_see (const stack_t* stk) {
   pfn(__FILE__, __LINE__, __func__);
 
-  size_t num_elts = stk->ptr;
-
-  if (!num_elts) {
-    char* output = safemalloc(1);
-    snprintf(output, 1, "%s", "");
-    return output;
+  if ( stack_isempty(stk) ) {
+    char* o = safemalloc(15);
+    snprintf(o, 15, "%s", "(empty)");
+    return o;
   }
 
-  dbg_prn("elts: %zu\n", num_elts);
-  for (size_t i = 0; i < num_elts; i++) {
-    dbg_prn("elt %zu: %LG\n", i, stk->data[i]);
-  }
+  size_t num_elts = stack_size(stk),
+         new_len  = 0;
 
-/*  char** tos = safemalloc(sizeof (char *) * num_elts);
+  char** to_str = safemalloc(sizeof (char *) * num_elts);
 
-  for (size_t i = num_elts; i != 0; i--) {
-    number_t val = stk->data[i];
-    dbg_prn("val: %LG", val);
+  for (
+    size_t i = (num_elts - 1);
+    (i + 1) != 0;
+    i--
+  ) {
 
-    size_t needed = atoi_strlen(val);
-    dbg_prn("len: %zu", needed);
+    number_t val = stack_get(stk, i);
+    // + 2 for space & good measure
+    size_t needed = 2 + atoi_strlen(val);
 
-    tos[i] = safemalloc(needed + 1);
+    to_str[i] = safemalloc(sizeof (char) * needed);
 
-    //snprintf(tos[i], needed, "%LG ", val);
-    //dbg_prn("snpd: %s", tos[i]);
+    snprintf(to_str[i], needed, "%LG", val);
 
     new_len += needed;
   }
 
-  char* output = safemalloc(sizeof (char) * new_len);
-
-  return output;
-*/
-  return malloc(4);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-char* stack_ccc (const stack_t* stk);
-char* stack_ccc (const stack_t* stk) {
-  pfn(__FILE__, __LINE__, __func__);
-
-  size_t num_elts = stk->ptr,
-         new_len = 0;
-
-  if (!num_elts) {
-    char* output = safemalloc(1);
-    snprintf(output, 1, "%s", "");
-    return output;
-  }
-
-  char **str_list = safemalloc(sizeof (char *) * (num_elts)),
-       *output;
+  char* output = safemalloc(sizeof (char) * new_len),
+       *bufend = output;
 
   for (size_t i = 0; i < num_elts; i++) {
-    number_t curdata = (stk->data)[i];
-    size_t needed    = atoi_strlen(curdata) + 1;
-    str_list[i]      = safemalloc(sizeof (char) * needed);
-
-    dbg_prn("this data: %LG length: %zu\n", curdata, needed);
-
-    snprintf(str_list[i], needed, "%LG", curdata);
-
-    dbg_prn("after snprintf: %s\n", str_list[i]);
-
-    new_len += needed;
+    // "normalise" to read in reverse order
+    size_t nml_val = (num_elts - 1) - i;
+    bufend += snprintf(bufend, 20, "%s ", to_str[nml_val]);
   }
 
-  dbg_prn("new_len: %zu\n", new_len);
-
-  output = safemalloc(sizeof (char) * new_len);
-  char* bufptr = output;
-
-  for (size_t i = 0; i < num_elts; i++) {
-    dbg_prn("snprintfing: %s\n", str_list[i]);
-    bufptr += snprintf(bufptr, 3, "%s ", str_list[i]);
-    safefree(str_list[i]);
-  }
-
-  safefree(str_list);
+  free_ptr_array((void **) to_str, num_elts);
 
   return output;
 }
@@ -425,10 +338,20 @@ char* stack_ccc (const stack_t* stk) {
 void    stack_op_add (stack_t* stk) {
   pfn(__FILE__, __LINE__, __func__);
 
+  stack_dbgp(stk);
+
   number_t a = stack_pop(stk);
+  printf("a: %LG\n", a);
+  stack_dbgp(stk);
+
+
   number_t b = stack_pop(stk);
+  printf("b: %LG\n", b);
+  stack_dbgp(stk);
 
   stack_push(stk, b + a);
+  printf("after push\n");
+  stack_dbgp(stk);
 }
 /*
   effect: ( x y -- x*y )
@@ -570,7 +493,7 @@ ssize_t      get_stackop (const char* const op) {
   pfn(__FILE__, __LINE__, __func__);
 
   for (size_t i = 0; i < NUM_STACKOPS; i++) {
-    if ( strncmp(op, ops_tostring[i], 5) ) {
+    if ( strncmp(op, ops_to_strtring[i], 5) ) {
       return (ssize_t) i;
     }
   }
@@ -663,7 +586,7 @@ bool is_base10 (const char *str) {
 
   for (size_t i = 0; i < len; i++) {
     char tmpbuf[2];
-    sprintf(tmpbuf, "%c", str[i]);
+    snprintf(tmpbuf, 1, "%c", str[i]);
 
     bool ismisc   = false,
          isnum    = false,
@@ -714,4 +637,17 @@ number_t* str_to_number_array (
 
   *out_len = len;
   return out;
+}
+
+void free_ptr_array (void** ptr, const size_t len) {
+  for (size_t i = 0; i < len; i++) {
+    safefree(ptr[i]);
+  }
+  safefree(ptr);
+}
+
+void stack_dbgp (const stack_t* stk) {
+  char* s = stack_see(stk);
+  printf("stack: %s\n", s);
+  safefree(s);
 }

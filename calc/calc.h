@@ -23,10 +23,10 @@ void interpret (void) {
 
     char* in = readln(MAX_STR_LEN);
 
-    if (!safestrnlen(in)) {
+    if ( ! safestrnlen(in) ) {
       safefree(in);
       continue;
-    } else if (in[0] == 4) {
+    } else if ( in[0] == 4 ) {
       safefree(in);
       break;
     } else {
@@ -48,10 +48,6 @@ void run_str (const char* const prog, stack_t* stk) {
     return;
   }
 
-  for (size_t i = 0; i < safestrnlen(prog); i++) {
-    dbg_prn("%d ", prog[i]);
-  }
-
   size_t len;
   number_t tmp = 0;
 
@@ -62,13 +58,9 @@ void run_str (const char* const prog, stack_t* stk) {
   for (size_t i = 0; i < len; i++) {
     val = spl_prog[i];
 
-    for (size_t z = 0; z < safestrnlen(val); z++) {
-      dbg_prn("chr %zu: %d\n", z, val[z]);
-    }
-
     tmp = strtold(val, &error);
 
-    if ( !safestrnlen(error) ) {
+    if ( ! safestrnlen(error) ) {
       stack_push(stk, tmp);
 
     } else {
@@ -86,13 +78,9 @@ void run_str (const char* const prog, stack_t* stk) {
 
   }
 
-  for (size_t i = 0; i < len; i++) {
-    safefree(spl_prog[i]);
-  }
-
-  safefree(spl_prog);
+  free_ptr_array( (void **) spl_prog, len);
 
   char* o = stack_see(stk);
-  printf("\nstack: %s\n", o);
+  printf("< %s\n", o);
   safefree(o);
 }

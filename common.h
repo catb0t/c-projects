@@ -215,7 +215,7 @@ char** str_split (
 
     new[i + 1] = 0;
     *out_len   = i;
-    safefree(str_copy);
+    //safefree(str_copy);
   }
 
   assert(out_len != NULL);
