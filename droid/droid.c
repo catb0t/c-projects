@@ -10,23 +10,11 @@ void droid_main (void) {
     return;
   }
 
-  if (! droid_checkbatt(hal)) {
-    return;
-  }
-
   if (! droid_hover(hal, 1)) {
     return;
   }
 
-  if (! droid_checkbatt(hal)) {
-    return;
-  }
-
   if (! droid_chargebatt(hal, 3)) {
-    return;
-  }
-
-  if (! droid_checkbatt(hal)) {
     return;
   }
 

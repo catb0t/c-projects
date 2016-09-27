@@ -28,7 +28,7 @@ droid_t* droid_new (void) {
 bool droid_recycle (droid_t* dr) {
   assert (dr != NULL);
   safefree(dr);
-  
+
   printf("Recycling droid...\n");
   printf("Recycled %zu bytes of droid.\n", sizeof (droid_t));
   return false;
@@ -79,7 +79,7 @@ bool droid_drainbatt (droid_t* dr, uint8_t amt) {
 bool droid_chargebatt (droid_t* dr, uint8_t hours) {
   printf("Charging droid for %d hours...\n", hours);
   bool ok;
-  ok = droid_set_battlvl(dr, hours);
+  ok = droid_set_battlvl(dr, (uint8_t) (hours + dr->batt_lvl));
   if (! ok) { return false; }
   return droid_checkbatt(dr);
 }
