@@ -180,15 +180,15 @@ void stack_decr (stack_t* stk) {
 void stack_push (stack_t* stk, number_t val) {
   pfn(__FILE__, __LINE__, __func__);
 
-#undef dbg_prn
-#define dbg_prn(...) printf(__VA_ARGS__)
   // set once at first run
   // keeps track of whether the index was 0 last time
   static bool was_zero = false;
+  bool incrd_yet = false;
   dbg_prn("was_zero: %d\n", was_zero);
 
   // pre-increment because it wasn't last time
   if ( was_zero ) {
+    incrd_yet = true;
     stack_incr(stk);
     dbg_prn("incremented stack to %zu b/c was_zero\n", stk->ptr );
   }
@@ -206,13 +206,16 @@ void stack_push (stack_t* stk, number_t val) {
     dbg_prn("ptr is not 0\n");
 
     was_zero = false;
-    //stack_incr(stk);
+
+    if ( ! incrd_yet ) {
+      stack_incr(stk);
+    }
+
     stk->data[stk->ptr] = val;
     dbg_prn("stk[%zu] is: %LG == %LG\n", stk->ptr, stack_top(stk), val);
 
   }
-#undef dbg_prn
-#define dbg_prn(...)
+
 }
 
 /*
@@ -263,7 +266,7 @@ number_t stack_pop (stack_t* stk) {
 size_t stack_size (const stack_t* stk) {
   pfn(__FILE__, __LINE__, __func__);
 
-  return stk->ptr;
+  return (stk->ptr) + 1;
 }
 
 /*
@@ -291,8 +294,7 @@ void stack_drop (stack_t* stk) {
 char* stack_see (const stack_t* stk) {
   pfn(__FILE__, __LINE__, __func__);
 
-  size_t num_elts = stk->ptr,
-         new_len = 0;
+  size_t num_elts = stk->ptr;
 
   if (!num_elts) {
     char* output = safemalloc(1);
@@ -305,7 +307,7 @@ char* stack_see (const stack_t* stk) {
     dbg_prn("elt %zu: %LG\n", i, stk->data[i]);
   }
 
-  char** tos = safemalloc(sizeof (char *) * num_elts);
+/*  char** tos = safemalloc(sizeof (char *) * num_elts);
 
   for (size_t i = num_elts; i != 0; i--) {
     number_t val = stk->data[i];
@@ -325,6 +327,8 @@ char* stack_see (const stack_t* stk) {
   char* output = safemalloc(sizeof (char) * new_len);
 
   return output;
+*/
+  return malloc(4);
 }
 
 

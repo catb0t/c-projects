@@ -94,18 +94,18 @@ function build_targets () {
 
     echo "$SKELE_MAKE" > Makefile
 
-    for arg in ${targets[*]}; do
-      ee "$COLOR_CYN\nMaking $COLOR_YLW$arg$COLOR_CYN in $dir...$COLOR_OFF\n\n"
+    for tgt in ${targets[*]}; do
+      ee "$COLOR_CYN\nMaking $COLOR_YLW$tgt$COLOR_CYN in $dir...$COLOR_OFF\n\n"
 
       ee "$COLOR_MGN"
-      make "${make_args[*]}" "$arg"
+      make ${make_args[*]} "$tgt"
       OK=$?
       ee "$COLOR_OFF"
 
       if [[ $OK == 0 ]]; then
-        ee "$COLOR_GRN\nSuccessfully made $COLOR_YLW$arg$COLOR_GRN in $dir.$COLOR_OFF\n"
+        ee "$COLOR_GRN\nSuccessfully made $COLOR_YLW$tgt$COLOR_GRN in $dir.$COLOR_OFF\n"
       else
-        ee "$COLOR_RED\nFailed to make $COLOR_YLW$arg$COLOR_RED in $dir.$COLOR_OFF\n"
+        ee "$COLOR_RED\nFailed to make $COLOR_YLW$tgt$COLOR_RED in $dir.$COLOR_OFF\n"
         sleep 1
       fi
     done
@@ -121,8 +121,10 @@ y = x.split('--')
 for i in y: print(i.strip())
 ")
 
+
 TARGETS=$(echo "$ARGS" | head -1)
 TARGETS_ARR=($TARGETS)
+
 MAKE_ARGS=$(echo "$ARGS" | tail -1)
 MAKE_ARGS_ARR=($MAKE_ARGS)
 
