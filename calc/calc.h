@@ -55,9 +55,11 @@ void run_str (const char* const prog, stack_t* stk) {
        *error = NULL,
        **spl_prog = str_split(prog, ' ', &len);
 
+  dbg_prn("LEN: %zu\n", len);
+
   for (size_t i = 0; i < len; i++) {
     val = spl_prog[i];
-
+    dbg_prn("%s\n", val);
     tmp = strtold(val, &error);
 
     if ( ! safestrnlen(error) ) {
@@ -78,7 +80,7 @@ void run_str (const char* const prog, stack_t* stk) {
 
   }
 
-  free_ptr_array( (void **) spl_prog, len);
+  free_ptr_array( (void **) spl_prog, 1);
 
   char* o = stack_see(stk);
   printf("< %s\n", o);

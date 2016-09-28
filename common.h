@@ -18,7 +18,6 @@
 
 #define DEC_BASE    10
 #define DEC_DIGITS  "0123456789"
-#define INT_DIGITS  10
 #define ULL_DIGITS  20
 #define NUM_PROBS   5
 #define MAX_STR_LEN 1024
@@ -37,6 +36,7 @@
 char* str_reverse (const char*  const str);
 void    str_chomp (char* str);
 char*      readln (const size_t len);
+char*    str_copy (const char* str);
 char*      str_rm (
   const char*   str,
   const char*   omit,
@@ -162,17 +162,27 @@ char* readln (const size_t len) {
   return buf;
 }
 
+char* str_copy (const char* str) {
+  size_t len = safestrnlen(str);
+  char* new = safemalloc(sizeof (char) * len);
+
+  for (size_t i = 0; i < len; i++) {
+    new[i] = str[i];
+  }
+  return new;
+}
+
 char** str_split (
   const char*   str,
   const char    delim,
         size_t* out_len
 ) {
-  pfn(__FILE__, __LINE__, __func__);
 
   char delim_str[2],
-       *str_copy = strndup(str, MAX_STR_LEN);
+       *scopy = strndup(str, MAX_STR_LEN);
 
-  sprintf(delim_str, "%c", delim);
+  snprintf(delim_str, 2, "%c", delim);
+
 
   size_t len = safestrnlen(str);
   size_t num_delim = str_count(str, delim_str);
@@ -182,9 +192,8 @@ char** str_split (
 
   if (0 == num_delim) {
     // no separator found
-    new      = safemalloc( sizeof (char *) * 2 );
-    new[0]   = str_copy;
-    new[1]   = NULL;
+    new      = safemalloc( sizeof (char *) );
+    new[0]   = scopy;
     *out_len = 1;
 
   } else if (1 == num_delim) {
@@ -197,25 +206,34 @@ char** str_split (
       (i < len) && str[i] != delim;
       i++
     );
-    str_copy[i] = '\0';
-    new[0] = str_copy;
-    new[1] = &(str_copy[i + 1]);
+    scopy[i] = '\0';
+    new[0] = scopy;
+    new[1] = &(scopy[i + 1]);
     *out_len = 2;
 
   } else {
-    // separators found
-    new = safemalloc( ( sizeof (char *) * num_delim ) + 1 );
+    // separators found, alloc two more
+    size_t num_pieces = num_delim + 1;
+
+    new = safemalloc( sizeof (char *) * num_pieces );
 
     size_t i;
     char* token;
 
-    for (i = 0; (token = strsep(&str_copy, delim_str)) != NULL; i++) {
+    for (i = 0;
+      (token = strsep(&scopy, delim_str)) != NULL;
+      i++
+    ) {
+      dbg_prn("i: %zu, token: %s\n", i, token);
       new[i] = token;
     }
 
-    new[i + 1] = 0;
-    *out_len   = i;
-    //safefree(str_copy);
+    if ( ((ssize_t) i - 1 ) < 0 ) {
+      *out_len = 0;
+    } else {
+      *out_len = i;
+    }
+
   }
 
   assert(out_len != NULL);
@@ -242,7 +260,7 @@ char*     str_rm (
 
   size_t i, j;
   for (i = 0, j = 0; j < len_new; i++) {
-    sprintf(c, "%c%c", str[i], 0);
+    snprintf(c, 3, "%c%c", str[i], 0);
     if (!str_count(omit, c)) {
       new[j] = str[i];
       j++;

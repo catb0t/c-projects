@@ -16,6 +16,8 @@ enum errortypes {
   ERROR_ZERO_DIVISION,   // 3
   ERROR_LITERAL_JUNK,    // 4
   ERROR_NOT_A_NUMBER,    // 5
+  ERROR_EMPTY_STACK,     // 6
+  ERROR_BAD_INDEX,       // 7
 };
 
 // handy types
@@ -48,8 +50,8 @@ void stack_drop (stack_t* stk);
 stack_t* stack_new (void);
 number_t stack_top (const stack_t* stk);
 number_t stack_pop (stack_t* stk);
-number_t stack_get (const stack_t* skt, const size_t idx);
-void     stack_set (stack_t* stk, const size_t idx, const number_t val);
+number_t stack_get (const stack_t* skt, const ssize_t idx);
+void     stack_set (stack_t* stk, const ssize_t idx, const number_t val);
 void stack_op_divmod (stack_t* stk);
 void  stack_destruct (stack_t* stk);
 void    stack_op_add (stack_t* stk);
@@ -87,7 +89,7 @@ void (* stack_ops[]) (stack_t *) = {
   stack_op_prc,
 };
 
-const char* ops_to_strtring[] = {
+const char* ops_tostring[] = {
   // # is arith related
   "#+", // add
   "#*", // mul
@@ -105,12 +107,13 @@ const char* ops_to_strtring[] = {
   "!,", // prc
 };
 
-#define NUM_STACKOPS (size_t) (sizeof ops_to_strtring) / (sizeof (char *))
+#define NUM_STACKOPS (size_t) (sizeof ops_tostring) / (sizeof (char *))
 
 /*
   stack_new: returns a new stack_t* object, heap allocated
 
-  data is INITIAL_STACKSIZE * (long double)0.0f, and ptr points to element 0.
+  data is INITIAL_STACKSIZE * (long double)0.0f, and ptr is -1 to indicate
+  empty stack.
 
   TODO: grow (?)
 */
@@ -179,16 +182,39 @@ void stack_decr (stack_t* stk) {
   --(stk->ptr);
 }
 
-number_t stack_get (const stack_t* stk, const size_t idx) {
+number_t stack_get (const stack_t* stk, const ssize_t idx) {
   pfn(__FILE__, __LINE__, __func__);
+
+  if ( stack_isempty(stk) ) {
+    error(ERROR_STACK_UNDERFLOW, "stack_get");
+    assert( ! stack_isempty(stk) );
+    return 0.f;
+
+  } else if ( idx < 0 ) {
+    error(ERROR_BAD_INDEX, "stack_get");
+    assert( idx > 0 );
+    return 0.f;
+  }
+
 
   assert(idx <= INITIAL_STACKSIZE);
 
   return stk->data[idx];
 }
 
-void stack_set (stack_t* stk, const size_t idx, const number_t val) {
+void stack_set (stack_t* stk, const ssize_t idx, const number_t val) {
   pfn(__FILE__, __LINE__, __func__);
+
+  if ( stack_isempty(stk) ) {
+    error(ERROR_STACK_UNDERFLOW, "stack_set");
+    assert( ! stack_isempty(stk) );
+    return;
+
+  } else if ( idx < 0 ) {
+    error(ERROR_BAD_INDEX, "stack_set");
+    assert( idx > 0 );
+    return;
+  }
 
   assert(idx <= INITIAL_STACKSIZE);
 
@@ -207,7 +233,7 @@ void stack_push (stack_t* stk, number_t val) {
   pfn(__FILE__, __LINE__, __func__);
 
   stack_incr(stk);
-  stack_set(stk, (size_t) stk->ptr, val);
+  stack_set(stk, stk->ptr, val);
 
 }
 
@@ -223,7 +249,7 @@ number_t stack_top (const stack_t* stk) {
     return 0.f;
   }
 
-  return stack_get(stk, (size_t) stk->ptr);
+  return stack_get(stk, stk->ptr);
 }
 
 /*
@@ -236,12 +262,12 @@ number_t stack_pop (stack_t* stk) {
   pfn(__FILE__, __LINE__, __func__);
 
   if ( stack_isempty(stk) ) {
-    error(ERROR_STACK_OVERFLOW, "stack_pop (empty stack)");
+    error(ERROR_EMPTY_STACK, "stack_pop (empty stack)");
     return 0.f;
   }
 
   number_t out = stack_top(stk);
-  stack_set(stk, (size_t) stk->ptr, 0);
+  stack_set(stk, stk->ptr, 0);
   stack_decr(stk);
   return out;
 }
@@ -253,9 +279,11 @@ number_t stack_pop (stack_t* stk) {
   this function mostly exists to avoid messy and possibly erroneous
   code which assigns to stk->ptr.
 
-  it is not inadvisable to read from stk->ptr itself but for the
-  sake of brevity and keeping the callstack short, this function may
-  be seen as useless.
+  this function returns the index as an unsigned size_t. this is for
+  code simplicity. to check if the stack is empty, either use
+  bool stack_isempty() or test if
+  size_t stack_size() > INITIAL_STACKSIZE (the value will wrap on a
+  two's complement system).
 */
 size_t stack_size (const stack_t* stk) {
   pfn(__FILE__, __LINE__, __func__);
@@ -275,9 +303,8 @@ void stack_drop (stack_t* stk) {
 
 /*
   stack_see: format the stack pointed to by *stk as a series of
-  space-separated long doubles using format specifier %LG from
-  left to right.
-
+  space-separated long doubles using format specifier %LG, with the
+  top item first and the bottom item last.
 */
 char* stack_see (const stack_t* stk) {
   pfn(__FILE__, __LINE__, __func__);
@@ -288,6 +315,7 @@ char* stack_see (const stack_t* stk) {
     return o;
   }
 
+  // this is ok because we already checked if the stack was empty
   size_t num_elts = stack_size(stk),
          new_len  = 0;
 
@@ -298,9 +326,10 @@ char* stack_see (const stack_t* stk) {
     (i + 1) != 0;
     i--
   ) {
-
-    number_t val = stack_get(stk, i);
-    // + 2 for space & good measure
+    // INITIAL_STACKSIZE is never large enough that casting
+    // here will cause issues
+    number_t val = stack_get(stk, (ssize_t) i);
+    // + 2 for space & good measure (null byte?)
     size_t needed = 2 + atoi_strlen(val);
 
     to_str[i] = safemalloc(sizeof (char) * needed);
@@ -338,20 +367,10 @@ char* stack_see (const stack_t* stk) {
 void    stack_op_add (stack_t* stk) {
   pfn(__FILE__, __LINE__, __func__);
 
-  stack_dbgp(stk);
-
   number_t a = stack_pop(stk);
-  printf("a: %LG\n", a);
-  stack_dbgp(stk);
-
-
   number_t b = stack_pop(stk);
-  printf("b: %LG\n", b);
-  stack_dbgp(stk);
 
   stack_push(stk, b + a);
-  printf("after push\n");
-  stack_dbgp(stk);
 }
 /*
   effect: ( x y -- x*y )
@@ -493,7 +512,7 @@ ssize_t      get_stackop (const char* const op) {
   pfn(__FILE__, __LINE__, __func__);
 
   for (size_t i = 0; i < NUM_STACKOPS; i++) {
-    if ( strncmp(op, ops_to_strtring[i], 5) ) {
+    if ( ! strncmp(op, ops_tostring[i], 5) ) {
       return (ssize_t) i;
     }
   }
@@ -531,6 +550,10 @@ void error (size_t err, const char* const info) {
     "Data stack underflowed (not enough values)",
     "Value overflows type 'long double' (value too large)",
     "Attempt to divide by zero leads to incomplete or inexpressable value (n / 0)",
+    "Bad literal string for conversion (unexpected radix or non-digit)",
+    "Input string cannot possibly be converted to a number",
+    "Empty data stack (underflow)",
+    "Attempt to access memory with a negative index leads to undefined behaviour",
   };
 
 #define errstrings_len (size_t) (sizeof errstrings) / (sizeof (char *))
@@ -647,7 +670,9 @@ void free_ptr_array (void** ptr, const size_t len) {
 }
 
 void stack_dbgp (const stack_t* stk) {
+  static unsigned long long count;
+  ++count;
   char* s = stack_see(stk);
-  printf("stack: %s\n", s);
+  dbg_prn("debug(%lld): %s\n", count, s);
   safefree(s);
 }
