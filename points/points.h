@@ -76,16 +76,19 @@ shape_t* shape_new (
 
   }
 
-  char*     name       = safemalloc(sizeof (char) * (size_t) len);
+  char*     name       = safemalloc((sizeof (char) * (size_t) len) + 1);
   point_t** new_points = safemalloc(sizeof (point_t *) * (size_t) len);
 
-  for (ssize_t i = 0; i < len; i++) {
+  ssize_t i;
+  for (i = 0; i < len; i++) {
     point_t* thisp = points[i];
     point_t* newp  = point_new(thisp->x, thisp->y, thisp->id);
 
     name[i]       = newp->id;
     new_points[i] = newp;
   }
+
+  name[i] = '\0';
 
   free_point_array(points, len);
 
@@ -106,7 +109,7 @@ void shape_destruct (shape_t* s) {
   }
 
   free_point_array(s->points, count_ps);
-
+  safefree(s->qual_name);
   safefree(s);
 }
 
@@ -181,6 +184,8 @@ char* shape_see (const shape_t* s) {
   size_t flen = new_len + safestrnlen(s->qual_name);
   char* final = safemalloc(sizeof (char) * flen);
   snprintf(final, flen, "%s(\n%s)", s->qual_name, out);
+
+  safefree(out);
 
   return final;
 }
