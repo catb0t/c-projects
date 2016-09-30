@@ -11,9 +11,11 @@ int main(void) {
 
   shape_t* s = shape_new(ps, (ssize_t) points, -1);
 
-  char* c = shape_see(s);
-  printf("%s\n", c);
-  safefree(c);
+  shape_print(s);
+
+  shape_translate(s, 5, -6);
+
+  shape_print(s);
 
   shape_destruct(s);
 

@@ -1,6 +1,6 @@
 #include "../common.h"
 
-#define MOST_POSSIBLE_POINTSEE_CHARS 44
+#define MOST_POSSIBLE_POINTSEE_CHARS 46
 
 typedef struct {
   int64_t x;  // coord x
@@ -34,6 +34,11 @@ char* shape_see (const shape_t* s);
 void free_point_array (point_t** ps, const ssize_t len);
 void   point_destruct (point_t* p);
 void   shape_destruct (shape_t* s);
+void      point_print (point_t* p);
+void      shape_print (shape_t* p);
+
+void point_translate (point_t* p, const int64_t x, const int64_t y);
+void shape_translate (shape_t* s, const int64_t x, const int64_t y);
 
 point_t* point_new (const int64_t x, const int64_t y, const char id) {
   point_t* p = safemalloc(sizeof (point_t));
@@ -181,11 +186,51 @@ char* shape_see (const shape_t* s) {
 
   free_ptr_array( (void **) pts_tos, count_ps);
 
-  size_t flen = new_len + safestrnlen(s->qual_name);
+  size_t len,
+         flen = new_len + safestrnlen(s->qual_name);
   char* final = safemalloc(sizeof (char) * flen);
-  snprintf(final, flen, "%s(\n%s)", s->qual_name, out);
+
+  char* primes;
+  if ( (s->primeness) >= 0 ) {
+    primes = str_repeat("'", (size_t) s->primeness + 1, &len);
+
+  } else {
+    primes = safemalloc(1);
+    snprintf(primes, 1, "%s", "\0");
+  }
+
+  snprintf(final, flen, "%s%s(\n%s)", s->qual_name, primes, out);
 
   safefree(out);
 
   return final;
+}
+
+void point_print (point_t* p) {
+  char* c = point_see(p);
+  printf("%s\n", c);
+  safefree(c);
+}
+
+void shape_print (shape_t* s) {
+  char* c = shape_see(s);
+  printf("%s\n", c);
+  safefree(c);
+}
+
+void point_translate (point_t* p, const int64_t x, const int64_t y) {
+  p->x += x;
+  p->y += y;
+}
+
+void shape_translate (shape_t* s, const int64_t x, const int64_t y) {
+  if ( (s->num_points) < 0) {
+    return;
+  }
+
+  for (ssize_t i = 0; i < s->num_points; i++) {
+    point_translate( (s->points) [i], x, y);
+  }
+
+  ++s->primeness;
 }
