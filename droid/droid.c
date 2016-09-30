@@ -4,31 +4,21 @@ void droid_main (void);
 
 void droid_main (void) {
 
-  droid_t* dr = droid_new();
+  droid_t* hal = droid_new();
 
-  dr->activate(dr);
-
-  if (NULL == dr) {
+  if (! droid_activate(hal)) {
     return;
   }
 
-  dr->hover(dr, 1);
-
-  if (NULL == dr) {
+  if (! droid_hover(hal, 1)) {
     return;
   }
 
-  dr->charge_battery(dr, 3);
-
-  if (NULL == dr) {
+  if (! droid_chargebatt(hal, 3)) {
     return;
   }
 
-  dr->recycle(dr);
-
-  printf("%d\n", dr == NULL);
-
-  if (NULL == dr) {
+  if (! droid_recycle(hal)) {
     return;
   }
 }
@@ -39,4 +29,3 @@ int main(void) {
 
   return 0;
 }
-
