@@ -33,9 +33,8 @@ struct s_stack {
   ssize_t    ptr;
 };
 
-size_t      atoi_strlen (const number_t val);
 size_t       stack_size (const stack_t* stk);
-void     free_ptr_array (void** ptr, const size_t len);
+size_t      atoi_strlen (const number_t val);
 void              error (const size_t err, const char* const info);
 bool          is_base10 (const char *nptr);
 bool      stack_isempty (const stack_t* stk);
@@ -205,12 +204,7 @@ number_t stack_get (const stack_t* stk, const ssize_t idx) {
 void stack_set (stack_t* stk, const ssize_t idx, const number_t val) {
   pfn(__FILE__, __LINE__, __func__);
 
-  if ( stack_isempty(stk) ) {
-    error(ERROR_STACK_UNDERFLOW, "stack_set");
-    assert( ! stack_isempty(stk) );
-    return;
-
-  } else if ( idx < 0 ) {
+  if ( idx < 0 ) {
     error(ERROR_BAD_INDEX, "stack_set");
     assert( idx > 0 );
     return;
@@ -605,11 +599,11 @@ bool is_base10 (const char *str) {
 
   size_t len = safestrnlen(str);
 
-  static const char misc_numeric_chars[] = { '-', '.', '+' };
+  static const char sign_chars[] = { '-', '.', '+' };
 
   for (size_t i = 0; i < len; i++) {
     char tmpbuf[2];
-    snprintf(tmpbuf, 1, "%c", str[i]);
+    snprintf(tmpbuf, 2, "%c", str[i]);
 
     bool ismisc   = false,
          isnum    = false,
@@ -617,7 +611,8 @@ bool is_base10 (const char *str) {
          validpos = true;
 
 
-    ismisc   = 1 == str_count(misc_numeric_chars, tmpbuf);
+    ismisc   = 1 == str_count(sign_chars, tmpbuf);
+
     isnum    = ( str[i] >= '0' ) && ( str[i] <= '9' );
     validch  = ismisc || isnum;
 
@@ -660,13 +655,6 @@ number_t* str_to_number_array (
 
   *out_len = len;
   return out;
-}
-
-void free_ptr_array (void** ptr, const size_t len) {
-  for (size_t i = 0; i < len; i++) {
-    safefree(ptr[i]);
-  }
-  safefree(ptr);
 }
 
 void stack_dbgp (const stack_t* stk) {

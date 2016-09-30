@@ -70,9 +70,11 @@ size_t   str_count (
   const char* const haystack,
   const char* const needle
 );
+
 size_t safestrnlen (const char* const str);
 size_t   safe_usub (size_t x, size_t y);
 
+void free_ptr_array (void**, size_t);
 void      _safefree (void* ptr,  uint64_t lineno);
 void*   _safemalloc (size_t len, uint64_t lineno);
 
@@ -108,6 +110,12 @@ void* _safemalloc (size_t len, uint64_t lineno) {
   return mem;
 }
 
+void free_ptr_array (void** ptr, const size_t len) {
+  for (size_t i = 0; i < len; i++) {
+    safefree(ptr[i]);
+  }
+  safefree(ptr);
+}
 
 // safe_usub -- perform safe unsigned subtraction
 size_t safe_usub (size_t x, size_t y) {
