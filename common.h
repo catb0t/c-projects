@@ -308,20 +308,17 @@ char*  str_repeat (
 ) {
   pfn(__FILE__, __LINE__, __func__);
 
-  size_t in_len;
-  char* out_buf;
-
-  in_len   = safestrnlen(in_str);
+  size_t in_len = safestrnlen(in_str);
   *out_len = in_len * times;
 
-  out_buf  = safemalloc( ( sizeof (char) * *out_len) );
+  char *out = safemalloc( 1 + *out_len ),
+       *bufptr = out;
 
   for (size_t i = 0; i < *out_len; i++) {
-    out_buf[i] = in_str[ i % in_len ];
+    bufptr += snprintf(bufptr, in_len + 1, "%s", in_str);
   }
-  out_buf[ *out_len ] = '\0';
 
-  return out_buf;
+  return out;
 }
 
 // safestrnlen -- find the length of a string, defaulting to SHORT_INSTR, without segfaulting

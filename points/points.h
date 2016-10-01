@@ -35,13 +35,13 @@ shape_t* shape_new (
 );
 
 char* point_see (const point_t* p);
-char* shape_see (const shape_t* s);
+char* shape_see (const shape_t* s, const bool lines);
 
 void free_point_array (point_t** ps, const ssize_t len);
 void   point_destruct (point_t* p);
 void   shape_destruct (shape_t* s);
 void      point_print (point_t* p);
-void      shape_print (shape_t* p);
+void      shape_print (shape_t* p, const bool lines);
 
 void point_translate (point_t* p, const int64_t x, const int64_t y);
 void shape_translate (shape_t* s, const int64_t x, const int64_t y);
@@ -166,7 +166,9 @@ char* point_see (const point_t* p) {
   return o;
 }
 
-char* shape_see (const shape_t* s) {
+char* shape_see (const shape_t* s, const bool lines) {
+
+#define STR_ERRMARGIN 8
 
   if ( (s->num_points) < 0 ) {
     char* o = safemalloc(sizeof (char));
@@ -185,14 +187,21 @@ char* shape_see (const shape_t* s) {
     char* st       = point_see(thisp);
 
     pts_tos[i] = st;
-    new_len   += safestrnlen(st) + 8;
+    new_len   += safestrnlen(st) + STR_ERRMARGIN;
   }
 
   char *out    = safemalloc(sizeof (char) * new_len),
        *bufend = out;
 
   for (size_t i = 0; i < count_ps; i++) {
-    bufend += snprintf(bufend, MOST_POSSIBLE_POINTSEE_CHARS + 8, "\t%s\n", pts_tos[i]);
+    bufend += snprintf(
+      bufend,
+      MOST_POSSIBLE_POINTSEE_CHARS + STR_ERRMARGIN,
+      "%s%s%s",
+      lines ? "\t" : "",
+      pts_tos[i],
+      lines ? "\n" : " "
+    );
   }
 
   free_ptr_array( (void **) pts_tos, count_ps);
@@ -210,7 +219,15 @@ char* shape_see (const shape_t* s) {
     snprintf(primes, 1, "%s", "\0");
   }
 
-  snprintf(final, flen, "%s%s(\n%s)", s->qual_name, primes, out);
+  snprintf(
+    final,
+    flen,
+    "%s%s(%s%s)",
+    s->qual_name,
+    primes,
+    lines ? "\n" : "",
+    out
+  );
 
   safefree(out);
 
@@ -223,8 +240,8 @@ void point_print (point_t* p) {
   safefree(c);
 }
 
-void shape_print (shape_t* s) {
-  char* c = shape_see(s);
+void shape_print (shape_t* s, const bool lines) {
+  char* c = shape_see(s, lines);
   printf("%s\n", c);
   safefree(c);
 }

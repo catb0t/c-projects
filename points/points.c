@@ -12,11 +12,11 @@ int main(void) {
 
   shape_t* s = shape_new(ps, (ssize_t) points, -1);
 
-  shape_print(s);
+  shape_print(s, true);
 
   shape_reflect(s, y_is_VAL, 4);
 
-  shape_print(s);
+  shape_print(s, false);
 
   shape_destruct(s);
 
