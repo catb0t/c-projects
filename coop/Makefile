@@ -23,7 +23,7 @@ FILES := $(FILENAME).c $(FILENAME).h
 
 OPTIONAL = $(if $(wildcard test_$(FILENAME).c), test, )
 
-all: normal debug mem $(OPTIONAL)
+all: normal debug mem arm $(OPTIONAL)
 
 normal: $(FILES)
 	$(CC) $(FILENAME).c $(CMD_ARGS) $(OPTS) -o $(OUT_FILENAME)
@@ -40,6 +40,9 @@ mem: $(FILES)
 test: test_$(FILENAME).c
 	$(CC) test_$(FILENAME).c $(CMD_ARGS) $(OPTS) -o test_$(OUT_FILENAME) -lcriterion
 	@echo
+
+arm: $(FILES)
+	arm-linux-gnueabi-gcc -static -march=armv7-a $(FILENAME).c -lm -o $(FILENAME)_arm
 
 clean:
 	(rm core a.out 2>/dev/null; echo)
