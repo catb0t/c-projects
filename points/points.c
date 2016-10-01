@@ -5,15 +5,16 @@ int main(void) {
   size_t points = 4;
   point_t** ps = safemalloc(sizeof (point_t *) * points);
 
-  for (size_t i = 0; i < points; i++) {
-    ps[i] = point_new((int64_t) i, (int64_t) i, (char) (i + 65) );
-  }
+  ps[0] = point_new(1, 1, 'A');
+  ps[1] = point_new(1, 3, 'B');
+  ps[2] = point_new(3, 3, 'C');
+  ps[3] = point_new(3, 1, 'D');
 
   shape_t* s = shape_new(ps, (ssize_t) points, -1);
 
   shape_print(s);
 
-  shape_translate(s, 5, -6);
+  shape_reflect(s, y_is_VAL, 4);
 
   shape_print(s);
 

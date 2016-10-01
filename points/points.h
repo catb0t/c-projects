@@ -1,6 +1,6 @@
 #include "../common.h"
 
-#define MOST_POSSIBLE_POINTSEE_CHARS 46
+#define MOST_POSSIBLE_POINTSEE_CHARS 51
 
 typedef struct {
   int64_t x;  // coord x
@@ -15,6 +15,12 @@ typedef struct {
   ssize_t   primeness;  // the primeness level or -1 if not prime
 } shape_t;
 
+typedef enum { x_axis, y_axis, x_is_VAL, y_is_VAL } axis_t;
+typedef enum {
+  QUAD_1, QUAD_2, QUAD_3, QUAD_4,
+  HEM_N,  HEM_W,  HEM_S,  HEM_E,
+  ORIGIN
+} sector_t;
 
 point_t* point_new (
   const int64_t x,
@@ -39,6 +45,11 @@ void      shape_print (shape_t* p);
 
 void point_translate (point_t* p, const int64_t x, const int64_t y);
 void shape_translate (shape_t* s, const int64_t x, const int64_t y);
+
+void point_reflect (point_t* p, const axis_t axs, const int64_t val);
+void shape_reflect (shape_t* s, const axis_t axs, const int64_t val);
+
+sector_t point_get_sector (point_t* p);
 
 point_t* point_new (const int64_t x, const int64_t y, const char id) {
   point_t* p = safemalloc(sizeof (point_t));
@@ -123,7 +134,7 @@ char* point_see (const point_t* p) {
   size_t len = (size_t) snprintf(
     t,
     MOST_POSSIBLE_POINTSEE_CHARS,
-    "%c(%" PRIi64 " %" PRIi64 ")\n",
+    "%c(x=%" PRIi64 " y=%" PRIi64 ")\n",
     p->id,
     p->x,
     p->y
@@ -147,7 +158,7 @@ char* point_see (const point_t* p) {
   snprintf(
     o,
     len,
-    "%c(%" PRIi64 " %" PRIi64 ")\n",
+    "%c(x=%" PRIi64 " y=%" PRIi64 ")\n",
     p->id,
     p->x,
     p->y
@@ -174,14 +185,14 @@ char* shape_see (const shape_t* s) {
     char* st       = point_see(thisp);
 
     pts_tos[i] = st;
-    new_len   += safestrnlen(st) + 4;
+    new_len   += safestrnlen(st) + 8;
   }
 
   char *out    = safemalloc(sizeof (char) * new_len),
        *bufend = out;
 
   for (size_t i = 0; i < count_ps; i++) {
-    bufend += snprintf(bufend, MOST_POSSIBLE_POINTSEE_CHARS + 2, "\t%s\n", pts_tos[i]);
+    bufend += snprintf(bufend, MOST_POSSIBLE_POINTSEE_CHARS + 8, "\t%s\n", pts_tos[i]);
   }
 
   free_ptr_array( (void **) pts_tos, count_ps);
@@ -218,6 +229,27 @@ void shape_print (shape_t* s) {
   safefree(c);
 }
 
+sector_t point_get_sector (point_t* p) {
+  int64_t x = p->x, y = p->y;
+
+  if ( y && x ) {
+    sector_t qs[2][2] = {
+      { QUAD_3, QUAD_4 },
+      { QUAD_2, QUAD_1 }
+    };
+    // get quadrant
+    return qs[y > 0][x > 0];
+  }
+
+  if ( !x && ( y > 0 ) ) { return HEM_N; }
+  if ( !x && ( y < 0 ) ) { return HEM_S; }
+  if ( !y && ( x < 0 ) ) { return HEM_W; }
+  if ( !y && ( x > 0 ) ) { return HEM_E; }
+
+  // !x && !y
+  return ORIGIN;
+}
+
 void point_translate (point_t* p, const int64_t x, const int64_t y) {
   p->x += x;
   p->y += y;
@@ -232,5 +264,61 @@ void shape_translate (shape_t* s, const int64_t x, const int64_t y) {
     point_translate( (s->points) [i], x, y);
   }
 
-  ++s->primeness;
+  ++(s->primeness);
+}
+
+void point_reflect (point_t* p, const axis_t axs, const int64_t val) {
+  int64_t x, y;
+  switch (axs) {
+    case x_axis: {
+      p->y = -(p->y);
+      break;
+    }
+
+    case y_axis: {
+      p->x = -(p->x);
+      break;
+    }
+
+    case y_is_VAL: {
+      x = p->x;
+
+      if (x > val) {
+        p->x -= (x - val) * 2;
+
+      }
+      if (x < val) {
+        p->x += (val - x) * 2;
+      }
+
+      break;
+    }
+
+    case x_is_VAL: {
+      y = p->y;
+
+      if (y > val) {
+        p->y -= (y - val) * 2;
+
+      }
+      if (y < val) {
+        p->y += (val - y) * 2;
+      }
+
+      break;
+    }
+
+  }
+}
+
+void shape_reflect (shape_t* s, const axis_t axs, const int64_t val) {
+  if (s->num_points < 0) {
+    return;
+  }
+
+  for (ssize_t i = 0; i < s->num_points; i++) {
+    point_reflect(s->points[i], axs, val);
+  }
+
+  ++(s->primeness);
 }
