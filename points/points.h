@@ -229,6 +229,7 @@ char* shape_see (const shape_t* s, const bool lines) {
     out
   );
 
+  safefree(primes);
   safefree(out);
 
   return final;
