@@ -51,13 +51,13 @@ Test(stack, op_mul) {
 }
 
 // div
-Test(stack, op_div) {
+Test(stack, op_divmod) {
   stack_t* stk = stack_new();
-  stack_push(stk, 12);
   stack_push(stk, 4);
+  stack_push(stk, 2);
 
   stack_op_divmod(stk);
-  cr_assert_eq( floorl(stack_top(stk)), 3 , "division" );
+  cr_assert_str_eq( stack_see(stk), "2 0 " , "division & mod" );
 
   stack_destruct(stk);
 }
@@ -67,7 +67,19 @@ Test(stack, op_div_frac) {
   stack_push(stk, 2);
 
   stack_op_divmod(stk);
-  cr_assert_eq( floorl(stack_top(stk)), 3.5 , "fractional division" );
+  cr_assert_str_eq( stack_see(stk), "3.5 1 ", "fractional division" );
+
+  stack_destruct(stk);
+}
+
+// swap
+Test(stack, op_swp) {
+  stack_t* stk = stack_new();
+  stack_push(stk, 7);
+  stack_push(stk, 2);
+
+  stack_op_swp(stk);
+  cr_assert_str_eq( stack_see(stk), "7 2 ", "swap top two items" );
 
   stack_destruct(stk);
 }

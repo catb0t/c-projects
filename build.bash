@@ -63,6 +63,7 @@ test: test_$(FILENAME).c
 
 arm: $(FILES)
 	arm-linux-gnueabi-gcc -static -march=armv7-a $(FILENAME).c -lm -o $(FILENAME)_arm
+	@echo
 
 clean:
 	(rm core a.out 2>/dev/null; echo)

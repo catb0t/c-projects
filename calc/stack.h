@@ -3,7 +3,8 @@
 #endif
 
 #include <errno.h>
-#include "../common.h"
+#include "../points/points.h"
+
 
 // maybe it will grow in the future
 #define INITIAL_STACKSIZE 50
