@@ -46,23 +46,23 @@ OPTIONAL = $(if $(wildcard test_$(FILENAME).c), test, )
 all: normal debug mem arm $(OPTIONAL)
 
 normal: $(FILES)
-	$(CC) $(FILENAME).c $(CMD_ARGS) $(OPTS) -o $(OUT_FILENAME)
+	$(CC) $(FILENAME).c $(CMD_ARGS) $(OPTS) -o ./bin/$(OUT_FILENAME)
 	@echo
 
 debug: $(FILES)
-	$(CC) $(FILENAME).c $(CMD_ARGS) $(DEBUG_OPTS) $(OPTS) -o debug_$(OUT_FILENAME)
+	$(CC) $(FILENAME).c $(CMD_ARGS) $(DEBUG_OPTS) $(OPTS) -o ./bin/debug_$(OUT_FILENAME)
 	@echo
 
 mem: $(FILES)
-	$(CC) $(FILENAME).c $(CMD_ARGS) $(MEM_OPTS) $(DEBUG_OPTS) $(OPTS) -o memdebug_$(OUT_FILENAME)
+	$(CC) $(FILENAME).c $(CMD_ARGS) $(MEM_OPTS) $(DEBUG_OPTS) $(OPTS) -o ./bin/memdebug_$(OUT_FILENAME)
 	@echo
 
 test: test_$(FILENAME).c
-	$(CC) test_$(FILENAME).c $(CMD_ARGS) $(OPTS) -o test_$(OUT_FILENAME) -lcriterion
+	$(CC) test_$(FILENAME).c $(CMD_ARGS) $(OPTS) -o ./bin/test_$(OUT_FILENAME) -lcriterion
 	@echo
 
 arm: $(FILES)
-	arm-linux-gnueabi-gcc $(CMD_ARGS) -static -march=armv7-a $(FILENAME).c -lm -o $(FILENAME)_arm
+	arm-linux-gnueabi-gcc $(CMD_ARGS) -static -march=armv7-a $(FILENAME).c -lm -o ./bin/$(FILENAME)_arm
 	@echo
 
 clean:
@@ -72,7 +72,7 @@ clean:
 
 EOF
 
-DIRS=$(find . -regextype sed -type d -iregex '\./[^\.].*' -exec echo {} +)
+DIRS=$(find . -maxdepth 1 -regextype sed -type d -iregex '\./[^\.].*' -exec echo {} +)
 
 function build_targets () {
 
