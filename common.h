@@ -9,12 +9,9 @@
 #include <limits.h>
 #include <math.h>
 #include <stdbool.h>
-#include <stddef.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
 #include <stdio.h>
-#include <time.h>
 
 #define DEC_BASE    10
 #define DEC_DIGITS  "0123456789"
@@ -26,9 +23,13 @@
 #ifdef DEBUG
   #define dbg_prn(...) printf(__VA_ARGS__)
   #define pfn(file, line, func) printf("\n%s#%d:%s\n", file, line, func)
+  #define __PURE_FUNC
+  #define __CONST_FUNC
 #else
   #define dbg_prn(...)
   #define pfn(file, line, func)
+  #define __PURE_FUNC __attribute_pure__
+  #define __CONST_FUNC __attribute_const__
 #endif
 
 
@@ -72,6 +73,7 @@ size_t   str_count (
 );
 
 size_t safestrnlen (const char* const str);
+__attribute_const__
 size_t   safe_usub (size_t x, size_t y);
 
 void free_ptr_array (void**, size_t);
@@ -118,6 +120,7 @@ void free_ptr_array (void** ptr, const size_t len) {
 }
 
 // safe_usub -- perform safe unsigned subtraction
+__attribute_const__
 size_t safe_usub (size_t x, size_t y) {
   pfn(__FILE__, __LINE__, __func__);
 
@@ -236,11 +239,7 @@ char** str_split (
       new[i] = token;
     }
 
-    if ( ((ssize_t) i - 1 ) < 0 ) {
-      *out_len = 0;
-    } else {
-      *out_len = i;
-    }
+    *out_len = i;
 
   }
 
@@ -264,7 +263,7 @@ char*     str_rm (
   const size_t len_new = ( ( ( sizeof(char) * len_str ) - str_count(str, omit) ) );
   char*            new = safemalloc( len_new + 1 );
 
-  char c[2];
+  char c[3];
 
   size_t i, j;
   for (i = 0, j = 0; j < len_new; i++) {
@@ -280,6 +279,7 @@ char*     str_rm (
   return new;
 }
 
+__PURE_FUNC
 size_t str_count (
   const char*   haystack,
   const char*   needles
@@ -322,6 +322,7 @@ char*  str_repeat (
 }
 
 // safestrnlen -- find the length of a string, defaulting to SHORT_INSTR, without segfaulting
+__PURE_FUNC
 size_t safestrnlen (const char* str) {
   pfn(__FILE__, __LINE__, __func__);
 
@@ -329,7 +330,7 @@ size_t safestrnlen (const char* str) {
   return str != NULL? strnlen(str, SHORT_INSTR) : 0;
 }
 
-
+__PURE_FUNC
 bool isEOL (const char* str) {
   pfn(__FILE__, __LINE__, __func__);
 
@@ -362,6 +363,7 @@ bool getuint64 (uint64_t* restrict dest) {
   return true;
 }
 
+__CONST_FUNC __PURE_FUNC
 uint64_t pow_uint64 (uint64_t in, uint64_t power) {
   pfn(__FILE__, __LINE__, __func__);
 

@@ -247,6 +247,7 @@ void shape_print (shape_t* s, const bool lines) {
   safefree(c);
 }
 
+__attribute_const__ __attribute_pure__
 sector_t point_get_sector (point_t* p) {
   int64_t x = p->x, y = p->y;
 

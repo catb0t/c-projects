@@ -70,7 +70,7 @@ number_t* str_to_number_array (
 );
 
 // for converting input. must stay synched
-void (* stack_ops[]) (stack_t *) = {
+void (* const stack_ops[]) (stack_t *)  = {
   stack_op_add,
   stack_op_mul,
   stack_op_divmod,
@@ -132,6 +132,7 @@ void stack_destruct (stack_t* stk) {
   safefree(stk->data), safefree(stk);
 }
 
+__PURE_FUNC
 bool stack_isempty (const stack_t* stk) {
   return (stk->ptr) == -1;
 }
@@ -149,9 +150,7 @@ bool stack_isempty (const stack_t* stk) {
 void stack_incr (stack_t* stk) {
   pfn(__FILE__, __LINE__, __func__);
 
-  ssize_t newval = (stk->ptr) + 1;
-
-  if (newval >= INITIAL_STACKSIZE) {
+  if ( (stk->ptr) > (INITIAL_STACKSIZE - 1) ) {
     error(ERROR_STACK_OVERFLOW, "stack_incr");
     return;
   }
@@ -274,6 +273,7 @@ number_t stack_pop (stack_t* stk) {
   size_t stack_size() > INITIAL_STACKSIZE (the value will wrap on a
   two's complement system).
 */
+__PURE_FUNC
 size_t stack_size (const stack_t* stk) {
   pfn(__FILE__, __LINE__, __func__);
 
@@ -497,6 +497,7 @@ void    stack_op_see (stack_t* stk) {
   get_stackop: return the index of the operator string pointed to
   by *op in stack_ops, or -1 if the operator is not defined.
 */
+__PURE_FUNC __CONST_FUNC
 ssize_t      get_stackop (const char* const op) {
   pfn(__FILE__, __LINE__, __func__);
 
@@ -512,6 +513,7 @@ ssize_t      get_stackop (const char* const op) {
   perform_op: currently a no-op. will call the function with the
   name pointed by *op on the stack pointed to by *stk.
 */
+__PURE_FUNC __CONST_FUNC
 void      perform_op (stack_t* stk, const char* const op) {
   pfn(__FILE__, __LINE__, __func__);
 

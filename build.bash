@@ -43,7 +43,7 @@ FILES := $(FILENAME).c $(FILENAME).h
 
 OPTIONAL = $(if $(wildcard test_$(FILENAME).c), test, )
 
-all: normal debug mem arm $(OPTIONAL)
+all: normal debug mem arm optifine $(OPTIONAL)
 
 normal: $(FILES)
 	$(CC) $(FILENAME).c $(CMD_ARGS) $(OPTS) -o ./bin/$(OUT_FILENAME)
@@ -51,6 +51,10 @@ normal: $(FILES)
 
 debug: $(FILES)
 	$(CC) $(FILENAME).c $(CMD_ARGS) $(DEBUG_OPTS) $(OPTS) -o ./bin/debug_$(OUT_FILENAME)
+	@echo
+
+optifine: $(FILES)
+	$(CC) $(FILENAME).c $(CMD_ARGS) $(DEBUG_OPTS) $(OPTS) -o ./bin/optifine_$(OUT_FILENAME) -O3
 	@echo
 
 mem: $(FILES)
@@ -62,7 +66,7 @@ test: test_$(FILENAME).c
 	@echo
 
 arm: $(FILES)
-	arm-linux-gnueabi-gcc $(CMD_ARGS) -static -march=armv7-a $(FILENAME).c -lm -o ./bin/$(FILENAME)_arm
+	arm-linux-gnueabi-gcc $(CMD_ARGS) -static -march=armv7-a $(FILENAME).c -lm -o ./bin/$(FILENAME)_armo -O3
 	@echo
 
 clean:

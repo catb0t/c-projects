@@ -44,6 +44,7 @@ bool droid_activate (droid_t* dr) {
   return droid_drainbatt(dr, 5);
 }
 
+__attribute_pure__
 uint8_t droid_get_battlvl (droid_t* dr) {
   assert (dr != NULL);
   return dr->batt_lvl;
