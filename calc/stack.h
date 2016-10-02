@@ -3,8 +3,7 @@
 #endif
 
 #include <errno.h>
-#include "../points/points.h"
-
+#include "object.h"
 
 // maybe it will grow in the future
 #define INITIAL_STACKSIZE 50
@@ -21,18 +20,13 @@ enum errortypes {
   ERROR_BAD_INDEX,       // 7
 };
 
-// handy types
-// may change number_t to object_t or so in the future
-typedef long double number_t;
-typedef struct s_stack stack_t;
-
 // subject to change -- maybe to be an array of other things too
-struct s_stack {
+typedef struct {
   // list of long doubles
   number_t* data;
   // points to the top
   ssize_t    ptr;
-};
+} stack_t;
 
 size_t       stack_size (const stack_t* stk);
 size_t      atoi_strlen (const number_t val);

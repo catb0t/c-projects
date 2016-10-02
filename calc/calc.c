@@ -9,12 +9,14 @@
 #include "calc.h"
 
 int main (void) {
-  interpret();
+  //interpret();
 
-  //stack_t* s = stack_new();
-  //stack_push(s, 7);
-  //stack_push(s, 2);
-  //stack_op_divmod(s);
-  
+  char* a = safemalloc(5);
+  snprintf(a, 5, "%s\n", "Hi!");
+
+  object_t* o = object_new(string, (void *) a);
+
+  object_destruct(o);
+
   return 0;
 }
