@@ -104,28 +104,30 @@ char** file_lines (const char* const fname, size_t* out_len) {
     perror(fname);
   }
 
-  ssize_t read;
-  size_t len = 0, lines_idx = 0;
-  char *line = NULL,
-       **in_lines = safemalloc( sizeof (char *) );
+  size_t lines_idx = 0;
+  char **in_lines = safemalloc( sizeof (char *) );
 
-  while ((read = getline(&line, &len, fp)) != -1) {
+  while ( true ) {
+
+    char *line = NULL;
+    size_t len = 0;
+    ssize_t bytes_read = getline(&line, &len, fp);
+
+    if (-1 == bytes_read) {
+      safefree(line);
+      break;
+    }
 
     in_lines = realloc(in_lines, sizeof (char *) * (lines_idx + 1));
-    in_lines[lines_idx] = safemalloc( (size_t) read);
+    in_lines[lines_idx] = safemalloc( (size_t) bytes_read);
 
-    snprintf(in_lines[lines_idx], (size_t) read, "%s", line);
+    snprintf(in_lines[lines_idx], (size_t) bytes_read, "%s", line);
 
     ++lines_idx;
+    safefree(line);
   }
 
-  safefree(line);
-
   fclose(fp);
-
-  //for (size_t i = 0; i < lines_idx; i++) {
-  //  printf("%s\n", in_lines[i]);
-  //}
 
   *out_len = lines_idx;
   return in_lines;

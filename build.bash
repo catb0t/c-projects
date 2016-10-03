@@ -70,7 +70,7 @@ arm: $(FILES)
 	@echo
 
 clean:
-	(rm core a.out 2>/dev/null; echo)
+	(rm core *core* a.out 2>/dev/null; echo)
 	$(shell find . -type f -executable -regextype sed -iregex '\./[^.]*' | xargs rm)
 	@echo
 

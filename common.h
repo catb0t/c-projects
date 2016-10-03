@@ -5,6 +5,7 @@
 #pragma once
 #define _GNU_SOURCE
 
+#include <errno.h>
 #include <assert.h>
 #include <inttypes.h>
 #include <limits.h>
@@ -109,6 +110,9 @@ void* _safemalloc (size_t len, uint64_t lineno) {
   if (!mem) {
     printf("Couldn't malloc() %zu bytes (perhaps you have run out of memory?) (line %" PRIu64 ")\n", len, lineno);
     assert(mem);
+  }
+  if (ENOMEM == errno) {
+    perror("safefree");
   }
   return mem;
 }

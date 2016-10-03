@@ -2,7 +2,6 @@
 #line 2 "stack"
 #endif
 
-#include <errno.h>
 #include "object.h"
 
 // maybe it will grow in the future
