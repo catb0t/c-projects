@@ -3,6 +3,7 @@
 #endif
 
 #pragma once
+#define _GNU_SOURCE
 
 #include <assert.h>
 #include <inttypes.h>

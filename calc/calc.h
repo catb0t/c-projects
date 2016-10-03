@@ -2,7 +2,10 @@
 #line 2 "calc"
 #endif
 
+#include <sys/stat.h>
 #include "stack.h"
+
+char** file_lines (const char* const fname, size_t* out_len);
 
 void interpret (void);
 void    run_str(const char* const, stack_t* stk);
@@ -85,4 +88,45 @@ void run_str (const char* const prog, stack_t* stk) {
   char* o = stack_see(stk);
   printf("< %s\n", o);
   safefree(o);
+}
+
+char** file_lines (const char* const fname, size_t* out_len) {
+  struct stat finfo;
+
+  if ( stat(fname, &finfo) == -1 ) {
+    perror(fname);
+    exit(EXIT_FAILURE);
+  }
+
+  FILE* fp;
+
+  if ( (fp = fopen(fname, "r")) == NULL ) {
+    perror(fname);
+  }
+
+  ssize_t read;
+  size_t len = 0, lines_idx = 0;
+  char *line = NULL,
+       **in_lines = safemalloc( sizeof (char *) );
+
+  while ((read = getline(&line, &len, fp)) != -1) {
+
+    in_lines = realloc(in_lines, sizeof (char *) * (lines_idx + 1));
+    in_lines[lines_idx] = safemalloc( (size_t) read);
+
+    snprintf(in_lines[lines_idx], (size_t) read, "%s", line);
+
+    ++lines_idx;
+  }
+
+  safefree(line);
+
+  fclose(fp);
+
+  //for (size_t i = 0; i < lines_idx; i++) {
+  //  printf("%s\n", in_lines[i]);
+  //}
+
+  *out_len = lines_idx;
+  return in_lines;
 }

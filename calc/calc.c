@@ -8,13 +8,20 @@
 
 #include "calc.h"
 
-int main (void) {
-  interpret();
+int main (int len_args, const char* const* const args) {
 
-  //char* a = safemalloc(5);
-  //snprintf(a, 5, "%s\n", "Hi!");
-  //object_t* o = object_new(string, (void *) a);
-  //object_destruct(o);
+  if (1 == len_args) {
+    interpret();
 
-  return 0;
+  } else {
+    // cat
+    size_t len;
+    char** fl = file_lines(args[1], &len);
+    for (size_t i = 0; i < len; i++) {
+      printf("%s\n", fl[i]);
+    }
+    free_ptr_array((void **) fl, len);
+  }
+
+  return EXIT_SUCCESS;
 }
