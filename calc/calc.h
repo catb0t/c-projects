@@ -5,7 +5,8 @@
 #include <sys/stat.h>
 #include "stack.h"
 
-char** file_lines (const char* const fname, size_t* out_len);
+char**     file_lines (const char* const fname, size_t* len);
+char*  strip_comments (char** prog_lines, size_t len, const char cm);
 
 void interpret (void);
 void    run_str(const char* const, stack_t* stk);
@@ -91,6 +92,8 @@ void run_str (const char* const prog, stack_t* stk) {
 }
 
 char** file_lines (const char* const fname, size_t* out_len) {
+  pfn(__FILE__, __LINE__, __func__);
+
   struct stat finfo;
 
   if ( stat(fname, &finfo) == -1 ) {
@@ -104,7 +107,7 @@ char** file_lines (const char* const fname, size_t* out_len) {
     perror(fname);
   }
 
-  size_t lines_idx = 0;
+  size_t lines_idx = 0;//, total_read = 0;
   char **in_lines = safemalloc( sizeof (char *) );
 
   while ( true ) {
@@ -117,6 +120,8 @@ char** file_lines (const char* const fname, size_t* out_len) {
       safefree(line);
       break;
     }
+
+    //total_read += (size_t) bytes_read;
 
     in_lines = realloc(in_lines, sizeof (char *) * (lines_idx + 1));
     in_lines[lines_idx] = safemalloc( (size_t) bytes_read);
@@ -131,4 +136,31 @@ char** file_lines (const char* const fname, size_t* out_len) {
 
   *out_len = lines_idx;
   return in_lines;
+}
+
+char* strip_comments (char** prog_lines, size_t len, const char cm) {
+  pfn(__FILE__, __LINE__, __func__);
+
+  size_t total_len = 0;
+
+  char **out_lines = safemalloc(sizeof (char *) * len),
+       *cms = safemalloc(2);
+
+  snprintf(cms, 2, "%c", cm);
+
+  for (size_t i = 0; i < len; i++) {
+    char* ln = strndup(prog_lines[i], MAX_STR_LEN * 4);
+
+    if ( str_count(ln, cms) ) {
+      ln[ strcspn(ln, cms) ] = '\0';
+    }
+
+    out_lines[i] = ln;
+    total_len += safestrnlen(ln);
+
+  }
+
+  safefree(cms);
+  free_ptr_array( (void **) prog_lines, len);
+  return concat_lines(out_lines, len, total_len);
 }

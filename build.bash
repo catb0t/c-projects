@@ -13,6 +13,7 @@ ASAN_SYMBOLIZER_PATH=$(which llvm-symbolizer)
 export ASAN_SYMBOLIZER_PATH
 export ASAN_OPTIONS
 
+
 function ee () { echo -e "$@"; }
 
 # if you think this makefile is scary, wait til you see a real project's one
@@ -43,7 +44,9 @@ FILES := $(FILENAME).c $(FILENAME).h
 
 OPTIONAL = $(if $(wildcard test_$(FILENAME).c), test, )
 
-all: normal debug mem arm optifine $(OPTIONAL)
+all: normal debug mem $(OPTIONAL)
+
+spec: arm optifine
 
 normal: $(FILES)
 	$(CC) $(FILENAME).c $(CMD_ARGS) $(OPTS) -o ./bin/$(OUT_FILENAME)

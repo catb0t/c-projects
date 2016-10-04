@@ -16,11 +16,9 @@ int main (int len_args, const char* const* const args) {
   } else {
     // cat
     size_t len;
-    char** fl = file_lines(args[1], &len);
-    for (size_t i = 0; i < len; i++) {
-      printf("%s\n", fl[i]);
-    }
-    free_ptr_array((void **) fl, len);
+    char* a  = strip_comments(file_lines(args[1], &len), len, '~');
+    printf("%s\n", a);
+    safefree(a);
   }
 
   return EXIT_SUCCESS;

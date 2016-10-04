@@ -55,6 +55,11 @@ char*  str_repeat (
   const size_t      times,
   size_t*           out_len
 );
+char* concat_lines (
+        char** string_lines,
+  const size_t lines_len,
+  const size_t total_len
+);
 
 bool     isEOL (const char* const str);
 bool  getint64 (int64_t*    restrict dest);
@@ -118,6 +123,8 @@ void* _safemalloc (size_t len, uint64_t lineno) {
 }
 
 void free_ptr_array (void** ptr, const size_t len) {
+  pfn(__FILE__, __LINE__, __func__);
+  
   for (size_t i = 0; i < len; i++) {
     safefree(ptr[i]);
   }
@@ -179,6 +186,8 @@ char* readln (const size_t len) {
 }
 
 char* str_copy (const char* str) {
+  pfn(__FILE__, __LINE__, __func__);
+
   size_t len = safestrnlen(str);
   char* new = safemalloc(sizeof (char) * len);
 
@@ -193,6 +202,7 @@ char** str_split (
   const char    delim,
         size_t* out_len
 ) {
+  pfn(__FILE__, __LINE__, __func__);
 
   char delim_str[2],
        *scopy = strndup(str, MAX_STR_LEN);
@@ -204,7 +214,6 @@ char** str_split (
   size_t num_delim = str_count(str, delim_str);
 
   char** new;
-
 
   if (0 == num_delim) {
     // no separator found
@@ -248,7 +257,6 @@ char** str_split (
 
   }
 
-  assert(out_len != NULL);
   return new;
 }
 
@@ -369,7 +377,7 @@ bool getuint64 (uint64_t* restrict dest) {
 }
 
 __CONST_FUNC __PURE_FUNC
-uint64_t pow_uint64 (uint64_t in, uint64_t power) {
+uint64_t pow_uint64 (const uint64_t in, const uint64_t power) {
   pfn(__FILE__, __LINE__, __func__);
 
   uint64_t out = 1;
@@ -377,4 +385,20 @@ uint64_t pow_uint64 (uint64_t in, uint64_t power) {
     out *= in;
   }
   return out;
+}
+
+char* concat_lines (char** string_lines, const size_t lines_len, const size_t total_len) {
+  pfn(__FILE__, __LINE__, __func__);
+
+  char *output = safemalloc( (sizeof (char) * total_len) + 1),
+       *bufptr = output;
+
+  for (size_t i = 0; i < lines_len; i++) {
+    char* tl = string_lines[i];
+    bufptr += snprintf(bufptr, safestrnlen(tl), "%s\n", tl);
+  }
+
+  free_ptr_array( (void **) string_lines, lines_len);
+
+  return output;
 }

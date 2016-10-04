@@ -23,7 +23,9 @@ FILES := $(FILENAME).c $(FILENAME).h
 
 OPTIONAL = $(if $(wildcard test_$(FILENAME).c), test, )
 
-all: normal debug mem arm optifine $(OPTIONAL)
+all: normal debug mem $(OPTIONAL)
+
+spec: arm optifine
 
 normal: $(FILES)
 	$(CC) $(FILENAME).c $(CMD_ARGS) $(OPTS) -o ./bin/$(OUT_FILENAME)
@@ -50,6 +52,6 @@ arm: $(FILES)
 	@echo
 
 clean:
-	(rm core a.out 2>/dev/null; echo)
+	(rm core *core* a.out 2>/dev/null; echo)
 	$(shell find . -type f -executable -regextype sed -iregex '\./[^.]*' | xargs rm)
 	@echo
