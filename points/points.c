@@ -18,6 +18,10 @@ int main(void) {
 
   shape_print(s, false);
 
+  shape_isotropic_dilate(s, 3);
+
+  shape_print(s, false);
+
   shape_destruct(s);
 
   return 0;

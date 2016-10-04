@@ -105,6 +105,7 @@ char** file_lines (const char* const fname, size_t* out_len) {
 
   if ( (fp = fopen(fname, "r")) == NULL ) {
     perror(fname);
+    exit(EXIT_FAILURE);
   }
 
   size_t lines_idx = 0;//, total_read = 0;
@@ -120,8 +121,6 @@ char** file_lines (const char* const fname, size_t* out_len) {
       safefree(line);
       break;
     }
-
-    //total_read += (size_t) bytes_read;
 
     in_lines = realloc(in_lines, sizeof (char *) * (lines_idx + 1));
     in_lines[lines_idx] = safemalloc( (size_t) bytes_read);

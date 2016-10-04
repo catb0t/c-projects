@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include "../common.h"
 
 #define MOST_POSSIBLE_POINTSEE_CHARS 51
@@ -37,22 +38,31 @@ shape_t* shape_new (
 char* point_see (const point_t* p);
 char* shape_see (const shape_t* s, const bool lines);
 
+bool shape_isempty (const shape_t*);
+
 void free_point_array (point_t** ps, const ssize_t len);
 void   point_destruct (point_t* p);
 void   shape_destruct (shape_t* s);
 void      point_print (point_t* p);
 void      shape_print (shape_t* p, const bool lines);
 
-void point_translate (point_t* p, const int64_t x, const int64_t y);
-void shape_translate (shape_t* s, const int64_t x, const int64_t y);
-
-void point_reflect (point_t* p, const axis_t axs, const int64_t val);
-void shape_reflect (shape_t* s, const axis_t axs, const int64_t val);
+void   shape_isotropic_dilate (shape_t*, const int64_t);
+void shape_anisotropic_dilate (shape_t*, const int64_t, const int64_t);
+void          point_translate (point_t*, const int64_t, const int64_t);
+void          shape_translate (shape_t*, const int64_t, const int64_t);
+void            point_reflect (point_t*, const axis_t,  const int64_t);
+void            shape_reflect (shape_t*, const axis_t,  const int64_t);
+void             point_rotate (point_t*, const uint16_t);
+void             shape_rotate (shape_t*, const uint16_t);
 
 sector_t point_get_sector (point_t* p);
 
 point_t* point_new (const int64_t x, const int64_t y, const char id) {
+
+  assert ( isalnum(id) );
+
   point_t* p = safemalloc(sizeof (point_t));
+
   p->x       = x;
   p->y       = y;
   p->id      = id;
@@ -76,7 +86,8 @@ void free_point_array (point_t** ps, const ssize_t len) {
 shape_t* shape_new (
       point_t** points,
   const ssize_t len,
-  const ssize_t primeness) {
+  const ssize_t primeness
+) {
 
   shape_t* s = safemalloc(sizeof (shape_t));
 
@@ -116,15 +127,16 @@ shape_t* shape_new (
   return s;
 }
 
-void shape_destruct (shape_t* s) {
-  ssize_t count_ps = s->num_points;
+__PURE_FUNC
+bool shape_isempty (const shape_t* s) {
+  return s->num_points == -1;
+}
 
-  if (count_ps < 0) {
-    safefree(s);
-    return;
+void shape_destruct (shape_t* s) {
+  if ( ! shape_isempty(s) ) {
+    free_point_array(s->points, s->num_points);
   }
 
-  free_point_array(s->points, count_ps);
   safefree(s->qual_name);
   safefree(s);
 }
@@ -170,7 +182,7 @@ char* shape_see (const shape_t* s, const bool lines) {
 
 #define STR_ERRMARGIN 8
 
-  if ( (s->num_points) < 0 ) {
+  if ( shape_isempty(s) ) {
     char* o = safemalloc(sizeof (char));
     snprintf(o, 1, "%c", 0);
     return o;
@@ -225,7 +237,7 @@ char* shape_see (const shape_t* s, const bool lines) {
     "%s%s(%s%s)",
     s->qual_name,
     primes,
-    lines ? "\n" : "",
+    lines ? "\n" : " ",
     out
   );
 
@@ -247,7 +259,7 @@ void shape_print (shape_t* s, const bool lines) {
   safefree(c);
 }
 
-__attribute_const__ __attribute_pure__
+__CONST_FUNC __PURE_FUNC
 sector_t point_get_sector (point_t* p) {
   int64_t x = p->x, y = p->y;
 
@@ -260,14 +272,18 @@ sector_t point_get_sector (point_t* p) {
     return qs[y > 0][x > 0];
   }
 
-  if ( !x && ( y > 0 ) ) { return HEM_N; }
-  if ( !x && ( y < 0 ) ) { return HEM_S; }
-  if ( !y && ( x < 0 ) ) { return HEM_W; }
-  if ( !y && ( x > 0 ) ) { return HEM_E; }
+  if ( !x && y ) {
+    return y > 0 ? HEM_N : HEM_S;
+  }
+  if ( !y && x ) {
+    return x > 0 ? HEM_E : HEM_W;
+  }
 
   // !x && !y
   return ORIGIN;
 }
+
+// TRANSFORMATIONS
 
 void point_translate (point_t* p, const int64_t x, const int64_t y) {
   p->x += x;
@@ -331,7 +347,7 @@ void point_reflect (point_t* p, const axis_t axs, const int64_t val) {
 }
 
 void shape_reflect (shape_t* s, const axis_t axs, const int64_t val) {
-  if (s->num_points < 0) {
+  if ( shape_isempty(s) ) {
     return;
   }
 
@@ -340,4 +356,84 @@ void shape_reflect (shape_t* s, const axis_t axs, const int64_t val) {
   }
 
   ++(s->primeness);
+}
+
+// inclusive
+static bool uint16_inrange (const uint16_t n, const uint16_t min, const uint16_t max) {
+  return (n >= min) && (n <= max);
+}
+
+void point_rotate (point_t* p, const uint16_t degrees) {
+
+  uint16_t dg = degrees;
+
+  if ( dg % 90 ) {
+
+    if ( uint16_inrange(dg, 0, 89) ) {
+      dg = 0;
+    }
+    else if ( uint16_inrange(dg, 90, 179) ) {
+      dg = 90;
+    }
+    else if ( uint16_inrange(dg, 180, 269) ) {
+      dg = 180;
+    }
+    else if ( uint16_inrange(dg, 270, 360) ) {
+      dg = 270;
+    }
+    else {
+      dg = 0;
+    }
+
+  }
+
+  switch ( dg ) {
+    case 90: {
+      p->y = -(p->y);
+      break;
+    }
+
+    case 180: {
+      p->x = -(p->x);
+      p->y = -(p->y);
+      break;
+    }
+
+    case 270: {
+      p->x = -(p->x);
+      break;
+    }
+  }
+
+}
+
+void shape_rotate (shape_t* s, const uint16_t dg) {
+  if ( shape_isempty(s) ) {
+    return;
+  }
+
+  for (ssize_t i = 0; i < (s->num_points); i++) {
+    point_rotate( (s->points) [i], dg);
+  }
+}
+
+void shape_isotropic_dilate (shape_t* s, const int64_t factor) {
+  if ( shape_isempty(s) ) {
+    return;
+  }
+
+  shape_anisotropic_dilate(s, factor, factor);
+}
+
+void shape_anisotropic_dilate (shape_t* s, const int64_t xscale, const int64_t yscale) {
+  if ( shape_isempty(s) ) {
+    return;
+  }
+
+  for (ssize_t i = 0; i < (s->num_points); i++) {
+    point_t** thispt = &((s->points) [i]);
+    (*thispt)->x *= xscale;
+    (*thispt)->y *= yscale;
+    assert((*thispt)->x == ((s->points)[i])->x);
+  }
 }

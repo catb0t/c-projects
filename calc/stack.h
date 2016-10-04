@@ -327,20 +327,8 @@ char* stack_see (const stack_t* stk) {
     new_len += needed;
   }
 
-  char* output = safemalloc(sizeof (char) * new_len),
-       *bufend = output;
-
-  for (size_t i = 0; i < num_elts; i++) {
-    // "normalise" to read in reverse order
-    size_t nml_val = (num_elts - 1) - i;
-    bufend += snprintf(bufend, 20, "%s ", to_str[nml_val]);
-  }
-
-  free_ptr_array((void **) to_str, num_elts);
-
-  return output;
+  return concat_lines(to_str, num_elts, new_len);
 }
-
 
 /*
   OPERATORS
