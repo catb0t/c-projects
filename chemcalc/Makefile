@@ -1,4 +1,3 @@
-
 FILENAME := $(shell basename `pwd`)
 ARCH := $(shell uname -m)
 OUT_FILENAME := $(FILENAME)
@@ -56,5 +55,3 @@ clean:
 	(rm core *core* a.out 2>/dev/null; echo)
 	$(shell find . -type f -executable -regextype sed -iregex '\./[^.]*' | xargs rm)
 	@echo
-
-

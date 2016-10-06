@@ -7,6 +7,7 @@
 #endif
 
 #include "calc.h"
+#include "lex.h"
 
 int main (int len_args, const char* const* const args) {
 
@@ -14,11 +15,8 @@ int main (int len_args, const char* const* const args) {
     interpret();
 
   } else {
-    // cat
-    size_t len;
-    char* a  = strip_comments(file_lines(args[1], &len), len, '~');
-    printf("%s\n", a);
-    safefree(a);
+    (void) args;
+    return EXIT_FAILURE;
   }
 
   return EXIT_SUCCESS;

@@ -2,6 +2,8 @@
 #line 2 "stack"
 #endif
 
+#pragma once
+#define STACK
 #include "object.h"
 
 // maybe it will grow in the future

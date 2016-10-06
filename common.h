@@ -19,7 +19,7 @@
 #define DEC_DIGITS  "0123456789"
 #define ULL_DIGITS  20
 #define NUM_PROBS   5
-#define MAX_STR_LEN 1024
+#define MAX_STR_LEN 4096
 #define SHORT_INSTR 256
 
 #ifdef DEBUG
@@ -34,8 +34,14 @@
   #define __CONST_FUNC __attribute_const__
 #endif
 
+#define dealloc_printf(x) do { printf("%s\n", (x)); safefree((x)); } while (0);
+//#define static_realloc(p, x) p = realloc( ( p ) , ( x ))
+
+#pragma GCC poison strcpy strdup sprintf
 
 // utils
+char* make_empty_str (void);
+
 char* str_reverse (const char*  const str);
 void    str_chomp (char* str);
 char*      readln (const size_t len);
@@ -124,7 +130,7 @@ void* _safemalloc (size_t len, uint64_t lineno) {
 
 void free_ptr_array (void** ptr, const size_t len) {
   pfn(__FILE__, __LINE__, __func__);
-  
+
   for (size_t i = 0; i < len; i++) {
     safefree(ptr[i]);
   }
@@ -159,7 +165,7 @@ char* str_reverse (const char* const str) {
 void str_chomp (char* str) {
   pfn(__FILE__, __LINE__, __func__);
 
-  if (str && str_count(str, "\n")) {
+  if (str && (strchr(str, '\n') != NULL) ) {
     str[ strcspn(str, "\n") ] = 0;
   }
 }
@@ -171,7 +177,7 @@ char* readln (const size_t len) {
   char *ret,
        *buf = safemalloc( sizeof(char) * len );
 
-  ret = fgets(buf, (int) len, stdin);
+  ret = fgets(buf, len > INT_MAX ? INT_MAX : (int) len, stdin);
 
   if ( ret == NULL ) {
     safefree(buf);
@@ -397,8 +403,15 @@ char* concat_lines (char** string_lines, const size_t lines_len, const size_t to
     char* tl = string_lines[i];
     bufptr += snprintf(bufptr, safestrnlen(tl), "%s\n", tl);
   }
+  output[total_len] = '\0';
 
   free_ptr_array( (void **) string_lines, lines_len);
 
   return output;
+}
+
+char* make_empty_str (void) {
+  char* out = safemalloc(1);
+  snprintf(out, 1, "%s", "");
+  return out;
 }

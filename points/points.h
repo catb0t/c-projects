@@ -1,3 +1,8 @@
+#ifdef GCC
+#line 2 "points"
+#endif
+
+#pragma once
 #include <ctype.h>
 #include "../common.h"
 
@@ -35,6 +40,9 @@ shape_t* shape_new (
   const ssize_t primeness
 );
 
+point_t* point_copy (const point_t* const p);
+shape_t* shape_copy (const shape_t* const s);
+
 char* point_see (const point_t* p);
 char* shape_see (const shape_t* s, const bool lines);
 
@@ -43,8 +51,8 @@ bool shape_isempty (const shape_t*);
 void free_point_array (point_t** ps, const ssize_t len);
 void   point_destruct (point_t* p);
 void   shape_destruct (shape_t* s);
-void      point_print (point_t* p);
-void      shape_print (shape_t* p, const bool lines);
+void      point_print (const point_t* const p);
+void      shape_print (const shape_t* const p, const bool lines);
 
 void   shape_isotropic_dilate (shape_t*, const int64_t);
 void shape_anisotropic_dilate (shape_t*, const int64_t, const int64_t);
@@ -55,7 +63,7 @@ void            shape_reflect (shape_t*, const axis_t,  const int64_t);
 void             point_rotate (point_t*, const uint16_t);
 void             shape_rotate (shape_t*, const uint16_t);
 
-sector_t point_get_sector (point_t* p);
+sector_t point_get_sector (const point_t* const p);
 
 point_t* point_new (const int64_t x, const int64_t y, const char id) {
 
@@ -92,7 +100,9 @@ shape_t* shape_new (
   shape_t* s = safemalloc(sizeof (shape_t));
 
   if (len < 0) {
-    free_point_array(points, len);
+    if (points != NULL ) {
+      free_point_array(points, len);
+    }
 
     // empty shape
     s->points     = NULL;
@@ -125,6 +135,27 @@ shape_t* shape_new (
   s->primeness  = primeness;
 
   return s;
+}
+
+point_t* point_copy (const point_t* const p) {
+
+  return point_new(p->x, p->y, p->id);
+}
+
+shape_t* shape_copy (const shape_t* const s) {
+
+  if ( ! shape_isempty(s) ) {
+    point_t** points = safemalloc(sizeof (point_t *) * (size_t) s->num_points);
+
+    for (size_t i = 0; i < ((size_t) s->num_points); i++) {
+      points[i] = point_copy( (s->points) [i]);
+    }
+
+    return shape_new(points, s->num_points, s->primeness);
+
+  }
+
+  return shape_new(NULL, -1, s->primeness);
 }
 
 __PURE_FUNC
@@ -247,20 +278,20 @@ char* shape_see (const shape_t* s, const bool lines) {
   return final;
 }
 
-void point_print (point_t* p) {
+void point_print (const point_t* const p) {
   char* c = point_see(p);
   printf("%s\n", c);
   safefree(c);
 }
 
-void shape_print (shape_t* s, const bool lines) {
+void shape_print (const shape_t* const s, const bool lines) {
   char* c = shape_see(s, lines);
   printf("%s\n", c);
   safefree(c);
 }
 
 __CONST_FUNC __PURE_FUNC
-sector_t point_get_sector (point_t* p) {
+sector_t point_get_sector (const point_t* const p) {
   int64_t x = p->x, y = p->y;
 
   if ( y && x ) {
@@ -400,7 +431,9 @@ void point_rotate (point_t* p, const uint16_t degrees) {
     }
 
     case 270: {
-      p->x = -(p->x);
+      int64_t x = p->x, y = p->y;
+      p->x = y;
+      p->y = -x;
       break;
     }
   }
