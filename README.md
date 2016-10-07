@@ -22,7 +22,7 @@ usage: build.bash [ <targets> ] [ -- <make-options> ]
 
 To:
 
-* Remove all binaries and make exercises: `./build.bash`
+* **Remove all binaries and make release builds: `./build.bash -- CMD_ARGS=-DNODEBUG`**
 
 * Build all the exercises: `./build.bash all`.
 

@@ -31,23 +31,25 @@
   #define pfn(file, line, func) printf("\n%s#%d:%s\n", file, line, func)
   #define __PURE_FUNC
   #define __CONST_FUNC
+  #define report_ctor(namestr, objname) \
+    static size_t uid = 0;              \
+    ++uid;                              \
+    (objname)->uid = uid;               \
+    printf("ctor %s #%zu\n", (namestr), uid)
+
+  #define report_dtor(namestr, objname) printf("dtor %s #%zu\n", (namestr), (objname)->uid)
 #else
   #define dbg_prn(...)
   #define pfn(file, line, func)
   #define __PURE_FUNC  __attribute_pure__
   #define __CONST_FUNC __attribute_const__
+  #define report_ctor(x, y)
+  #define report_dtor(x, y)
 #endif
 
 #define dealloc_printf(x) do { printf("%s\n", (x)); safefree((x)); } while (0);
-#define report_ctor(namestr, objname) \
-  static size_t uid = 0;              \
-  ++uid;                              \
-  (objname)->uid = uid;               \
-  printf("ctor %s #%zu\n", (namestr), uid)
 
-#define report_dtor(namestr, objname) printf("dtor %s #%zu\n", namestr, (objname)->uid)
-
-#pragma GCC poison strcpy strdup sprintf gets // poison unsafe functions
+#pragma GCC poison strcpy strdup sprintf gets atoi // poison unsafe functions
 
 // utils
 char* make_empty_str (void);
