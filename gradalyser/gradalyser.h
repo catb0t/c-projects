@@ -8,6 +8,9 @@ grade_t     grade_max (const grade_t* const gs, const size_t len);
 
 void test (void);
 
+/*
+  grade_getmean: get the average of an array of grades
+*/
 grade_t grade_getmean (const grade_t* const gs, const size_t len) {
 
   if (NULL == gs || len == 0) {
@@ -24,6 +27,9 @@ grade_t grade_getmean (const grade_t* const gs, const size_t len) {
   return total / k;
 }
 
+/*
+  grade_max: get the highest grade from an array
+*/
 grade_t grade_max (const grade_t* const gs, const size_t len) {
   grade_t high = 0;
 
@@ -36,6 +42,9 @@ grade_t grade_max (const grade_t* const gs, const size_t len) {
   return high;
 }
 
+/*
+  grade_min: get the lowest grade from an array
+*/
 grade_t grade_min (const grade_t* const gs, const size_t len) {
   grade_t low = UINT64_MAX;
 
@@ -49,7 +58,7 @@ grade_t grade_min (const grade_t* const gs, const size_t len) {
 }
 
 void test (void) {
-
+  // 98 92 88 75 61 89 95
   size_t len;
 
   char
