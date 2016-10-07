@@ -65,6 +65,8 @@ object_t* object_new (const objtype_t valtype, const void* const val) {
     }
   }
 
+  report_ctor("obj", obj);
+
   return obj;
 }
 
@@ -101,6 +103,8 @@ void** object_getval (const object_t* const obj) {
 
 void object_destruct (object_t* obj) {
   pfn(__FILE__, __LINE__, __func__);
+
+  report_dtor("obj", obj);
 
   objtype_t t = obj->type;
   if (t_array == t) {
