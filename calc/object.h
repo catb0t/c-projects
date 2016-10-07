@@ -5,6 +5,10 @@
 #pragma once
 #include "../points/points.h"
 
+#ifdef STACK
+typedef long double number_t;
+#else
+
 typedef enum {
   t_F, // only false value
   t_number,
@@ -19,11 +23,8 @@ typedef enum {
 
 typedef struct st_obj_t   object_t;
 typedef struct st_F_t     F_t;
-#ifdef STACK
-typedef long double number_t;
-#else
+
 typedef struct st_numb_t  number_t;
-#endif
 typedef struct st_fnc_t   func_t;
 typedef struct st_str_t   string_t;
 typedef struct st_array_t array_t;
@@ -85,6 +86,7 @@ string_t* string_copy (const string_t* const s);
 bool   string_isempty (const string_t* const s);
 
 object_t* object_new (const objtype_t valtype, const void* const val) {
+  pfn(__FILE__, __LINE__, __func__);
 
   object_t* obj = safemalloc(sizeof (object_t));
   obj->type     = valtype;
@@ -141,7 +143,18 @@ object_t* object_new (const objtype_t valtype, const void* const val) {
   return obj;
 }
 
+object_t* object_copy (const object_t* const obj) {
+  pfn(__FILE__, __LINE__, __func__);
+
+  if (NULL == obj) {
+    return object_new(t_F, NULL);
+  }
+
+  return object_new(obj->type, object_getval(obj));
+}
+
 void** object_getval (const object_t* const obj) {
+  pfn(__FILE__, __LINE__, __func__);
 
   if (NULL == obj) {
     return NULL;
@@ -162,6 +175,7 @@ void** object_getval (const object_t* const obj) {
 }
 
 void object_destruct (object_t* obj) {
+  pfn(__FILE__, __LINE__, __func__);
 
   objtype_t t = obj->type;
   if (t_array == t) {
@@ -183,8 +197,7 @@ void object_destruct (object_t* obj) {
 }
 
 char* objtype_repr (const objtype_t t) {
-  size_t max = 12;
-  char *out = safemalloc(max);
+  pfn(__FILE__, __LINE__, __func__);
 
   static const char* const obj_strings[] = {
     "F_t",
@@ -198,32 +211,23 @@ char* objtype_repr (const objtype_t t) {
   };
 
   _Static_assert(
-    (sizeof obj_strings / NUM_OBJTYPES) == NUM_OBJTYPES,
+    ((sizeof obj_strings) / NUM_OBJTYPES) == NUM_OBJTYPES,
     "not all objtypes handled by objtype_repr"
   );
 
   const char* const this = obj_strings[t];
-
-  printf("%zu\n", sizeof this);
-  out = realloc(out, sizeof this);
-  snprintf(out, max, "%s", this);
+  char* out = safemalloc(safestrnlen(this) + 1);
+  snprintf(out, 20, "%s", this);
   return out;
 }
 
-object_t* object_copy (const object_t* const obj) {
-
-  if (NULL == obj) {
-    return object_new(t_F, NULL);
-  }
-
-  return object_new(obj->type, object_getval(obj));
-}
-
 bool array_isempty (const array_t* const a) {
+  pfn(__FILE__, __LINE__, __func__);
   return a->len == -1 || (NULL == a->data);
 }
 
 array_t* array_copy (const array_t* const a) {
+  pfn(__FILE__, __LINE__, __func__);
 
   array_t* out = safemalloc(sizeof (array_t));
 
@@ -244,6 +248,7 @@ array_t* array_copy (const array_t* const a) {
 }
 
 string_t* string_new (const char* const c) {
+  pfn(__FILE__, __LINE__, __func__);
 
   string_t* s = safemalloc(sizeof (string_t));
   size_t len = safestrnlen(c);
@@ -255,5 +260,8 @@ string_t* string_new (const char* const c) {
 }
 
 string_t* string_copy (const string_t* const s) {
+  pfn(__FILE__, __LINE__, __func__);
   return string_new(s->data);
 }
+
+#endif

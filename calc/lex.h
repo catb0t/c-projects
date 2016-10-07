@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <time.h>
 #include "object.h"
 
 typedef struct st_astnode astnode_t;
@@ -12,51 +13,59 @@ struct st_astnode {
   objtype_t   type;
   object_t*   obj;
   char*       code;
-  astnode_t** children;
-  ssize_t     num_children;
+  astnode_t** chldn;
+  ssize_t     chldn_idx;
+  size_t      uid;
 };
 
-typedef enum { NULCHAR, CNTRL, DIGIT, ALPHA, WSPACE, PUNC, DEL } srcchar_t;
+typedef enum { NULCHAR, CNTRL, DIGIT, ALPHA, WSPACE, PUNC, DEL, EASCII } srcchar_t;
 
 astnode_t* ast_newnode (const object_t* const obj, const char* const code);
-astnode_t*  lex_string (char* prog);
-astnode_t* ast_newtree (char* prog);
+astnode_t*  lex_string (const char* const prog);
+astnode_t* ast_newtree (const char* const prog);
 
 void ast_destruct_node (astnode_t* n);
 
 char* ast_see (astnode_t* n);
 
 ssize_t build_string (const char* const code, const size_t idx, astnode_t** out_node);
-ssize_t build_number (char* code, const size_t idx, astnode_t** out_node);
+ssize_t build_number (const char* const code, const size_t idx, astnode_t** out_node);
 
 srcchar_t get_srcobj_type (const char c);
 
-astnode_t* ast_newtree (char* prog) {
+astnode_t* ast_newtree (const char* const prog) {
+  pfn(__FILE__, __LINE__, __func__);
 
   return ast_newnode(NULL, prog);
 }
 
 astnode_t* ast_newnode (const object_t* const obj, const char* const code) {
+  pfn(__FILE__, __LINE__, __func__);
+
   astnode_t* ast    = safemalloc( sizeof (astnode_t) );
   ast->code         = strndup(code, MAX_STR_LEN);
   ast->obj          = object_copy(obj);
-  ast->type         = (ast->obj == NULL) ? t_F : ast->obj->type;
-  ast->children     = safemalloc( sizeof (astnode_t *) );
-  ast->num_children = -1;
+  ast->type         = ast->obj->type;
+  ast->chldn        = safemalloc( sizeof (astnode_t *) );
+  ast->chldn_idx    = -1;
+
+  report_ctor("ast", ast);
   return ast;
 }
 
 void ast_destruct_node (astnode_t* n) {
-  if ((n->num_children) != -1) {
+  pfn(__FILE__, __LINE__, __func__);
 
-    ssize_t count = n->num_children;
+  report_dtor("ast", n);
 
-    for (ssize_t i = 0; i < count; i++) {
-      ast_destruct_node( (n->children)[i] );
+  if ((n->chldn_idx) != -1) {
+
+    for (ssize_t i = 0; i < (n->chldn_idx); i++) {
+      ast_destruct_node( (n->chldn)[i] );
     }
   }
-  if (NULL != n->children) {
-    safefree(n->children);
+  if (NULL != n->chldn) {
+    safefree(n->chldn);
   }
 
   safefree(n->code);
@@ -65,6 +74,7 @@ void ast_destruct_node (astnode_t* n) {
 }
 
 char* ast_see (astnode_t* n) {
+  pfn(__FILE__, __LINE__, __func__);
 
 #define MAX_ASTSEE_LEN 2048
 
@@ -77,16 +87,16 @@ char* ast_see (astnode_t* n) {
        *type = objtype_repr(n->type);
 
   size_t lines = 0, total = 0;
-  if (n->num_children > -1) {
+  if ((n->chldn_idx) != -1) {
 
-    size_t nc = (size_t) (n->num_children);
-    chldlns = safemalloc(sizeof (char *) * 2);
+    size_t nc = (size_t) (n->chldn_idx);
+    chldlns   = safemalloc(sizeof (char *) * 2);
 
     for (size_t i = 0; i < nc; i++) {
-      chldlns = realloc(chldlns, sizeof (char *) * (i + 1));
+      chldlns    = realloc(chldlns, sizeof (char *) * (i + 1));
       chldlns[i] = safemalloc(MAX_ASTSEE_LEN);
 
-      snprintf(chldlns[i], MAX_ASTSEE_LEN, "%s", ast_see( (n->children)[i] ));
+      snprintf(chldlns[i], MAX_ASTSEE_LEN, "%s", ast_see( (n->chldn)[i] ));
       ++lines;
       total += safestrnlen(chldlns[i]);
     }
@@ -105,14 +115,16 @@ char* ast_see (astnode_t* n) {
     MAX_ASTSEE_LEN,
 
     "NODE:\n"
+    "\tunid: %zu\n"  // uid
     "\ttype: %s\n"   // type
     "\tcode: %s\n"   // code
     "\tnumc: %zd\n"  // num_childs
-    "\tchld: {\n%s\n}",  // children
+    "\tchld: {\n%s\n}",  // chldn
 
+    n->uid,
     type,
     n->code,
-    n->num_children,
+    n->chldn_idx,
     chlds
   );
 
@@ -125,30 +137,32 @@ char* ast_see (astnode_t* n) {
     out,
     len,
     "NODE:\n"
+    "\tunid: %zu\n"   // uid
     "\ttype: %s\n"  // type
     "\tcode: %s\n"  // code
     "\tnumc: %zd\n"  // num_childs
-    "\tchld: {\n%s\n}", // children
+    "\tchld: {\n%s\n}", // chldn
 
+    n->uid,
     type,
     n->code,
-    n->num_children,
+    n->chldn_idx,
     chlds
 
   );
+
   safefree(chlds);
   safefree(type);
 
   return out;
 }
 
-astnode_t* lex_string (char* prog) {
+astnode_t* lex_string (const char* const prog) {
+  pfn(__FILE__, __LINE__, __func__);
 
+  char* s;
   astnode_t*    ast = ast_newtree(prog);
-  ast->num_children = 0;
-  ast->type         = t_F;
-  ast->code         = make_empty_str();
-  ast->obj          = object_new(t_F, NULL);
+
 
   size_t plen = safestrnlen(prog);
 
@@ -186,11 +200,20 @@ astnode_t* lex_string (char* prog) {
         tmp = build_number(prog, i, &thisnode);
       }
 
+      case EASCII: {
+        fprintf(stderr, "error: not implemented: EASCII: found Extended ASCII in source\n");
+      }
+
     }
 
-    ast->children = realloc(ast->children, sizeof (astnode_t *) * (i + 1));
-    (ast->children)[i] = thisnode;
-    ++(ast->num_children);
+    s = ast_see(thisnode);
+    dealloc_printf(s);
+
+    ast->chldn = realloc(ast->chldn, sizeof (astnode_t *) * (i + 1));
+    (ast->chldn)[i] = thisnode;
+    ++(ast->chldn_idx);
+
+    dbg_prn("i: %zu\n", i);
   }
 
   return ast;
@@ -198,12 +221,14 @@ astnode_t* lex_string (char* prog) {
 
 
 static char char_inrange (char n, char min, char max) {
+  pfn(__FILE__, __LINE__, __func__);
   assert (max >= min);
   return (n >= min) && (n <= max);
 }
 
 __PURE_FUNC __CONST_FUNC
 srcchar_t get_srcobj_type (const char c) {
+  pfn(__FILE__, __LINE__, __func__);
 
   assert( ! (c < 0) );
 
@@ -229,10 +254,11 @@ srcchar_t get_srcobj_type (const char c) {
   if ( char_inrange(c, 97,  122) ) { return ALPHA; }
   if ( char_inrange(c, 123, 126) ) { return PUNC;  }
 
-  return NULCHAR;
+  return EASCII;
 }
 
 static void getfilepos (const char* const prog, const size_t idx, uint64_t* restrict lineno, uint64_t* restrict chrpos) {
+  pfn(__FILE__, __LINE__, __func__);
 
   size_t plen = safestrnlen(prog);
   *lineno = 1;
@@ -248,6 +274,7 @@ static void getfilepos (const char* const prog, const size_t idx, uint64_t* rest
 }
 
 ssize_t build_string (const char* const code, const size_t idx, astnode_t** out_node) {
+  pfn(__FILE__, __LINE__, __func__);
   const size_t clen = safestrnlen(code);
   assert (clen > idx);
 
@@ -313,7 +340,8 @@ ssize_t build_string (const char* const code, const size_t idx, astnode_t** out_
   }
 }
 
-ssize_t build_number (char* code, const size_t idx, astnode_t** out_node) {
+ssize_t build_number (const char* const code, const size_t idx, astnode_t** out_node) {
+  pfn(__FILE__, __LINE__, __func__);
 
   const size_t clen = safestrnlen(code);
   assert (clen > idx);

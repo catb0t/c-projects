@@ -22,6 +22,10 @@
 #define MAX_STR_LEN 4096
 #define SHORT_INSTR 256
 
+#ifndef NODEBUG
+#define DEBUG
+#endif
+
 #ifdef DEBUG
   #define dbg_prn(...) printf(__VA_ARGS__)
   #define pfn(file, line, func) printf("\n%s#%d:%s\n", file, line, func)
@@ -30,14 +34,20 @@
 #else
   #define dbg_prn(...)
   #define pfn(file, line, func)
-  #define __PURE_FUNC __attribute_pure__
+  #define __PURE_FUNC  __attribute_pure__
   #define __CONST_FUNC __attribute_const__
 #endif
 
 #define dealloc_printf(x) do { printf("%s\n", (x)); safefree((x)); } while (0);
-//#define static_realloc(p, x) p = realloc( ( p ) , ( x ))
+#define report_ctor(namestr, objname) \
+  static size_t uid = 0;              \
+  ++uid;                              \
+  (objname)->uid = uid;               \
+  printf("ctor %s #%zu\n", (namestr), uid)
 
-#pragma GCC poison strcpy strdup sprintf
+#define report_dtor(namestr, objname) printf("dtor %s #%zu\n", namestr, (objname)->uid)
+
+#pragma GCC poison strcpy strdup sprintf gets // poison unsafe functions
 
 // utils
 char* make_empty_str (void);
@@ -411,6 +421,8 @@ char* concat_lines (char** string_lines, const size_t lines_len, const size_t to
 }
 
 char* make_empty_str (void) {
+  pfn(__FILE__, __LINE__, __func__);
+
   char* out = safemalloc(1);
   snprintf(out, 1, "%s", "");
   return out;

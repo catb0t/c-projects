@@ -2,12 +2,8 @@
 #line 2 "calcmain"
 #endif
 
-#ifndef NODEBUG
-#define DEBUG
-#endif
-
 #include "calc.h"
-#include "lex.h"
+//#include "lex.h"
 
 int main (int len_args, const char* const* const args) {
 

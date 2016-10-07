@@ -8,6 +8,8 @@ void test (void) {
 
   astnode_t* n = lex_string(code);
 
+  printf("gets here\n");
+
   char* s = ast_see(n);
   dealloc_printf(s);
 

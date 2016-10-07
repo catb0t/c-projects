@@ -109,7 +109,7 @@ function build_targets () {
       ee "$COLOR_CYN\nMaking $COLOR_YLW$tgt$COLOR_CYN in $dir...$COLOR_OFF\n\n"
 
       ee "$COLOR_MGN"
-      make ${make_args[*]} "$tgt"
+      make -j8 ${make_args[*]} "$tgt"
       OK=$?
       ee "$COLOR_OFF"
 
