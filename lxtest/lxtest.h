@@ -1,4 +1,4 @@
-#include "../calc/lex.h"
+#include "../calc/lex/lex.h"
 
 void test (void);
 

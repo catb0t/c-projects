@@ -158,7 +158,7 @@ shape_t* shape_copy (const shape_t* const s) {
   return shape_new(NULL, -1, s->primeness);
 }
 
-__PURE_FUNC
+__attribute_pure__
 bool shape_isempty (const shape_t* s) {
   return s->num_points == -1;
 }
@@ -290,7 +290,7 @@ void shape_print (const shape_t* const s, const bool lines) {
   safefree(c);
 }
 
-__CONST_FUNC __PURE_FUNC
+__attribute_pure__ __attribute_const__
 sector_t point_get_sector (const point_t* const p) {
   int64_t x = p->x, y = p->y;
 

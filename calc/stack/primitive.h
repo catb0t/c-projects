@@ -35,6 +35,8 @@ void stack_destruct (stack_t* stk) {
 
 __PURE_FUNC
 bool stack_isempty (const stack_t* stk) {
+  pfn(__FILE__, __LINE__, __func__);
+
   return (stk->ptr) == -1;
 }
 
@@ -178,6 +180,9 @@ __PURE_FUNC
 size_t stack_size (const stack_t* stk) {
   pfn(__FILE__, __LINE__, __func__);
 
+  if ( stack_isempty(stk) ) {
+    return 0;
+  }
   return (size_t) ((stk->ptr) + 1);
 }
 
@@ -209,6 +214,8 @@ char* stack_see (const stack_t* stk) {
   size_t num_elts = stack_size(stk),
          new_len  = 0;
 
+  dbg_prn("e: %zu", num_elts);
+
   char** to_str = safemalloc(sizeof (char *) * num_elts);
 
   for (
@@ -221,11 +228,11 @@ char* stack_see (const stack_t* stk) {
     number_t val = stack_get(stk, (ssize_t) i);
     // + 2 for space & good measure (null byte?)
     size_t needed = 2 + atoi_strlen(val);
-
+    dbg_prn("i: %zu v: %LG, n: %zu", i, val, needed);
     to_str[i] = safemalloc(sizeof (char) * needed);
 
     snprintf(to_str[i], needed, "%LG", val);
-
+    dbg_prn("val: %s", to_str[i]);
     new_len += needed;
   }
 

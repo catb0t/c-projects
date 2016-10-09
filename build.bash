@@ -69,7 +69,7 @@ test: test_$(FILENAME).c
 	@echo
 
 arm: $(FILES)
-	arm-linux-gnueabi-gcc $(CMD_ARGS) -static -march=armv7-a $(FILENAME).c -lm -o ./bin/$(FILENAME)_armo -O3
+	arm-linux-gnueabi-gcc $(CMD_ARGS) -DARM -static -march=armv7-a $(FILENAME).c -lm -o ./bin/$(FILENAME)_armo -O3
 	@echo
 
 clean:
@@ -98,6 +98,8 @@ function build_targets () {
   ee "$COLOR_CYN\btargets: $COLOR_YLW${targets[*]} $COLOR_OFF"
 
   for dir in $DIRS; do
+
+    if [[ "$dir" = "./old" ]] ; then continue ; fi
 
     ee "$COLOR_CYN\nMaking $dir...$COLOR_OFF\n"
 

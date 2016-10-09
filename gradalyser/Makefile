@@ -48,7 +48,7 @@ test: test_$(FILENAME).c
 	@echo
 
 arm: $(FILES)
-	arm-linux-gnueabi-gcc $(CMD_ARGS) -static -march=armv7-a $(FILENAME).c -lm -o ./bin/$(FILENAME)_armo -O3
+	arm-linux-gnueabi-gcc $(CMD_ARGS) -DARM -static -march=armv7-a $(FILENAME).c -lm -o ./bin/$(FILENAME)_armo -O3
 	@echo
 
 clean:

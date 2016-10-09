@@ -16,28 +16,28 @@ astnode_t* ast_newnode (const object_t* const obj, const char* const code) {
   ast->chldn        = safemalloc( sizeof (astnode_t *) );
   ast->chldn_idx    = -1;
 
-  report_ctor("ast", ast);
+  report_ctor(ast);
   return ast;
 }
 
-void ast_destruct_node (astnode_t* n) {
+void ast_destruct_node (astnode_t* ast) {
   pfn(__FILE__, __LINE__, __func__);
 
-  report_dtor("ast", n);
+  report_dtor(ast);
 
-  if ((n->chldn_idx) != -1) {
+  if ((ast->chldn_idx) != -1) {
 
-    for (ssize_t i = 0; i < (n->chldn_idx); i++) {
-      ast_destruct_node( (n->chldn)[i] );
+    for (ssize_t i = 0; i < (ast->chldn_idx); i++) {
+      ast_destruct_node( (ast->chldn)[i] );
     }
   }
-  if (NULL != n->chldn) {
-    safefree(n->chldn);
+  if (NULL != ast->chldn) {
+    safefree(ast->chldn);
   }
 
-  safefree(n->code);
-  object_destruct(n->obj);
-  safefree(n);
+  safefree(ast->code);
+  object_destruct(ast->obj);
+  safefree(ast);
 }
 
 char* ast_see (astnode_t* n) {

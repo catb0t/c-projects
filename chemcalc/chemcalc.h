@@ -43,13 +43,13 @@ char* element_see (const element_t* elem);
 isotope_t* isotope_new (const double abun, const amu_t mass) {
   pfn(__FILE__, __LINE__, __func__);
 
-  isotope_t* out = safemalloc( sizeof (isotope_t) );
-  out->abun = abun;
-  out->mass = mass;
+  isotope_t* isotope = safemalloc( sizeof (isotope_t) );
+  isotope->abun = abun;
+  isotope->mass = mass;
 
-  report_ctor("isotope", out);
+  report_ctor(isotope);
 
-  return out;
+  return isotope;
 }
 
 isotope_t* isotope_copy (const isotope_t* const iso) {
@@ -58,7 +58,7 @@ isotope_t* isotope_copy (const isotope_t* const iso) {
 
 void isotope_destruct (isotope_t* iso) {
 
-  report_dtor("isotope", iso);
+  report_dtor(iso);
   safefree(iso);
 }
 
@@ -219,6 +219,7 @@ char* element_see (const element_t* elem) {
 
 }
 
+__attribute_pure__
 amu_t amass_from_isos (const isotope_t* const * const isos, const size_t len) {
   amu_t total = 0;
 
@@ -230,6 +231,7 @@ amu_t amass_from_isos (const isotope_t* const * const isos, const size_t len) {
   return total;
 }
 
-isotope_t** abun_from_elem (const amu_t elem_basemass, amu_t* isomasses, const size_t len) {
+/*isotope_t** abun_from_elem (const amu_t elem_basemass, amu_t* isomasses, const size_t len) {
 
 }
+*/

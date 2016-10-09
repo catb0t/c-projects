@@ -5,20 +5,20 @@
 #include "objcommon.h"
 
 array_t* array_new (const object_t* const * const objs, const ssize_t len) {
-  array_t* out = safemalloc( sizeof (array_t) );
-  out->data    = safemalloc( sizeof (object_t *) );
+  array_t* array = safemalloc( sizeof (array_t) );
+  array->data    = safemalloc( sizeof (object_t *) );
 
   if (-1 != len) {
     for (ssize_t i = 0; i < len; i++) {
-      out->data[i] = object_copy(objs[i]);
+      array->data[i] = object_copy(objs[i]);
     }
 
   }
-  out->idx = len;
+  array->idx = len;
 
-  report_ctor("array", out);
+  report_ctor(array);
 
-  return out;
+  return array;
 }
 
 array_t* array_copy (const array_t* const a) {
@@ -39,24 +39,22 @@ array_t* array_copy (const array_t* const a) {
   out->data = NULL;
   out->idx  = -1;
 
-  report_ctor("array", out);
-
   return out;
 }
 
-void array_destruct (array_t* const a) {
+void array_destruct (array_t* const array) {
 
-  report_dtor("array", a);
+  report_dtor(array);
 
-  if ( ! array_isempty(a) ) {
-    for (ssize_t i = 0; i < a->idx; i++) {
-      object_destruct( (a->data) [i]);
+  if ( ! array_isempty(array) ) {
+    for (ssize_t i = 0; i < array->idx; i++) {
+      object_destruct( (array->data) [i]);
     }
   }
-  if (NULL != a->data) {
-    safefree(a->data);
+  if (NULL != array->data) {
+    safefree(array->data);
   }
-  safefree(a);
+  safefree(array);
 }
 
 bool array_isempty (const array_t* const a) {
@@ -80,16 +78,12 @@ void array_delete (array_t* const a, const ssize_t idx) {
     return;
   }
 
-  size_t uidx = (size_t) idx - 1 > -1 ? idx : 0;
-
-  object_t** front = safemalloc(sizeof (object_t *) * uidx);
-  for (size_t i = 0; i < uidx; i++) {
+  object_t** back = safemalloc(sizeof (object_t *) * safe_usub( (size_t) idx, (size_t) a->idx));
+  for (ssize_t i = idx + 1; i < (a->idx); i++) {
     // **NOT** a copy construction
-    front[i] = a->data[i];
+    back[i] = a->data[i];
   }
 
 }
 
-void array_append (array_t* const a, const object_t* const o, const ssize_t idx) {
-
-}
+//void array_append (array_t* const a, const object_t* const o, const ssize_t idx) {}

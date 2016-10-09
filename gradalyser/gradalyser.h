@@ -11,6 +11,7 @@ void test (void);
 /*
   grade_getmean: get the average of an array of grades
 */
+__attribute_pure__ __attribute_const__
 grade_t grade_getmean (const grade_t* const gs, const size_t len) {
 
   if (NULL == gs || len == 0) {
@@ -30,6 +31,7 @@ grade_t grade_getmean (const grade_t* const gs, const size_t len) {
 /*
   grade_max: get the highest grade from an array
 */
+__attribute_pure__ __attribute_const__
 grade_t grade_max (const grade_t* const gs, const size_t len) {
   grade_t high = 0;
 
@@ -45,6 +47,7 @@ grade_t grade_max (const grade_t* const gs, const size_t len) {
 /*
   grade_min: get the lowest grade from an array
 */
+__attribute_pure__ __attribute_const__
 grade_t grade_min (const grade_t* const gs, const size_t len) {
   grade_t low = UINT64_MAX;
 
@@ -69,7 +72,7 @@ void test (void) {
 
   for (size_t i = 0; i < len; i++) {
     // grades will never be 0 so this is ok
-    grade_t j = (grade_t) atoi(spl[i]);
+    grade_t j = (grade_t) strtoull(spl[i], NULL, 10);
     gs[i] = j;
   }
   safefree(in);

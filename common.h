@@ -28,16 +28,16 @@
 
 #ifdef DEBUG
   #define dbg_prn(...) printf(__VA_ARGS__)
-  #define pfn(file, line, func) printf("\n%s#%d:%s\n", file, line, func)
+  #define pfn(file, line, func) printf("\n\033[30;1m%s#%d:%s\033[0m\n", file, line, func)
   #define __PURE_FUNC
   #define __CONST_FUNC
-  #define report_ctor(namestr, objname) \
+  #define report_ctor(obj) \
     static size_t uid = 0;              \
     ++uid;                              \
-    (objname)->uid = uid;               \
-    printf("ctor %s #%zu\n", (namestr), uid)
+    (obj)->uid = uid;               \
+    printf("ctor %s #%zu\n", #obj, uid)
 
-  #define report_dtor(namestr, objname) printf("dtor %s #%zu\n", (namestr), (objname)->uid)
+  #define report_dtor(obj) printf("dtor %s #%zu\n", #obj, obj->uid)
 #else
   #define dbg_prn(...)
   #define pfn(file, line, func)
@@ -49,6 +49,7 @@
 
 #define dealloc_printf(x) do { printf("%s\n", (x)); safefree((x)); } while (0);
 
+#undef strdup
 #pragma GCC poison strcpy strdup sprintf gets atoi // poison unsafe functions
 
 // utils
@@ -413,9 +414,11 @@ char* concat_lines (char** string_lines, const size_t lines_len, const size_t to
 
   for (size_t i = 0; i < lines_len; i++) {
     char* tl = string_lines[i];
-    bufptr += snprintf(bufptr, safestrnlen(tl), "%s\n", tl);
+    dbg_prn("tl: %s len: %zu", tl, safestrnlen(tl));
+    bufptr += snprintf(bufptr, safestrnlen(tl) + 2, "%s ", tl);
   }
-  output[total_len] = '\0';
+  printf("o: %s total_len: %zu\n", output, total_len);
+  //output[total_len] = '\0';
 
   free_ptr_array( (void **) string_lines, lines_len);
 

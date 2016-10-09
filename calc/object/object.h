@@ -65,7 +65,7 @@ object_t* object_new (const objtype_t valtype, const void* const val) {
     }
   }
 
-  report_ctor("obj", obj);
+  report_ctor(obj);
 
   return obj;
 }
@@ -104,13 +104,13 @@ void** object_getval (const object_t* const obj) {
 void object_destruct (object_t* obj) {
   pfn(__FILE__, __LINE__, __func__);
 
-  report_dtor("obj", obj);
+  report_dtor(obj);
 
   objtype_t t = obj->type;
   if (t_array == t) {
     free_ptr_array(
       (void **) obj->ary->data,
-      (size_t) obj->ary->len
+      (size_t) obj->ary->idx
     );
 
   } else if (t_func == t) {
@@ -128,7 +128,7 @@ void object_destruct (object_t* obj) {
 char* objtype_repr (const objtype_t t) {
   pfn(__FILE__, __LINE__, __func__);
 
-  static const char* const obj_strings[] = {
+  static const char* const obj_strings [NUM_OBJTYPES] = {
     "F_t",
     "number_t",
     "string_t",
@@ -140,8 +140,8 @@ char* objtype_repr (const objtype_t t) {
   };
 
   _Static_assert(
-    ((sizeof obj_strings) / NUM_OBJTYPES) == NUM_OBJTYPES,
-    "not all objtypes handled by objtype_repr"
+    ( (sizeof obj_strings) / (sizeof (char*)) == NUM_OBJTYPES),
+    "not all objtypes handled in repr"
   );
 
   const char* const this = obj_strings[t];

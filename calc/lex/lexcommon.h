@@ -4,7 +4,8 @@
 
 #pragma once
 
-#include "object.h"
+#include "../../common.h"
+#include "../object/object.h"
 
 typedef struct st_astnode astnode_t;
 
