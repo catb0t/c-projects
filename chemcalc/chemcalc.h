@@ -41,7 +41,7 @@ char* element_see (const element_t* elem);
 #define ISOSEE_LEN  30
 
 isotope_t* isotope_new (const double abun, const amu_t mass) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   isotope_t* isotope = safemalloc( sizeof (isotope_t) );
   isotope->abun = abun;
@@ -68,12 +68,12 @@ element_t* element_new (
   const isotope_t* const * const isos,
   const ssize_t isosidx
 ) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   element_t* out = safemalloc(sizeof (element_t));
 
   if (isosidx != -1 && NULL != isos) {
-    out->isos = safemalloc(sizeof (isotope_t *) * (size_t) (isosidx + 1) );
+    out->isos = safemalloc(sizeof (isotope_t *) * signed2un(isosidx + 1) );
 
     for (ssize_t i = 0; i < isosidx; i++) {
       out->isos[i] = isotope_copy(isos[i]);
@@ -151,7 +151,7 @@ char* element_see (const element_t* elem) {
 
   if ((elem->isosidx) != -1) {
 
-    size_t nc = (size_t) (elem->isosidx);
+    size_t nc = signed2un(elem->isosidx);
     isostrs   = safemalloc(sizeof (char *) * nc);
 
     for (size_t i = 0; i < nc; i++) {
@@ -175,7 +175,7 @@ char* element_see (const element_t* elem) {
   isos_str = concat_lines(isostrs, lines, total);
 
   char *out, tmp[MAX_SEE_LEN];
-  size_t len = (size_t) snprintf(
+  size_t len = signed2un(snprintf(
     tmp,
     MAX_SEE_LEN,
 
@@ -189,7 +189,7 @@ char* element_see (const element_t* elem) {
     elem->symb,
     elem->name,
     isos_str
-  );
+  ));
 
   if (len > MAX_SEE_LEN) {
     len = MAX_SEE_LEN;

@@ -11,7 +11,7 @@ void interpret (void);
 void    run_str(const char* const, stack_t* stk);
 
 void interpret (void) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   printf(
     "Stack-based calculator\n"
@@ -45,7 +45,7 @@ void interpret (void) {
 }
 
 void run_str (const char* const prog, stack_t* stk) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   if (prog == NULL) {
     return;
@@ -91,7 +91,7 @@ void run_str (const char* const prog, stack_t* stk) {
 }
 
 char** file_lines (const char* const fname, size_t* out_len) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   struct stat finfo;
 
@@ -122,9 +122,9 @@ char** file_lines (const char* const fname, size_t* out_len) {
     }
 
     in_lines = realloc(in_lines, sizeof (char *) * (lines_idx + 1));
-    in_lines[lines_idx] = safemalloc( (size_t) bytes_read);
+    in_lines[lines_idx] = safemalloc( sizeof (char) * signed2un(bytes_read) );
 
-    snprintf(in_lines[lines_idx], (size_t) bytes_read, "%s", line);
+    snprintf(in_lines[lines_idx], signed2un(bytes_read), "%s", line);
 
     ++lines_idx;
     safefree(line);

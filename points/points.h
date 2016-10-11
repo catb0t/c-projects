@@ -54,14 +54,16 @@ void   shape_destruct (shape_t* s);
 void      point_print (const point_t* const p);
 void      shape_print (const shape_t* const p, const bool lines);
 
-void   shape_isotropic_dilate (shape_t*, const int64_t);
-void shape_anisotropic_dilate (shape_t*, const int64_t, const int64_t);
-void          point_translate (point_t*, const int64_t, const int64_t);
-void          shape_translate (shape_t*, const int64_t, const int64_t);
-void            point_reflect (point_t*, const axis_t,  const int64_t);
-void            shape_reflect (shape_t*, const axis_t,  const int64_t);
-void             point_rotate (point_t*, const uint16_t);
-void             shape_rotate (shape_t*, const uint16_t);
+void   shape_isotropic_dilate (shape_t* const, const int64_t);
+void shape_anisotropic_dilate (shape_t* const, const int64_t, const int64_t);
+void          point_translate (point_t* const, const int64_t, const int64_t);
+void          shape_translate (shape_t* const, const int64_t, const int64_t);
+void            point_reflect (point_t* const, const axis_t,  const int64_t);
+void            shape_reflect (shape_t* const, const axis_t,  const int64_t);
+void             point_rotate (point_t* const, const uint16_t);
+void             shape_rotate (shape_t* const, const uint16_t);
+bool             point_equals (const point_t* const a, const point_t* const b);
+bool             shape_equals (const shape_t* const a, const shape_t* const b);
 
 sector_t point_get_sector (const point_t* const p);
 
@@ -113,8 +115,8 @@ shape_t* shape_new (
 
   }
 
-  char*     name       = safemalloc((sizeof (char) * (size_t) len) + 1);
-  point_t** new_points = safemalloc(sizeof (point_t *) * (size_t) len);
+  char*     name       = safemalloc((sizeof (char) * signed2un(len)) + 1);
+  point_t** new_points = safemalloc(sizeof (point_t *) * signed2un(len));
 
   ssize_t i;
   for (i = 0; i < len; i++) {
@@ -145,9 +147,9 @@ point_t* point_copy (const point_t* const p) {
 shape_t* shape_copy (const shape_t* const s) {
 
   if ( ! shape_isempty(s) ) {
-    point_t** points = safemalloc(sizeof (point_t *) * (size_t) s->num_points);
+    point_t** points = safemalloc(sizeof (point_t *) * signed2un(s->num_points));
 
-    for (size_t i = 0; i < ((size_t) s->num_points); i++) {
+    for (size_t i = 0; i < ( signed2un(s->num_points) ); i++) {
       points[i] = point_copy( (s->points) [i]);
     }
 
@@ -174,14 +176,14 @@ void shape_destruct (shape_t* s) {
 
 char* point_see (const point_t* p) {
   char t[MOST_POSSIBLE_POINTSEE_CHARS];
-  size_t len = (size_t) snprintf(
+  size_t len = signed2un(snprintf(
     t,
     MOST_POSSIBLE_POINTSEE_CHARS,
     "%c(x=%" PRIi64 " y=%" PRIi64 ")\n",
     p->id,
     p->x,
     p->y
-  );
+  ));
 
   /*
   "If the output was truncated due to this limit, then
@@ -219,7 +221,7 @@ char* shape_see (const shape_t* s, const bool lines) {
     return o;
   }
 
-  size_t count_ps = (size_t) s->num_points;
+  size_t count_ps = signed2un(s->num_points);
   size_t new_len = 0;
 
   char** pts_tos = safemalloc(sizeof (char *) * count_ps);
@@ -255,7 +257,7 @@ char* shape_see (const shape_t* s, const bool lines) {
 
   char* primes;
   if ( (s->primeness) >= 0 ) {
-    primes = str_repeat("'", (size_t) s->primeness + 1, &len);
+    primes = str_repeat("'", signed2un(s->primeness) + 1, &len);
 
   } else {
     primes = safemalloc(1);
@@ -470,3 +472,29 @@ void shape_anisotropic_dilate (shape_t* s, const int64_t xscale, const int64_t y
     assert((*thispt)->x == ((s->points)[i])->x);
   }
 }
+
+bool point_equals (const point_t* const a, const point_t* const b) {
+  // don't compare ids
+  return ( a->x == b->x ) && ( a->y == b->y );
+}
+
+bool shape_equals (const shape_t* const a, const shape_t* const b) {
+  // compares neither ids nor primeness
+
+  if ( shape_isempty(a) && shape_isempty(b) ) {
+    return true;
+  }
+
+  if ( a->num_points != b->num_points ) {
+    return false;
+  }
+
+  for (ssize_t i = 0; i < a->num_points; i++) {
+    if ( ! point_equals((a->points) [i], (b->points) [i]) ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+

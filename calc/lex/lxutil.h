@@ -1,7 +1,7 @@
 #include "lexcommon.h"
 
 astnode_t* lex_string (const char* const prog) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   char* s;
   astnode_t*    ast = ast_newtree(prog);
@@ -28,7 +28,7 @@ astnode_t* lex_string (const char* const prog) {
           if ( tmp == -1 ) {
             return ast;
           }
-          i = (size_t) tmp;
+          i = signed2un(tmp);
         }
         break;
       }
@@ -64,14 +64,14 @@ astnode_t* lex_string (const char* const prog) {
 
 
 static char char_inrange (char n, char min, char max) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
   assert (max >= min);
   return (n >= min) && (n <= max);
 }
 
 __PURE_FUNC __CONST_FUNC
 srcchar_t get_srcobj_type (const char c) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   assert( ! (c < 0) );
 
@@ -101,7 +101,7 @@ srcchar_t get_srcobj_type (const char c) {
 }
 
 static void getfilepos (const char* const prog, const size_t idx, uint64_t* restrict lineno, uint64_t* restrict chrpos) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   size_t plen = safestrnlen(prog);
   *lineno = 1;
@@ -117,7 +117,7 @@ static void getfilepos (const char* const prog, const size_t idx, uint64_t* rest
 }
 
 ssize_t build_string (const char* const code, const size_t idx, astnode_t** out_node) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
   const size_t clen = safestrnlen(code);
   assert (clen > idx);
 
@@ -136,7 +136,7 @@ ssize_t build_string (const char* const code, const size_t idx, astnode_t** out_
     object_t* o = object_new(t_realchar, "");
     *out_node   = ast_newnode(o, "\"\"");
     object_destruct(o);
-    return (ssize_t) idx + 2;
+    return un2signed(idx + 2);
 
   } else {
     printf("non-empty\n");
@@ -157,7 +157,7 @@ ssize_t build_string (const char* const code, const size_t idx, astnode_t** out_
     }
 
     printf("found at %zu\n", nextd);
-    new_len = safe_usub(nextd, idx);
+    new_len = udifference(nextd, idx);
     newstr  = realloc(newstr, (sizeof (char) * new_len) + 2);
     newstr[ new_len + 1 ] = '\0';
 
@@ -170,7 +170,7 @@ ssize_t build_string (const char* const code, const size_t idx, astnode_t** out_
     *out_node = ast_newnode(o, str_lit);
     object_destruct(o);
 
-    return (ssize_t) nextd;
+    return un2signed(nextd);
 
   }
 
@@ -184,7 +184,7 @@ ssize_t build_string (const char* const code, const size_t idx, astnode_t** out_
 }
 
 ssize_t build_number (const char* const code, const size_t idx, astnode_t** out_node) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   const size_t clen = safestrnlen(code);
   assert (clen > idx);
@@ -233,5 +233,5 @@ ssize_t build_number (const char* const code, const size_t idx, astnode_t** out_
   snprintf(str_lit, 103, "\"%LG\"", n->value);
 
   *out_node = ast_newnode(o, newstr);
-  return (ssize_t) idx;
+  return un2signed(idx);
 }

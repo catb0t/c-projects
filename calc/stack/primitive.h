@@ -13,7 +13,7 @@
   TODO: grow (?)
 */
 stack_t* stack_new (void) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   stack_t* out = safemalloc(sizeof (stack_t));
   out->data    = calloc(INITIAL_STACKSIZE, sizeof (number_t));
@@ -28,14 +28,14 @@ stack_t* stack_new (void) {
   struct types, will be more complex
 */
 void stack_destruct (stack_t* stk) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   safefree(stk->data), safefree(stk);
 }
 
 __PURE_FUNC
 bool stack_isempty (const stack_t* stk) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   return (stk->ptr) == -1;
 }
@@ -51,7 +51,7 @@ bool stack_isempty (const stack_t* stk) {
   INITIAL_STACKSIZE.
 */
 void stack_incr (stack_t* stk) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   if ( (stk->ptr) > (INITIAL_STACKSIZE - 1) ) {
     error(ERROR_STACK_OVERFLOW, "stack_incr");
@@ -68,7 +68,7 @@ void stack_incr (stack_t* stk) {
   if the stack becomes growable in the future, this can probably stay.
 */
 void stack_decr (stack_t* stk) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   if ( stack_isempty(stk) ) {
     error(ERROR_STACK_UNDERFLOW, "stack_decr");
@@ -79,7 +79,7 @@ void stack_decr (stack_t* stk) {
 }
 
 number_t stack_get (const stack_t* stk, const ssize_t idx) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   if ( stack_isempty(stk) ) {
     error(ERROR_STACK_UNDERFLOW, "stack_get");
@@ -99,7 +99,7 @@ number_t stack_get (const stack_t* stk, const ssize_t idx) {
 }
 
 void stack_set (stack_t* stk, const ssize_t idx, const number_t val) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   if ( idx < 0 ) {
     error(ERROR_BAD_INDEX, "stack_set");
@@ -121,7 +121,7 @@ void stack_set (stack_t* stk, const ssize_t idx, const number_t val) {
   assigned except when ptr is 0.
 */
 void stack_push (stack_t* stk, number_t val) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   stack_incr(stk);
   stack_set(stk, stk->ptr, val);
@@ -134,7 +134,7 @@ void stack_push (stack_t* stk, number_t val) {
   does not modify *stk.
 */
 number_t stack_top (const stack_t* stk) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   if ( stack_isempty(stk) ) {
     return 0.f;
@@ -150,7 +150,7 @@ number_t stack_top (const stack_t* stk) {
   unlike number_t stack_top(), modifies *stk.
 */
 number_t stack_pop (stack_t* stk) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   if ( stack_isempty(stk) ) {
     error(ERROR_EMPTY_STACK, "stack_pop (empty stack)");
@@ -178,12 +178,12 @@ number_t stack_pop (stack_t* stk) {
 */
 __PURE_FUNC
 size_t stack_size (const stack_t* stk) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   if ( stack_isempty(stk) ) {
     return 0;
   }
-  return (size_t) ((stk->ptr) + 1);
+  return signed2un((stk->ptr) + 1);
 }
 
 /*
@@ -191,7 +191,7 @@ size_t stack_size (const stack_t* stk) {
   without returning it.
 */
 void stack_drop (stack_t* stk) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   stack_pop(stk);
 }
@@ -202,7 +202,7 @@ void stack_drop (stack_t* stk) {
   top item first and the bottom item last.
 */
 char* stack_see (const stack_t* stk) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   if ( stack_isempty(stk) ) {
     char* o = safemalloc(15);
@@ -225,7 +225,7 @@ char* stack_see (const stack_t* stk) {
   ) {
     // INITIAL_STACKSIZE is never large enough that casting
     // here will cause issues
-    number_t val = stack_get(stk, (ssize_t) i);
+    number_t val = stack_get(stk, un2signed(i));
     // + 2 for space & good measure (null byte?)
     size_t needed = 2 + atoi_strlen(val);
     dbg_prn("i: %zu v: %LG, n: %zu", i, val, needed);
@@ -245,11 +245,11 @@ char* stack_see (const stack_t* stk) {
 */
 __PURE_FUNC __CONST_FUNC
 ssize_t      get_stackop (const char* const op) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   for (size_t i = 0; i < NUM_STACKOPS; i++) {
     if ( ! strncmp(op, ops_tostring[i], 5) ) {
-      return (ssize_t) i;
+      return un2signed(i);
     }
   }
   return -1;
@@ -261,7 +261,7 @@ ssize_t      get_stackop (const char* const op) {
 */
 __PURE_FUNC __CONST_FUNC
 void      perform_op (stack_t* stk, const char* const op) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   (void) stk, (void) op;
 /*  ssize_t opidx;
@@ -280,7 +280,7 @@ void      perform_op (stack_t* stk, const char* const op) {
   optimal nor used, yet.
 */
 void error (size_t err, const char* const info) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   static const char* const errstrings[] = {
     "Data stack overflowed (too many values)",
@@ -293,7 +293,7 @@ void error (size_t err, const char* const info) {
     "Attempt to access memory with a negative index leads to undefined behaviour",
   };
 
-#define errstrings_len (size_t) (sizeof errstrings) / (sizeof (char *))
+#define errstrings_len signed2un (sizeof errstrings) / (sizeof (char *))
 
   if (err > errstrings_len) {
     fprintf(stderr, "Attempted to access value out of bounds of error string array\n");
@@ -314,10 +314,10 @@ void error (size_t err, const char* const info) {
   ever used by %LG for any long double.
 */
 size_t atoi_strlen (number_t val) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   char* buf = safemalloc(100);
-  size_t len = (size_t) snprintf(buf, 100, "%LG", val);
+  size_t len = signed2un(snprintf(buf, 100, "%LG", val));
 
   safefree(buf);
   return len;
@@ -330,7 +330,7 @@ size_t atoi_strlen (number_t val) {
   TODO: improve, write more tests. not optimal.
 */
 bool is_base10 (const char *str) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   // quickly invalidate str
   if ( (!str_count(str, DEC_DIGITS))
@@ -382,7 +382,7 @@ number_t* str_to_number_array (
   const char    split_at,
         size_t* out_len
 ) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   number_t* out;
 

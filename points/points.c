@@ -10,7 +10,7 @@ int main(void) {
   ps[2] = point_new(5, -6, 'C');
   //ps[3] = point_new(3, 1, 'D');
 
-  shape_t* s = shape_new(ps, (ssize_t) points, -1);
+  shape_t* s = shape_new(ps, un2signed(points), -1);
 
   shape_print(s, true);
 

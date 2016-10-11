@@ -15,7 +15,7 @@
   stack.
 */
 void    stack_op_add (stack_t* stk) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   number_t a = stack_pop(stk);
   number_t b = stack_pop(stk);
@@ -28,7 +28,7 @@ void    stack_op_add (stack_t* stk) {
   on the stack pointed to by *stk.
 */
 void    stack_op_mul (stack_t* stk) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   number_t a = stack_pop(stk);
   number_t b = stack_pop(stk);
@@ -44,7 +44,7 @@ void    stack_op_mul (stack_t* stk) {
   TODO: floorl instead.
 */
 void stack_op_divmod (stack_t* stk) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   number_t a = stack_pop(stk);
   number_t b = stack_pop(stk);
@@ -63,7 +63,7 @@ void stack_op_divmod (stack_t* stk) {
   operator subtract: push the result of subtracting y from x.
 */
 void    stack_op_sub (stack_t* stk) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   number_t a = stack_pop(stk);
   number_t b = stack_pop(stk);
@@ -75,7 +75,7 @@ void    stack_op_sub (stack_t* stk) {
   operator pow: push the result of x raised to the y power.
 */
 void    stack_op_pow (stack_t* stk) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   number_t a = stack_pop(stk);
   number_t b = stack_pop(stk);
@@ -87,7 +87,7 @@ void    stack_op_pow (stack_t* stk) {
   operator drop: drop the top item off the stack pointed to by *stk.
 */
 void    stack_op_drp (stack_t* stk) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   stack_pop(stk);
 }
@@ -96,7 +96,7 @@ void    stack_op_drp (stack_t* stk) {
   operator swap: swap the top two operands.
 */
 void    stack_op_swp (stack_t* stk) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   number_t a = stack_pop(stk);
   number_t b = stack_pop(stk);
@@ -113,7 +113,7 @@ void    stack_op_swp (stack_t* stk) {
   const; this is because the operators must share a type.
 */
 void    stack_op_prn (stack_t* stk) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   printf("%LG", stack_top(stk));
 }
@@ -125,7 +125,7 @@ void    stack_op_prn (stack_t* stk) {
   unlike prn, modifies *stk.
 */
 void    stack_op_prn_dispose (stack_t* stk) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   printf("%LG", stack_pop(stk));
 }
@@ -137,7 +137,7 @@ void    stack_op_prn_dispose (stack_t* stk) {
   applies no formatting whatsoever.
 */
 void    stack_op_prc (stack_t* stk) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   printf("%c", (int) floorl( stack_pop(stk) ) );
 }
@@ -147,7 +147,7 @@ void    stack_op_prc (stack_t* stk) {
   without modifying it.
 */
 void    stack_op_see (stack_t* stk) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   stack_see(stk);
 }

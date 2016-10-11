@@ -102,4 +102,4 @@ const char* ops_tostring[] = {
   "!,", // prc
 };
 
-#define NUM_STACKOPS (size_t) (sizeof ops_tostring) / (sizeof (char *))
+#define NUM_STACKOPS signed2un(sizeof ops_tostring) / (sizeof (char *))

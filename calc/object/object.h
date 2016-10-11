@@ -9,31 +9,38 @@ typedef long double number_t;
 
 #include "array.h"
 #include "string.h"
+#include "hash.h"
+#include "number.h"
+
+object_t* nothing_new (void) {
+  pfn();
+
+  object_t* False = object_new(t_F, NULL);
+  report_ctor(False);
+  return False;
+}
 
 object_t* object_new (const objtype_t valtype, const void* const val) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   object_t* obj = safemalloc(sizeof (object_t));
   obj->type     = valtype;
 
-  if (NULL == val) {
+  if ( NULL == val ) {
     obj->type = t_F;
   }
 
   switch (obj->type) {
     case NUM_OBJTYPES: {
-      fprintf(stderr, "NUM_OBJTYPES isn't a real type, dummy. Don't do that.\n"
-        "Have you considered trying to match wits with a rutabaga?"
-      );
-      abort();
+      object_error(NOT_A_TYPE, "object_repr", true);
+      break;
     }
     case t_F: {
       obj->f = safemalloc(sizeof (F_t));
       break;
     }
     case t_number: {
-      obj->num        = safemalloc(sizeof (number_t));
-      obj->num->value = ((const number_t *) val)->value;
+      obj->num = number_copy( (const number_t* const) val);
       break;
     }
     case t_string: {
@@ -63,6 +70,9 @@ object_t* object_new (const objtype_t valtype, const void* const val) {
       obj->ary = array_copy( (const array_t *) val);
       break;
     }
+    case t_hash: {
+      obj->hsh = hash_copy( (const hash_t *) val);
+    }
   }
 
   report_ctor(obj);
@@ -71,7 +81,7 @@ object_t* object_new (const objtype_t valtype, const void* const val) {
 }
 
 object_t* object_copy (const object_t* const obj) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   if (NULL == obj) {
     return object_new(t_F, NULL);
@@ -81,7 +91,7 @@ object_t* object_copy (const object_t* const obj) {
 }
 
 void** object_getval (const object_t* const obj) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   if (NULL == obj) {
     return NULL;
@@ -95,40 +105,47 @@ void** object_getval (const object_t* const obj) {
     (void **) (obj->sp),
     (void **) (obj->fnc),
     (void **) (obj->ary),
+    (void **) (obj->hsh),
     (void *)  (obj->str->data) // t_realchar returns str's realchar
   };
 
   return types[obj->type];
 }
 
-void object_destruct (object_t* obj) {
-  pfn(__FILE__, __LINE__, __func__);
+void object_destruct (object_t* const obj) {
+  pfn();
 
   report_dtor(obj);
 
-  objtype_t t = obj->type;
-  if (t_array == t) {
-    free_ptr_array(
-      (void **) obj->ary->data,
-      (size_t) obj->ary->idx
-    );
 
-  } else if (t_func == t) {
-    safefree(obj->fnc->code);
-    safefree(obj->fnc->name);
+  switch (obj->type) {
+    case t_array: {
+      array_destruct(obj->ary);
+      break;
+    }
+    case t_func: {
+      safefree(obj->fnc->code);
+      safefree(obj->fnc->name);
+      break;
+    }
+    case t_realchar:
+    case t_string: {
+      string_destruct(obj->str);
+      break;
+    }
 
-  } else if (t_string == t || t_realchar == t) {
-    safefree(obj->str->data);
+    default: {}
   }
+
 
   safefree( object_getval(obj) );
   safefree(obj);
 }
 
 char* objtype_repr (const objtype_t t) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
-  static const char* const obj_strings [NUM_OBJTYPES] = {
+  static const char* const obj_strings [] = {
     "F_t",
     "number_t",
     "string_t",
@@ -136,18 +153,132 @@ char* objtype_repr (const objtype_t t) {
     "shape_t",
     "func_t",
     "array_t",
+    "hash_t",
     "char* (string_t.data)",
   };
 
   _Static_assert(
-    ( (sizeof obj_strings) / (sizeof (char*)) == NUM_OBJTYPES),
-    "not all objtypes handled in repr"
+    ( (sizeof obj_strings) / (sizeof (char *)) == NUM_OBJTYPES),
+    "repr has too few or too many values"
   );
 
   const char* const this = obj_strings[t];
   char* out = safemalloc(safestrnlen(this) + 1);
   snprintf(out, 20, "%s", this);
   return out;
+}
+
+char* object_repr (const object_t* const obj) {
+  pfn();
+
+  char* buf;
+  switch (obj->type) {
+    case NUM_OBJTYPES: {
+      buf = NULL;
+      object_error(NOT_A_TYPE, "object_repr", true);
+      break;
+    }
+    case t_F: {
+      buf = safemalloc(2);
+      snprintf(buf, 1, "%s", "f");
+      break;
+    }
+    case t_number: {
+      buf = number_see(obj->num);
+      break;
+    }
+
+    case t_realchar: // fallthrough
+    case t_string: {
+      size_t buflen = sizeof (char) * obj->str->len;
+      buf = safemalloc(buflen);
+      snprintf(buf, buflen, "%s", obj->str->data);
+      break;
+    }
+
+    case t_point: {
+      buf = point_see(obj->pt);
+      break;
+    }
+    case t_shape: {
+      buf = shape_see(obj->sp, false);
+      break;
+    }
+    case t_func: {
+      char *code = obj->fnc->code,
+           *name = obj->fnc->name;
+      size_t len = safestrnlen(code) + safestrnlen(name) + 2;
+      buf = safemalloc(sizeof (char) * len);
+      snprintf(buf, len, "%s:%s", code, name);
+      break;
+    }
+    case t_array: {
+      buf = array_see(obj->ary);
+      break;
+    }
+    case t_hash: {
+      buf = hash_see(obj->hsh);
+    }
+  }
+
+  return buf;
+}
+
+// value equality
+bool object_equals (const object_t* const a, const object_t* const b) {
+  pfn();
+
+  // can only compare these objects of different types
+  if (a->type != b->type) {
+    if (
+      ( a->type == t_realchar || a->type == t_string )
+      && ( b->type == t_realchar || b->type == t_string )
+    ) {
+      return strcmp(a->str->data, b->str->data) == 0;
+    }
+    return false;
+  }
+
+  // False always compares equal
+  if ( a->type == t_F && b->type == t_F ) {
+    return true;
+  }
+
+  switch (a->type) {
+    case NUM_OBJTYPES: {
+      object_error(NOT_A_TYPE, "object_equals", false);
+      return false;
+    }
+
+    case t_number: return a->num == b->num;
+    case t_point:  return point_equals(a->pt, b->pt);
+    case t_shape:  return shape_equals(a->sp, b->sp);
+    case t_hash:   return hash_equals(a->hsh, b->hsh);
+    case t_array:  return array_equals(a->ary, b->ary);
+
+    case t_func: {
+      bool same;
+      char *fa = object_repr(a),
+           *fb = object_repr(b);
+      same = strcmp(fa, fb) == 0;
+      safefree(fa), safefree(fa);
+      return same;
+    }
+
+    case t_string:
+    case t_realchar:
+    case t_F: {
+      // satisfy the compiler
+    }
+  }
+
+  return false;
+}
+
+bool object_id_equals (const object_t* const a, const object_t* const b) {
+  pfn();
+
+  return (a->type == b->type) && (a->uid == b->uid);
 }
 
 #endif

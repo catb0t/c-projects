@@ -1,13 +1,15 @@
-#include "lexcommon.h"
+  #include "lexcommon.h"
 
 astnode_t* ast_newtree (const char* const prog) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
+
 
   return ast_newnode(NULL, prog);
 }
 
 astnode_t* ast_newnode (const object_t* const obj, const char* const code) {
-  pfn(__FILE__, __LINE__, __func__);
+
+  pfn();
 
   astnode_t* ast    = safemalloc( sizeof (astnode_t) );
   ast->code         = strndup(code, MAX_STR_LEN);
@@ -21,7 +23,7 @@ astnode_t* ast_newnode (const object_t* const obj, const char* const code) {
 }
 
 void ast_destruct_node (astnode_t* ast) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
   report_dtor(ast);
 
@@ -41,7 +43,7 @@ void ast_destruct_node (astnode_t* ast) {
 }
 
 char* ast_see (astnode_t* n) {
-  pfn(__FILE__, __LINE__, __func__);
+  pfn();
 
 #define MAX_ASTSEE_LEN 2048
 
@@ -56,7 +58,7 @@ char* ast_see (astnode_t* n) {
   size_t lines = 0, total = 0;
   if ((n->chldn_idx) != -1) {
 
-    size_t nc = (size_t) (n->chldn_idx);
+    size_t nc = signed2un(n->chldn_idx);
     chldlns   = safemalloc(sizeof (char *) * 2);
 
     for (size_t i = 0; i < nc; i++) {
@@ -77,7 +79,7 @@ char* ast_see (astnode_t* n) {
   chlds = concat_lines(chldlns, lines, total);
 
   char *out, tmp[MAX_ASTSEE_LEN];
-  size_t len = (size_t) snprintf(
+  size_t len = signed2un(snprintf(
     tmp,
     MAX_ASTSEE_LEN,
 
@@ -93,7 +95,7 @@ char* ast_see (astnode_t* n) {
     n->code,
     n->chldn_idx,
     chlds
-  );
+  ));
 
   if (len > MAX_ASTSEE_LEN) {
     len = MAX_ASTSEE_LEN;
