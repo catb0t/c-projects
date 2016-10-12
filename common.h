@@ -44,14 +44,16 @@
   #define report_dtor(obj) printf("dtor %s #%zu\n", #obj, obj->uid)
 #else
   #define dbg_prn(...)
-  #define pfn(file, line, func)
+  #define pfn()
   #define __PURE_FUNC  __attribute_pure__
   #define __CONST_FUNC __attribute_const__
-  #define report_ctor(x, y)
-  #define report_dtor(x, y)
+  #define report_ctor(x)
+  #define report_dtor(x)
 #endif
 
 #define dealloc_printf(x) do { printf("%s\n", (x)); safefree((x)); } while (0);
+
+#define OBJ_UID_SLOT size_t uid
 
 #undef strdup
 #pragma GCC poison strcpy strdup sprintf gets atoi // poison unsafe functions
@@ -96,17 +98,17 @@ void*   _safemalloc (size_t   len, const uint64_t lineno);
 #define safemalloc(x) _safemalloc(x, __LINE__)
 
 __attribute_const__ __attribute_pure__
-inline size_t signed2un (const ssize_t val) {
+size_t signed2un (const ssize_t val) {
   return val < 0 ? 0 : (size_t) val;
 }
 
 __attribute_const__ __attribute_pure__
-inline ssize_t un2signed (const size_t val) {
+ssize_t un2signed (const size_t val) {
   return (ssize_t) (val > (SIZE_MAX / 2) ? SIZE_MAX / 2 : val);
 }
 
 __attribute_const__ __attribute_pure__
-inline size_t usub (const size_t a, const size_t b) {
+size_t usub (const size_t a, const size_t b) {
 
   return signed2un(un2signed(a) - un2signed(b));
 }

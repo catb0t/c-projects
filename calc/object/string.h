@@ -7,13 +7,15 @@
 string_t* string_new (const char* const c) {
   pfn();
 
-  string_t* s = safemalloc(sizeof (string_t));
-  size_t  len = safestrnlen(c);
+  string_t* string = safemalloc(sizeof (string_t));
+  size_t       len = safestrnlen(c);
 
-  s->len  = len;
-  s->data = strndup(c, len);
+  string->len  = len;
+  string->data = strndup(c, len);
 
-  return s;
+  report_ctor(string);
+
+  return string;
 }
 
 string_t* string_copy (const string_t* const s) {

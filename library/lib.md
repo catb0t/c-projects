@@ -1,10 +1,8 @@
 Personal Library
 In this project, you will create a simple Library tool to help analyze completed books in a small, personal library. The tool will print out the books that a user has fully read. We will store the books and their completion status in a HashMap.
 
-The HashMap class is part of a Java package. On line 1, import the correct package by typing:
-import java.util.HashMap;
 Next, create a class called Library.
-Now create a Library constructor. You can leave the contents of the constructor empty.
+Now create a Library constructor.
 
 Let's create a method that will print all of a user's completed books. Create a method called getFinishedBooks. It should not return any value.
 

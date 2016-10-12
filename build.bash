@@ -106,7 +106,7 @@ function build_targets () {
     pushd "$dir" # || ( ee "$COLOR_RED\nFatally failed $dir...$COLOR_OFF\n"; exit )
 
     if [[ "$dir" = "./fnv-hash" ]] ; then
-      make -j8
+      make -j
       popd
       continue
     fi
@@ -117,7 +117,7 @@ function build_targets () {
       ee "$COLOR_CYN\nMaking $COLOR_YLW$tgt$COLOR_CYN in $dir...$COLOR_OFF\n\n"
 
       ee "$COLOR_MGN"
-      make -j8 ${make_args[*]} "$tgt"
+      make -j ${make_args[*]} "$tgt"
       OK=$?
       ee "$COLOR_OFF"
 

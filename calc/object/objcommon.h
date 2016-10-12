@@ -9,12 +9,15 @@
 typedef enum {
   t_F, // only false value
   t_number,
+  t_fixwid,
   t_string,
   t_point,
   t_shape,
   t_func,
   t_array,
   t_hash,
+  t_pair,
+  t_realint,
   t_realchar,
   NUM_OBJTYPES
 } objtype_t;
@@ -24,49 +27,148 @@ typedef enum {
   KEYERROR,
 } objerror_t;
 
+// object object
 typedef struct st_obj_t   object_t;
+// false singleton compares false with everything except itself
 typedef struct st_F_t     F_t;
-typedef struct st_numb_t  number_t;
-typedef struct st_fnc_t   func_t;
-typedef struct st_str_t   string_t;
-typedef struct st_array_t array_t;
-typedef struct st_hash_t  hash_t;
 
-// false singleton
+// arithmetic types
+//  arbitrary precision
+typedef struct st_numb_t  number_t;
+//  fixed width signed integral type -- underlying uses ssize_t and size_t
+typedef struct st_fxwd_t  fixwid_t;
+
+// collections
+//  string is mostly just a wrapper for char*, at least for now
+typedef struct st_str_t   string_t;
+//  array is little more than a list of objects
+typedef struct st_array_t array_t;
+//  hash is implemented using FNV-1A 32-bit
+typedef struct st_hash_t  hash_t;
+//  pair is just two things -- this can be used for a singly linked list
+typedef struct st_pair_t  pair_t;
+
+// function type
+typedef struct st_fnc_t   func_t;
+
+/*
+  the point of having this as a struct is
+  C compiler errors around void* casts and alignment
+  if it were:
+    typedef void* st_F_t
+  then `f` would be transparently and silently castable
+  to any other pointer (and thus object) type -- not desired behaviour
+*/
 struct st_F_t {
   void*  nothing;
-  size_t uid;
+
+  OBJ_UID_SLOT;
 };
 
 struct st_fnc_t {
   char*  code;
   char*  name;
-  size_t uid;
+
+  OBJ_UID_SLOT;
 };
 
+/*
+  for now, data is null terminated and not wide
+  and len is mostly for convenience
+  a len of 0 indicates an empty string
+*/
 struct st_str_t {
   char*   data;
-  size_t len;
-  size_t  uid;
+  size_t  len;
+
+  OBJ_UID_SLOT;
 };
 
+/*
+  idx is a direct index value to the last value in data
+  -1 indicates an empty array, but use array_isempty instead
+*/
 struct st_array_t {
   object_t** data;
   ssize_t    idx;  // -1 for empty
-  size_t     uid;
+
+  OBJ_UID_SLOT;
 };
 
 struct st_numb_t {
   long double value;
-  size_t      uid;
+
+  OBJ_UID_SLOT;
 };
 
+struct st_fxwd_t {
+  bool sign;
+  union {
+    ssize_t svalue;
+    size_t  value;
+  };
+};
+
+// like an array, except only two values
+struct st_pair_t {
+  object_t* car;
+  object_t* cdr;
+};
+
+/*
+  a hashtable consists of:
+    non-sparse list of keys: array_t
+    non-sparse list of pairs of values and
+    sparse list of which values map to which actual entries.
+
+  in pythonish syntax (and inspired from python 3.6's ordered dictionaries):
+
+  { 1: 'a', 2: 'b', 3: 'c' }
+
+  is represented in this structure as:
+
+  hash->keys = array{ 1, 2, 3 }
+  hash->vals = array{
+    pair{ 'a' 5 }
+    pair{ 'b' 7 }
+    pair{ 'c' 9 }
+  }
+  hash->idxs = { -1 -1 -1 -1 -1  0 -1  1 -1  2 }
+                 0  1  2  3  4  5  6  7  8  9
+
+  to get an value by key, we:
+    hash the key
+    return ( vals [ idxs [ hash_obj(key) ] ] ) [0]
+
+  to set a value to a key, we:
+    hash the key
+    array_append( keys, key )
+    array_append( vals, pair{ value, hash_obj(key) } )
+    resize idxs to vals->idx + 1
+    idxs [ hash_obj(key) ] = vals->idx
+
+  to delete a value by key, we:
+    hash the key
+    array_delete( keys, array_find( keys, key ) )
+    array_delete( vals, idxs [ hash_obj(key) ] )
+    idxs[ hash_obj(key) ] = -1
+    resize idxs to be as small as possible
+
+  to find a key or value by value, we:
+    binary search the list of pairs of values
+    use the hash value from the search to get the value in idxs
+    hash each value in keys until we find the one matching
+
+
+*/
 struct st_hash_t {
   array_t* keys;
   array_t* vals;
-  size_t   len;
 
-  size_t   uid;
+  ssize_t* idxs;
+  size_t   idxs_len;
+
+  OBJ_UID_SLOT;
 };
 
 struct st_obj_t {
@@ -74,19 +176,22 @@ struct st_obj_t {
   union {
     F_t*      f;
     number_t* num;
+    fixwid_t* fwi;
     string_t* str;
     point_t*  pt;
     shape_t*  sp;
     func_t*   fnc;
     array_t*  ary;
     hash_t*   hsh;
+    pair_t*   cel;
   };
-  size_t uid;
+
+  OBJ_UID_SLOT;
 };
 
 
 
-void object_error (objerror_t errt, const char* const info, const bool fatal);
+void object_error (objerror_t, const char* const, const bool);
 
 void object_error (objerror_t errt, const char* const info, const bool fatal) {
   pfn();
@@ -127,7 +232,7 @@ bool     array_equals (const array_t* const a, const array_t* const b);
 bool    array_isempty (const array_t* const a);
 void     array_resize (array_t* const a, const ssize_t new_len);
 void     array_delete (array_t* const a, const ssize_t idx);
-void     array_append (array_t* const a, const object_t* const o, const ssize_t idx);
+void     array_append (array_t* const a, const object_t* const o);
 void   array_destruct (array_t* const a);
 
 // provided by string.h
@@ -137,16 +242,30 @@ void  string_destruct (string_t* s);
 bool   string_isempty (const string_t* const s);
 
 // provided by hash.h
-hash_t*    hash_new (const array_t* const keys, const array_t* const vals, const size_t len);
-hash_t*   hash_copy (const hash_t* const h);
-char*      hash_see (const hash_t* const h);
-object_t*  hash_get (const hash_t* const h, const object_t* const key, bool* ok);
-bool    hash_equals (const hash_t* const a, const hash_t* const b);
-bool   hash_isempty (const hash_t* const h);
-void       hash_set (const hash_t* const h, const object_t* const key);
-void    hash_delete (const hash_t* const h, const object_t* const key);
-void    hash_resize (hash_t* h, const size_t );
-void  hash_destruct (hash_t* h);
+hash_t* hash_new_skele (void);
+hash_t*   hash_new_boa (const array_t* const keys, const array_t* const vals, const size_t len);
+hash_t*      hash_copy (const hash_t* const h);
+char*         hash_see (const hash_t* const h);
+object_t*     hash_get (const hash_t* const h, const object_t* const key, bool* ok);
+array_t*  hash_getvals (const hash_t* const h);
+bool       hash_equals (const hash_t* const a, const hash_t* const b);
+bool      hash_isempty (const hash_t* const h);
+bool          hash_add (hash_t* const h, const object_t* const key, const object_t* val);
+bool    hash_keyexists (const hash_t* const h, const object_t* const key);
+bool       hash_exists (const hash_t* const h, const object_t* const key);
+void       hash_delete (hash_t* const h, const object_t* const key);
+void       hash_resize (hash_t* h, const size_t new_len);
+void     hash_destruct (hash_t* h);
+
+// provided by pair.h
+// yes, it's cons, but the idiomatic thing here is typename_new
+pair_t*   pair_new (const object_t* const car, const object_t* const cdr);
+pair_t*  pair_copy (const pair_t* const p);
+void pair_destruct (pair_t* const p);
+char*     pair_see (const pair_t* const p);
+object_t* pair_car (const pair_t* const p);
+object_t* pair_cdr (const pair_t* const p);
+bool   pair_equals (const pair_t* const a, const pair_t* const b);
 
 // provided by number.h
 number_t*  number_new (const long double val);
@@ -157,3 +276,8 @@ bool        number_gt (const number_t* const n);
 bool        number_lt (const number_t* const n);
 void  number_destruct (number_t* n);
 
+// provided by fixdsz.h
+fixwid_t*  fixwid_new (const size_t n, bool sign);
+fixwid_t* fixwid_copy (const fixwid_t* const n);
+char*      fixwid_see (const fixwid_t* const n);
+bool    fixwid_equals (const fixwid_t* const a, const fixwid_t* const b);

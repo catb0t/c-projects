@@ -10,7 +10,9 @@ array_t* array_new (const object_t* const * const objs, const ssize_t len) {
 
   if (-1 != len) {
     for (ssize_t i = 0; i < len; i++) {
-      array->data[i] = object_copy(objs[i]);
+      object_t* o = object_copy(objs[i]);
+      array_append(array, o);
+      object_destruct(o);
     }
 
   }
@@ -33,7 +35,7 @@ void array_destruct (array_t* const array) {
 
   if ( ! array_isempty(array) ) {
     for (ssize_t i = 0; i < array->idx; i++) {
-      object_destruct( (array->data) [i]);
+      object_destruct( array_get(array, i, NULL) );
     }
   }
   if (NULL != array->data) {
@@ -44,6 +46,7 @@ void array_destruct (array_t* const array) {
 
 bool array_isempty (const array_t* const a) {
   pfn();
+
   return -1 == a->idx || (NULL == a->data);
 }
 
@@ -71,11 +74,29 @@ void array_delete (array_t* const a, const ssize_t idx) {
     a->data[i - 1] = a->data[i];
   }
 
-  array_resize(a, i + idx);
+  array_resize(
+    a,
+    un2signed(udifference(
+      signed2un(i),
+      signed2un(idx)
+    ))
+  );
 
 }
 
-//void array_append (array_t* const a, const object_t* const o, const ssize_t idx) {}
+//void array_insert (array_t* const a, const object_t* const o, const ssize_t idx) {}
+
+void array_append (array_t* const a, const object_t* const o) {
+
+  dbg_prn("b4 idx: %zd\n", a->idx);
+
+  ++(a->idx);
+  a->data = realloc(a->data, (sizeof (object_t *) * signed2un(a->idx + 1)) + 2);
+
+  dbg_prn("after idx: %zd\n", a->idx);
+
+  (a->data) [a->idx] = object_copy(o);
+}
 
 char* array_see (const array_t* const a) {
 
@@ -91,7 +112,7 @@ char* array_see (const array_t* const a) {
   }
 
   for (ssize_t i = 0; i < a->idx; i++) {
-    object_t* this = (a->data) [a->idx];
+    object_t* this = array_get(a, i, NULL);
     char*  strthis = object_repr(this);
     size_t thislen = safestrnlen(strthis);
 
@@ -110,7 +131,7 @@ char* array_see (const array_t* const a) {
 ssize_t array_find (const array_t* const a, const object_t* const obj) {
 
   for (ssize_t i = 0; i < a->idx; i++) {
-    if ( object_equals(obj, (a->data) [i] )) {
+    if ( object_equals(obj, array_get(a, i, NULL) )) {
       return i;
     }
   }
@@ -128,7 +149,7 @@ object_t* array_get (const array_t* const a, const ssize_t idx, bool* ok) {
   }
 
   size_t uidx = signed2un(idx);
-  return (a->data) [uidx];
+  return object_copy( (a->data) [uidx] );
 }
 
 bool array_equals (const array_t* const a, const array_t* const b) {
@@ -141,11 +162,13 @@ bool array_equals (const array_t* const a, const array_t* const b) {
   }
 
   for (ssize_t i = 0; i < a->idx; i++) {
-    object_t *oa = a->data[i],
-             *ob = b->data[i];
+    object_t *oa = array_get(a, i, NULL),
+             *ob = array_get(b, i, NULL);
     if ( ! object_equals(oa, ob) ) {
+      object_destruct(oa), object_destruct(ob);
       return false;
     }
+    object_destruct(oa), object_destruct(ob);
   }
 
   return true;

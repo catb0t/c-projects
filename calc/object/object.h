@@ -11,6 +11,7 @@ typedef long double number_t;
 #include "string.h"
 #include "hash.h"
 #include "number.h"
+#include "pair.h"
 
 object_t* nothing_new (void) {
   pfn();
@@ -40,38 +41,51 @@ object_t* object_new (const objtype_t valtype, const void* const val) {
       break;
     }
     case t_number: {
-      obj->num = number_copy( (const number_t* const) val);
+      obj->num = number_copy( (const number_t * const) val);
+      break;
+    }
+    case t_realint: {
+      //obj->fwi = fixwid_new(const size_t n, bool sign)
+      break;
+    }
+    case t_fixwid: {
+      obj->fwi = fixwid_copy( (const fixwid_t * const) val);
       break;
     }
     case t_string: {
-      obj->str = string_copy( (const string_t *) val);
+      obj->str = string_copy( (const string_t * const) val);
       break;
     }
     case t_realchar: {
-      obj->str  = string_new( (const char *) val);
+      obj->str  = string_new( (const char * const) val);
       obj->type = t_string;
       break;
     }
     case t_point: {
-      obj->pt  = point_copy( (const point_t *) val);
+      obj->pt  = point_copy( (const point_t * const) val);
       break;
     }
     case t_shape: {
-      obj->sp  = shape_copy( (const shape_t *) val);
+      obj->sp  = shape_copy( (const shape_t * const) val);
       break;
     }
     case t_func: {
       obj->fnc = safemalloc(sizeof (func_t));
-      obj->fnc->code = ((const func_t *) val)->code;
-      obj->fnc->name = ((const func_t *) val)->name;
+      obj->fnc->code = ((const func_t * const) val)->code;
+      obj->fnc->name = ((const func_t * const) val)->name;
       break;
     }
     case t_array: {
-      obj->ary = array_copy( (const array_t *) val);
+      obj->ary = array_copy( (const array_t * const) val);
       break;
     }
     case t_hash: {
-      obj->hsh = hash_copy( (const hash_t *) val);
+      obj->hsh = hash_copy( (const hash_t * const) val);
+      break;
+    }
+    case t_pair: {
+      obj->cel = pair_copy( (const pair_t * const) val);
+      break;
     }
   }
 
@@ -100,14 +114,21 @@ void** object_getval (const object_t* const obj) {
   void** types[] = {
     (void **) (obj->f),
     (void **) (obj->num),
+    (void **) (obj->fwi),
     (void **) (obj->str),
     (void **) (obj->pt),
     (void **) (obj->sp),
     (void **) (obj->fnc),
     (void **) (obj->ary),
     (void **) (obj->hsh),
+    (void **) (obj->cel),
     (void *)  (obj->str->data) // t_realchar returns str's realchar
   };
+
+  _Static_assert(
+    ( (sizeof types) / (sizeof (char *)) == NUM_OBJTYPES),
+    "getval types[] has too few or too many values"
+  );
 
   return types[obj->type];
 }
@@ -117,17 +138,22 @@ void object_destruct (object_t* const obj) {
 
   report_dtor(obj);
 
+  if ( t_number == obj->type) {
+    printf("DESTRUCT NUMBER ID: %zu\n", obj->num->uid);
+  }
 
   switch (obj->type) {
     case t_array: {
       array_destruct(obj->ary);
       break;
     }
+
     case t_func: {
       safefree(obj->fnc->code);
       safefree(obj->fnc->name);
       break;
     }
+
     case t_realchar:
     case t_string: {
       string_destruct(obj->str);
@@ -148,12 +174,14 @@ char* objtype_repr (const objtype_t t) {
   static const char* const obj_strings [] = {
     "F_t",
     "number_t",
+    "fixwid_t",
     "string_t",
     "point_t",
     "shape_t",
     "func_t",
     "array_t",
     "hash_t",
+    "pair_t",
     "char* (string_t.data)",
   };
 
@@ -188,6 +216,11 @@ char* object_repr (const object_t* const obj) {
       break;
     }
 
+    case t_fixwid: {
+      buf = fixwid_see(obj->fwi);
+      break;
+    }
+
     case t_realchar: // fallthrough
     case t_string: {
       size_t buflen = sizeof (char) * obj->str->len;
@@ -218,6 +251,9 @@ char* object_repr (const object_t* const obj) {
     }
     case t_hash: {
       buf = hash_see(obj->hsh);
+    }
+    case t_pair: {
+      buf = pair_see(obj->cel);
     }
   }
 
@@ -250,11 +286,13 @@ bool object_equals (const object_t* const a, const object_t* const b) {
       return false;
     }
 
+    case t_fixwid: return fixwid_equals(a->fwi, b->fwi);
     case t_number: return a->num == b->num;
     case t_point:  return point_equals(a->pt, b->pt);
     case t_shape:  return shape_equals(a->sp, b->sp);
     case t_hash:   return hash_equals(a->hsh, b->hsh);
     case t_array:  return array_equals(a->ary, b->ary);
+    case t_pair:   return pair_equals(a->cel, b->cel);
 
     case t_func: {
       bool same;
