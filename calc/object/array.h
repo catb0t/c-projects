@@ -109,27 +109,28 @@ char* array_see (const array_t* const a) {
   char *outbuf = safemalloc(10),
        *bufptr = outbuf;
 
-  str_append(bufptr, 3, "%s", "{ ");
+  str_append(bufptr, 3, "%s ", "{");
 
   if ( array_isempty(a) ) {
-    str_append(bufptr, 3, "%s", "}\n");
+    str_append(bufptr, 3, "%s\n", "}");
     return outbuf;
   }
 
-  size_t total_len = 3;
+  size_t total_len = safestrnlen(outbuf);
 
   for (ssize_t i = 0; i < (a->idx + 1); i++) {
-    object_t* this = array_get_copy(a, i, NULL);
-    char*  strthis = object_repr(this);
-    size_t thislen = safestrnlen(strthis) + 3;
+    // but a reference
+    object_t** this = array_get_ref(a, i, NULL);
+    char*   strthis = object_repr(*this);
+    size_t  tlen    = safestrnlen(strthis) + 2;
 
-    outbuf     = realloc(outbuf, total_len + thislen);
-    bufptr     = outbuf + (total_len - 1);
+    outbuf = realloc(outbuf, total_len + tlen);
+    bufptr = outbuf + total_len;
 
-    str_append(bufptr, thislen, "%s ", strthis);
-    total_len += thislen;
+    str_append(bufptr, tlen, "%s ", strthis);
+    total_len = safestrnlen(outbuf);
 
-    object_destruct(this), safefree(strthis);
+    safefree(strthis);
   }
 
   // for my own sanity
@@ -138,7 +139,7 @@ char* array_see (const array_t* const a) {
   outbuf  = realloc(outbuf, total_len + 3);
 
   bufptr  = outbuf + total_len;
-  str_append(bufptr, 3, "%s", "}\n");
+  str_append(bufptr, 3, "%s\n", "}");
 
   return outbuf;
 }

@@ -358,7 +358,7 @@ char*  str_repeat (
 
 // safestrnlen -- find the length of a string, defaulting to SHORT_INSTR, without segfaulting
 __PURE_FUNC
-size_t safestrnlen (const char* str) {
+size_t safestrnlen (const char* const str) {
   pfn();
 
   // it seems gnu strnlen segfaults on null pointer
