@@ -18,8 +18,6 @@ typedef long double number_t;
   nothing_new returns a new "nothing" object
   it is the only value which represents a boolean false
   in a rather lispy / functional-inspired way.
-
-
 */
 object_t* nothing_new (void) {
   pfn();
@@ -29,6 +27,13 @@ object_t* nothing_new (void) {
   return False;
 }
 
+/*
+  object_new returns a new object with the given objtype_t from the val argument
+  which must be either a heap allocated object type structure pointer
+  or a char* or ssize_t* pointer, if valtype is t_realchar or t_realint
+
+  if valtype is t_F or val is NULL, a new false singleton will be returned.
+*/
 object_t* object_new (const objtype_t valtype, const void* const val) {
   pfn();
 
@@ -41,7 +46,7 @@ object_t* object_new (const objtype_t valtype, const void* const val) {
 
   switch (obj->type) {
     case NUM_OBJTYPES: {
-      object_error(NOT_A_TYPE, "object_repr", true);
+      object_error\([A-Z_]+, __func__, .*\);
       break;
     }
     case t_F: {
@@ -103,6 +108,12 @@ object_t* object_new (const objtype_t valtype, const void* const val) {
   return obj;
 }
 
+/*
+  returns a new object constructed with the same values and type as the argument.
+  this is a value-only copy, that is, obj->uid will not be copied; moreover
+  because it calls the constructor explicitly rather than say, memcpy, there is no
+  reason it will have all the same bytes.
+*/
 object_t* object_copy (const object_t* const obj) {
   pfn();
 
@@ -113,6 +124,10 @@ object_t* object_copy (const object_t* const obj) {
   return object_new(obj->type, object_getval(obj));
 }
 
+/*
+  object_getval returns a reference to a heap-allocated object's "active" value
+  this reads obj->type to determine which slot of the anonymous union to read
+*/
 void** object_getval (const object_t* const obj) {
   pfn();
 
@@ -143,6 +158,12 @@ void** object_getval (const object_t* const obj) {
   return types[obj->type];
 }
 
+/*
+  destructs an object by calling its type's specific destructor and then freeing the
+  object itself.
+
+  mutates obj, such that it may be NULL or in an invalid state after a call.
+*/
 void object_destruct (object_t* const obj) {
   pfn();
 
@@ -180,6 +201,7 @@ void object_destruct (object_t* const obj) {
 
     case t_fixwid: {
       fixwid_destruct(obj->fwi);
+      break;
     }
 
     default: {
@@ -190,6 +212,11 @@ void object_destruct (object_t* const obj) {
   safefree(obj);
 }
 
+/*
+  convenience version of object_destruct which destructs an argc number of object argument objects by reference
+  rather than calling object_destruct twice or more times for objects in the same
+  scope, just call this.
+*/
 void object_dtor_args (size_t argc, ...) {
   va_list vl;
   va_start(vl, argc);
@@ -207,6 +234,9 @@ void object_dtor_args (size_t argc, ...) {
   va_end(vl);
 }
 
+/*
+  return an object's typename as a string
+*/
 char* objtype_repr (const objtype_t t) {
   pfn();
 
@@ -221,7 +251,7 @@ char* objtype_repr (const objtype_t t) {
     "array_t",
     "hash_t",
     "pair_t",
-    "s?size_t (fixwid_t.svalue)",
+    "ssize_t (fixwid_t.value)",
     "char* (string_t.data)",
   };
 
@@ -239,6 +269,10 @@ char* objtype_repr (const objtype_t t) {
   return out;
 }
 
+/*
+  return a string representation of an object's data
+  for most types, this calls their typename_see function
+*/
 char* object_repr (const object_t* const obj) {
   pfn();
 
@@ -247,7 +281,7 @@ char* object_repr (const object_t* const obj) {
     case NUM_OBJTYPES: {
       buf = NULL;
       // you can't repr that, you can't fix stupid
-      object_error(NOT_A_TYPE, "object_repr", true);
+      object_error\([A-Z_]+, __func__, .*\);
       break;
     }
     case t_F: {
@@ -308,19 +342,37 @@ char* object_repr (const object_t* const obj) {
   return buf;
 }
 
-// value equality
+/*
+  object_equals tests if two objects, possibly of disparate type, are equal by value
+  for types other than t_realint, t_realchar, t_fixwid and t_string, typename_equals
+  (or, for arithmetic types, typename_eq) is called
+
+  if the arguments are of disparate type, then they will compare false, except
+  t_realint with t_fixwid and t_realchar with t_string, in which case obj->type is obviously lying about its actual type (or someone compiled without warnings and
+  violated strict aliasing / alignment rules)
+*/
 bool object_equals (const object_t* const a, const object_t* const b) {
   pfn();
 
-  // can only compare these objects of different types
+  // can only compare these specific disparate types
   if (a->type != b->type) {
     if (
       ( a->type == t_realchar || a->type == t_string )
       && ( b->type == t_realchar || b->type == t_string )
     ) {
       return strcmp(a->str->data, b->str->data) == 0;
+
+    } else if (
+      ( a->type == t_realint || a->type == t_fixwid )
+      && ( b->type == t_realint || b->type == t_fixwid )
+    ) {
+      return a->fwi->value == b->fwi->value;
+
+    } else {
+      return false;
+
     }
-    return false;
+
   }
 
   // False always compares equal
@@ -335,12 +387,10 @@ bool object_equals (const object_t* const a, const object_t* const b) {
 
   switch (a->type) {
     case NUM_OBJTYPES: {
-      object_error(NOT_A_TYPE, "object_equals", false);
+      object_error\([A-Z_]+, __func__, .*\);
       return false;
     }
 
-    // fallthrough, since it must be lying
-    case t_realint: oa->type = t_fixwid, ob->type = t_fixwid;
     case t_fixwid:  same =     fixwid_eq(oa->fwi, ob->fwi); break;
     case t_number:  same =     number_eq(a->num, b->num);   break;
     case t_point:   same =  point_equals(a->pt, b->pt);     break;
@@ -360,7 +410,7 @@ bool object_equals (const object_t* const a, const object_t* const b) {
     case t_string:
     case t_realchar: // already cmpd
     case t_F: {
-      // always compares equal with itself
+      // satisfy the compiler
       same = true;
     }
   }
@@ -370,6 +420,15 @@ bool object_equals (const object_t* const a, const object_t* const b) {
   return same;
 }
 
+/*
+  object_id_equals returns whether the arguments alias the same heap-allocated object
+  it's very easy to trick this function because it relies on only that the objects
+  share a type (and therefore a constructor) and that their uid slots are the same.
+
+  if there is no funny business, then if they share a constructor and have the same
+  ID, they must refer to the same object, or be exact ("deep") copies of the same
+  object.
+*/
 bool object_id_equals (const object_t* const a, const object_t* const b) {
   pfn();
 

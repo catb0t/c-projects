@@ -4,7 +4,14 @@
 
 #include "objcommon.h"
 
+
+/*
+  returns a newly constructed, unique array object.
+  if objs is NULL or len is -1, an empty array will be returned, instead of building a new one by copying the objects from the first argument.
+*/
 array_t* array_new (const object_t* const * const objs, const ssize_t len) {
+  pfn();
+
   array_t* array = safemalloc( sizeof (array_t) );
   array->data    = safemalloc( sizeof (object_t *) );
 
@@ -23,13 +30,25 @@ array_t* array_new (const object_t* const * const objs, const ssize_t len) {
   return array;
 }
 
+/*
+  copies an array object, by constructing a new one with the argument's
+  underlying object** array
+
+  copy constructors are called all the way down, so the new object is unique
+*/
 array_t* array_copy (const array_t* const a) {
   pfn();
 
   return array_new( (const object_t* const * const) a->data, a->idx);
 }
 
+/*
+  free, by reference, all of an array's items, then the object itself
+
+  mutates its argument, because it will be in an invalid state hereafter
+*/
 void array_destruct (array_t* const array) {
+  pfn();
 
   report_dtor(array);
 
@@ -47,12 +66,21 @@ void array_destruct (array_t* const array) {
   safefree(array);
 }
 
+/*
+  tests whether an array contains no elements or if its data pointer is NULL
+  effectively, there is little difference, except in referencing NULL pointers.
+*/
 bool array_isempty (const array_t* const a) {
   pfn();
 
   return -1 == a->idx || (NULL == a->data);
 }
 
+/*
+  resize an array to the new size. implemented with realloc(2), so if new_idx is
+  smaller than a->idx, the objects past will disappear and their destructors will
+  not be called.
+*/
 void array_resize (array_t* const a, const ssize_t new_idx) {
   if ( -1 == new_idx ) {
     a->data = realloc(a->data, 0);
@@ -64,43 +92,88 @@ void array_resize (array_t* const a, const ssize_t new_idx) {
   a->data = realloc(a->data, sizeof (object_t*) * signed2un(new_idx));
 }
 
+/*
+  remove an element from an array and shrink it by one.
+
+  to remove an element from an array:
+    if the array is empty, return
+    if idx is the same as array->idx, return
+
+    shift elements left by one by changing the pointers, not copying them
+    resize the array by -1.
+*/
 void array_delete (array_t* const a, const ssize_t idx) {
 
-  if (-1 == idx || idx == a->idx) {
-    array_resize(a, idx);
+  if ( idx > a->idx ) {
+    object_error(INDEXERROR, __func__, false);
+    return;
+  }
+
+  if ( array_isempty(a) || idx == a->idx ) {
+    // no point continuing
     return;
   }
 
   ssize_t i;
   for (i = idx + 1; i < (a->idx); i++) {
-    // a copy construction
-    a->data[i - 1] = a->data[i];
+    // change pointer (?)
+    (a->data) [i - 1] = (a->data) [i];
   }
 
-  array_resize(
-    a,
-    un2signed(udifference(
-      signed2un(i),
-      signed2un(idx)
-    ))
-  );
+  array_resize(a, a->idx - 1);
 
 }
 
-//void array_insert (array_t* const a, const object_t* const o, const ssize_t idx) {}
+/*
+  insert an element anywhere into an array, growing it by one in the process.
 
+  to insert an element into an array:
+    if the array is empty, just append
+
+    resize the array by one
+    shift elements left by one
+    put the new element at its index
+*/
+void array_insert (array_t* const a, const object_t* const o, const ssize_t idx) {
+
+  if ( array_isempty(a) || -1 == idx ) {
+    array_append(a, o);
+    return;
+  }
+
+  array_resize(a, a->idx + 1);
+
+  ssize_t i;
+  for (i = a->idx; i > idx; i--) {
+    // change pointer (?)
+    (a->data) [i] = (a->data) [i - 1];
+  }
+
+  (a->data) [idx] = object_copy(o);
+}
+
+/*
+  append an element to an array, growing it by one in the process
+
+  to append:
+    increment idx
+    realloc by one
+    put the new object at the end.
+*/
 void array_append (array_t* const a, const object_t* const o) {
 
-  dbg_prn("b4 idx: %zd\n", a->idx);
-
   ++(a->idx);
-  a->data = realloc(a->data, (sizeof (object_t *) * signed2un(a->idx + 1)) + 2);
-
-  dbg_prn("after idx: %zd\n", a->idx);
+  a->data = realloc(a->data, (sizeof (object_t *) * signed2un(a->idx + 1) ));
 
   (a->data) [a->idx] = object_copy(o);
 }
 
+
+/*
+  return a string representation of the given array object
+
+  hopefully, roundtrips.
+*/
 // WARN: POINTER MATH INCOMING
 // thankfully, without threatening aliasing or alignment
 // because we are working only with char and size_t
@@ -119,7 +192,7 @@ char* array_see (const array_t* const a) {
   size_t total_len = safestrnlen(outbuf);
 
   for (ssize_t i = 0; i < (a->idx + 1); i++) {
-    // but a reference
+    // 'tis but a reference
     object_t** this = array_get_ref(a, i, NULL);
     char*   strthis = object_repr(*this);
     size_t  tlen    = safestrnlen(strthis) + 2;
@@ -144,10 +217,14 @@ char* array_see (const array_t* const a) {
   return outbuf;
 }
 
+/*
+  find an object in an array, by simply checking each for equality
+  not a binary search.
+*/
 ssize_t array_find (const array_t* const a, const object_t* const obj) {
 
   for (ssize_t i = 0; i < a->idx; i++) {
-    if ( object_equals(obj, array_get_copy(a, i, NULL) )) {
+    if ( object_equals(obj, *array_get_ref(a, i, NULL) )) {
       return i;
     }
   }
@@ -155,6 +232,16 @@ ssize_t array_find (const array_t* const a, const object_t* const obj) {
   return -1;
 }
 
+/*
+  copy an element from an array and return it.
+
+  if the array is empty or some error occurred, ok will be false and a new false object will be returned.
+
+  otherwise, ok will be true and a new object is copy constructed and returned.
+
+  if ok is NULL, it will be ignored (useful in loops when it is known that the
+  index will never go out of bounds).
+*/
 object_t* array_get_copy (const array_t* const a, const ssize_t idx, bool* ok) {
 
   if (NULL != ok) { *ok = true; }
@@ -164,10 +251,21 @@ object_t* array_get_copy (const array_t* const a, const ssize_t idx, bool* ok) {
     return nothing_new();
   }
 
-  size_t uidx = signed2un(idx);
-  return object_copy( (a->data) [uidx] );
+  return object_copy( *array_get_ref(a, idx, ok) );
 }
 
+/*
+  return a reference to an object in an array.
+
+  realistically this does little more than add the array's data address to the
+  element's offset.
+
+  if some error occurred, ok will be false and NULL is returned.
+  otherwise, ok is true and a reference to the original object is given.
+
+  if ok is NULL, then it will be ignored (useful in loops when it is known that the
+  index will never go out of bounds).
+*/
 object_t** array_get_ref (const array_t* const a, const ssize_t idx, bool* ok) {
 
   if (NULL != ok) { *ok = true; }
@@ -181,6 +279,16 @@ object_t** array_get_ref (const array_t* const a, const ssize_t idx, bool* ok) {
   return &( (a->data) [uidx] );
 }
 
+/*
+  test if two arrays are equal by value.
+
+  this is done by comparing each element in one with each element in another, and
+  returning when a difference is found.
+
+  arrays of disparate length cannot be equal.
+
+  references to each object from the arrays are given to object_equals.
+*/
 bool array_equals (const array_t* const a, const array_t* const b) {
   if ( array_isempty(a) && array_isempty(b) ) {
     return true;
@@ -191,13 +299,12 @@ bool array_equals (const array_t* const a, const array_t* const b) {
   }
 
   for (ssize_t i = 0; i < a->idx; i++) {
-    object_t *oa = array_get_copy(a, i, NULL),
-             *ob = array_get_copy(b, i, NULL);
-    if ( ! object_equals(oa, ob) ) {
-      object_destruct(oa), object_destruct(ob);
+    // 'tis but a reference
+    object_t **oa = array_get_ref(a, i, NULL),
+             **ob = array_get_ref(b, i, NULL);
+    if ( ! object_equals(*oa, *ob) ) {
       return false;
     }
-    object_destruct(oa), object_destruct(ob);
   }
 
   return true;

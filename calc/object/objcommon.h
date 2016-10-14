@@ -7,6 +7,7 @@
 #include "../../common.h"
 #include "../../points/points.h"
 
+#define OBJ_UID_SLOT size_t uid
 #define LD_EPSILON 0.001L // this is how to compare floating point, right??
 
 typedef enum {
@@ -28,6 +29,9 @@ typedef enum {
 typedef enum {
   NOT_A_TYPE,
   KEYERROR,
+  INDEXERROR,
+  PTRMATH_BUG,
+  NUM_ERRTYPES
 } objerror_t;
 
 // object object
@@ -156,8 +160,8 @@ struct st_pair_t {
     pair{ 'b' 7 }
     pair{ 'c' 9 }
   }
-  hash->idxs = { -1 -1 -1 -1 -1  0 -1  1 -1  2 }
-                 0  1  2  3  4  5  6  7  8  9
+  hash->idxs = array{ -1 -1 -1 -1 -1  0 -1  1 -1  2 }
+                      0  1  2  3  4  5  6  7  8  9
 
   to get an value by key, we:
     hash the key
@@ -219,17 +223,27 @@ void object_error (objerror_t, const char* const, const bool);
 void object_error (objerror_t errt, const char* const info, const bool fatal) {
   pfn();
 
-  if (NOT_A_TYPE == errt) {
-    fprintf(stderr, "%s: NUM_OBJTYPES isn't a real type, dummy. Don't do that.\n"
-      "Have you considered trying to match wits with a rutabaga?",
-      info
-    );
-  } else {
-    fprintf(stderr, "%s:%s\n", "some object-error occurred...", info);
-  }
+  static const char* const errmsgs[] = {
+    "NUM_OBJTYPES isn't a real type, dummy. Don't do that.\n"
+      "Have you considered trying to match wits with a rutabaga?", // NOT_A_TYPE
+    "no such key",         // KEYERROR
+    "index out of bounds", // INDEXERROR
+    "pointer math error (invalid read or write) -- probably a bug", // PTRMATH_BUG
+  };
+
+  _Static_assert(
+    (sizeof (errmsgs) / sizeof (char*) ) == NUM_ERRTYPES,
+    "too many or too few error strings in object_error"
+  );
+
+  fprintf(stderr, "%s: %s", info, errmsgs[errt]);
 
   if ( fatal ) {
-    abort();
+    fprintf(
+      stderr,
+      "That error was fatal, aborting.\n\n"
+      "I'm melting!"
+    );
   }
 
 }
@@ -255,6 +269,7 @@ object_t** array_get_ref (const array_t* const a, const ssize_t idx, bool* ok);
 ssize_t       array_find (const array_t* const a, const object_t* const obj);
 bool        array_equals (const array_t* const a, const array_t* const b);
 bool       array_isempty (const array_t* const a);
+void        array_insert (array_t* const a, const object_t* const o, const ssize_t idx);
 void        array_resize (array_t* const a, const ssize_t new_len);
 void        array_delete (array_t* const a, const ssize_t idx);
 void        array_append (array_t* const a, const object_t* const o);
@@ -267,30 +282,33 @@ bool   string_isempty (const string_t* const s);
 void  string_destruct (string_t* const s);
 
 // provided by hash.h
-hash_t* hash_new_skele (void);
-hash_t*   hash_new_boa (const array_t* const keys, const array_t* const vals, const size_t len);
-hash_t*      hash_copy (const hash_t* const h);
-char*         hash_see (const hash_t* const h);
-object_t*     hash_get (const hash_t* const h, const object_t* const key, bool* ok);
+hash_t*  hash_new_skele (void);
+hash_t*    hash_new_boa (const array_t* const keys, const array_t* const vals, const size_t len);
+hash_t*       hash_copy (const hash_t* const h);
+char*          hash_see (const hash_t* const h);
+object_t* hash_get_copy (const hash_t* const h, const object_t* const key, bool* ok);
+object_t** hash_get_ref (const hash_t* const h, const object_t* const key, bool* ok);
 array_t*  hash_getvals (const hash_t* const h);
-bool       hash_equals (const hash_t* const a, const hash_t* const b);
-bool      hash_isempty (const hash_t* const h);
-bool          hash_add (hash_t* const h, const object_t* const key, const object_t* val);
-bool    hash_keyexists (const hash_t* const h, const object_t* const key);
-bool       hash_exists (const hash_t* const h, const object_t* const key);
-void       hash_delete (hash_t* const h, const object_t* const key);
-void       hash_resize (hash_t* const h, const size_t new_len);
-void     hash_destruct (hash_t* const h);
+bool        hash_equals (const hash_t* const a, const hash_t* const b);
+bool       hash_isempty (const hash_t* const h);
+bool           hash_add (hash_t* const h, const object_t* const key, const object_t* val);
+bool     hash_keyexists (const hash_t* const h, const object_t* const key);
+bool        hash_exists (const hash_t* const h, const object_t* const key);
+void        hash_delete (hash_t* const h, const object_t* const key);
+void      hash_destruct (hash_t* const h);
+void     hash_recompute (const hash_t* h);
 
 // provided by pair.h
 // yes, it's cons, but the idiomatic thing here is typename_new
-pair_t*   pair_new (const object_t* const car, const object_t* const cdr);
-pair_t*  pair_copy (const pair_t* const p);
-char*     pair_see (const pair_t* const p);
-object_t* pair_car (const pair_t* const p);
-object_t* pair_cdr (const pair_t* const p);
-bool   pair_equals (const pair_t* const a, const pair_t* const b);
-void pair_destruct (pair_t* const p);
+pair_t*         pair_new (const object_t* const car, const object_t* const cdr);
+pair_t*        pair_copy (const pair_t* const p);
+char*           pair_see (const pair_t* const p);
+object_t*  pair_car_copy (const pair_t* const p);
+object_t*  pair_cdr_copy (const pair_t* const p);
+object_t** pair_car_ref  (const pair_t* const p);
+object_t** pair_cdr_ref  (const pair_t* const p);
+bool         pair_equals (const pair_t* const a, const pair_t* const b);
+void       pair_destruct (pair_t* const p);
 
 // provided by number.h
 number_t*  number_new (const long double val);

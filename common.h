@@ -45,7 +45,6 @@
 
 #define str_append(dest, len, fmt, ...) (dest) += snprintf((dest), (len), (fmt), (__VA_ARGS__));
 
-
 #define report_ctor(obj) \
   static size_t uid = 0; \
   ++uid;                 \
@@ -53,9 +52,6 @@
   dbg_prn("ctor %s #%zu\n", #obj, uid)
 
 #define report_dtor(obj) dbg_prn("dtor %s #%zu\n", #obj, obj->uid)
-
-
-#define OBJ_UID_SLOT size_t uid
 
 #undef strdup
 #pragma GCC poison strcpy strdup sprintf gets atoi // poison unsafe functions
