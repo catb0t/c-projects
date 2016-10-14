@@ -288,7 +288,7 @@ hash_t*       hash_copy (const hash_t* const h);
 char*          hash_see (const hash_t* const h);
 object_t* hash_get_copy (const hash_t* const h, const object_t* const key, bool* ok);
 object_t** hash_get_ref (const hash_t* const h, const object_t* const key, bool* ok);
-array_t*  hash_getvals (const hash_t* const h);
+array_t*   hash_getvals (const hash_t* const h);
 bool        hash_equals (const hash_t* const a, const hash_t* const b);
 bool       hash_isempty (const hash_t* const h);
 bool           hash_add (hash_t* const h, const object_t* const key, const object_t* val);
@@ -300,15 +300,15 @@ void     hash_recompute (const hash_t* h);
 
 // provided by pair.h
 // yes, it's cons, but the idiomatic thing here is typename_new
-pair_t*         pair_new (const object_t* const car, const object_t* const cdr);
-pair_t*        pair_copy (const pair_t* const p);
-char*           pair_see (const pair_t* const p);
-object_t*  pair_car_copy (const pair_t* const p);
-object_t*  pair_cdr_copy (const pair_t* const p);
-object_t** pair_car_ref  (const pair_t* const p);
-object_t** pair_cdr_ref  (const pair_t* const p);
-bool         pair_equals (const pair_t* const a, const pair_t* const b);
-void       pair_destruct (pair_t* const p);
+pair_t*        pair_new (const object_t* const car, const object_t* const cdr);
+pair_t*       pair_copy (const pair_t* const p);
+char*          pair_see (const pair_t* const p);
+object_t* pair_car_copy (const pair_t* const p);
+object_t* pair_cdr_copy (const pair_t* const p);
+object_t** pair_car_ref (pair_t* const p);
+object_t** pair_cdr_ref (pair_t* const p);
+bool        pair_equals (const pair_t* const a, const pair_t* const b);
+void      pair_destruct (pair_t* const p);
 
 // provided by number.h
 number_t*  number_new (const long double val);

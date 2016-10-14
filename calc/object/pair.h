@@ -34,8 +34,11 @@ char* pair_see (const pair_t* const p) {
   return buf;
 }
 
-object_t* pair_car (const pair_t* const p) { return object_copy(p->car); }
-object_t* pair_cdr (const pair_t* const p) { return object_copy(p->cdr); }
+object_t* pair_car_copy (const pair_t* const p) { return object_copy(p->car); }
+object_t* pair_cdr_copy (const pair_t* const p) { return object_copy(p->cdr); }
+
+object_t** pair_car_ref (pair_t* const p) { return &(p->car); }
+object_t** pair_cdr_ref (pair_t* const p) { return &(p->cdr); }
 
 bool   pair_equals (const pair_t* const a, const pair_t* const b) {
   return

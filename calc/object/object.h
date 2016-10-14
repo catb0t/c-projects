@@ -46,7 +46,7 @@ object_t* object_new (const objtype_t valtype, const void* const val) {
 
   switch (obj->type) {
     case NUM_OBJTYPES: {
-      object_error\([A-Z_]+, __func__, .*\);
+      object_error(NOT_A_TYPE, __func__, true);
       break;
     }
     case t_F: {
@@ -281,7 +281,7 @@ char* object_repr (const object_t* const obj) {
     case NUM_OBJTYPES: {
       buf = NULL;
       // you can't repr that, you can't fix stupid
-      object_error\([A-Z_]+, __func__, .*\);
+      object_error(NOT_A_TYPE, __func__, true);
       break;
     }
     case t_F: {
@@ -387,7 +387,7 @@ bool object_equals (const object_t* const a, const object_t* const b) {
 
   switch (a->type) {
     case NUM_OBJTYPES: {
-      object_error\([A-Z_]+, __func__, .*\);
+      object_error(NOT_A_TYPE, __func__, true);
       return false;
     }
 
@@ -407,6 +407,7 @@ bool object_equals (const object_t* const a, const object_t* const b) {
       break;
     }
 
+    case t_realint:
     case t_string:
     case t_realchar: // already cmpd
     case t_F: {
