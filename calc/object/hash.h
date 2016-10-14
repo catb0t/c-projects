@@ -33,27 +33,29 @@ hash_t* hash_new_boa (
   pfn();
 
   size_t
-    klen = signed2un(keys->idx),
-    vlen = signed2un(vals->idx);
+    klen = signed2un(keys->idx + 1),
+    vlen = signed2un(vals->idx + 1);
+
+  printf("%zu %zu %zu\n", klen, vlen, len);
 
   assert(
-      (klen == vlen)
-    + (klen == len)
-    + (vlen == len)
-    == 3
+    (klen == vlen)
+    && (klen == len)
+    && (vlen == len)
   );
 
-  hash_t* hash = hash_new_skele();
+  hash_t* hash = hash_new_skele(); // 1
 
   for (size_t i = 0; i < klen; i++) {
     object_t
-      *k = object_copy((keys->data) [i]),
-      *v = object_copy((vals->data) [i]);
+      *k = object_copy((keys->data) [i]), // 2
+      *v = object_copy((vals->data) [i]); // 3
 
     hash_add(hash, k, v);
-    object_destruct(k), object_destruct(v);
+    object_dtor_args(2, k, v); // ~2, ~3
   }
 
+  // 3 allocs, 2 frees, last free is caller's problem
   return hash;
 }
 
@@ -71,9 +73,13 @@ void  hash_destruct (hash_t* const hash) {
 hash_t*   hash_copy (const hash_t* const h) {
   pfn();
 
-  array_t* values = hash_getvals(h);
+  array_t* values = hash_getvals(h); // 1
 
-  return hash_new_boa(h->keys, values, signed2un(h->keys->idx));
+  // 2
+  hash_t* cp = hash_new_boa(h->keys, values, signed2un(h->keys->idx));
+
+  array_destruct(values); // ~1
+  return cp;
 }
 
 bool   hash_isempty (const hash_t* const h) {
@@ -82,12 +88,13 @@ bool   hash_isempty (const hash_t* const h) {
   return 0 == h->idxs_len;
 }
 
-Fnv32_t hash_obj (const object_t* const obj) {
+hashkey_t hash_obj (const object_t* const obj) {
   pfn();
 
-  char* buf = object_repr(obj);
-  Fnv32_t hval = fnv_32a_str(buf, FNV1_32A_INIT);
+  char* buf      = object_repr(obj);
+  hashkey_t hval = fnv_32a_str(buf, FNV1_32A_INIT);
   safefree(buf);
+
   return hval;
 }
 
@@ -99,7 +106,7 @@ object_t* hash_get (const hash_t* const h, const object_t* const key, bool* ok) 
   object_t *valpair, *finalval;
 
   kh       = hash_obj(key);
-  valpair  = array_get(h->vals, (h->idxs) [kh], ok); // 1
+  valpair  = array_get_copy(h->vals, (h->idxs) [kh], ok); // 1
   if (! ok) {
     object_destruct(valpair); // ~1
     return object_new(t_F, NULL);
@@ -116,23 +123,28 @@ object_t* hash_get (const hash_t* const h, const object_t* const key, bool* ok) 
 }
 
 array_t* hash_getvals (const hash_t* h) {
-  array_t* vs = array_new(NULL, -1);
+  pfn();
+
+  array_t* vs = array_new(NULL, -1); // 1
 
   size_t vlen = signed2un(h->vals->idx);
 
   for (size_t i = 0; i < vlen; i++) {
     object_t
-      *p   = array_get(vs, un2signed(i), NULL),
-      *car = pair_car( p->cel );
+      *p   = array_get_copy(vs, un2signed(i), NULL), // 2
+      *car = pair_car( p->cel );                // 3
 
     array_append(vs, car);
-    object_destruct(car), object_destruct(p);
+    object_destruct(car), object_destruct(p); // ~2, ~3
   }
 
+  // 3 allocs, 2 frees, last is for caller
   return vs;
 }
 
 bool hash_add (hash_t* const h, const object_t* const key, const object_t* const val) {
+  pfn();
+
   pair_t* newp;
   object_t *pairobj, *khobj;
   hashkey_t kh;
@@ -172,10 +184,14 @@ bool hash_add (hash_t* const h, const object_t* const key, const object_t* const
 }
 
 bool hash_keyexists (const hash_t* const h, const object_t* const key) {
-  return false;
+  pfn();
+
+  return -1 != array_find(h->keys, key);
 }
 
 bool hash_exists (const hash_t* const h, const object_t* const key) {
+  pfn();
+
   hashkey_t kh = hash_obj(key);
 
   if (kh > h->idxs_len) {

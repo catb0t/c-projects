@@ -4,8 +4,8 @@ void test (void);
 
 void test (void) {
 
-  array_t *titles = array_new(NULL, -1),
-          *fins   = array_new(NULL, -1);
+  array_t *titles = array_new(NULL, -1), // 1
+          *fins   = array_new(NULL, -1); // 2
 
   size_t count = 0;
 
@@ -13,38 +13,42 @@ void test (void) {
 
     printf("Enter a book's name: ");
 
-    char* namebuf = readln(MAX_STR_LEN);
+    char* namebuf = readln(MAX_STR_LEN); // 3
 
     printf("Completed? [y/n?] ");
 
-    char* cmplt   = readln(3);
+    char* cmplt   = readln(3); // 4
+
+    if ( (cmplt[0] == 4) || (namebuf[0] == 4) ) {
+      safefree(namebuf), safefree(cmplt); // ~3, ~4
+      break;
+    }
+
     bool finished = cmplt[0] == 'y';
 
-    number_t* n = number_new(1);
+    fixwid_t* n = fixwid_new(1); // 5
 
-    object_t *titleobj = object_new(t_realchar, (const void * const) namebuf),
-             *compobj  = finished ?
-                         object_new(t_number, (const void * const) n)
-                         : object_new(t_F, NULL);
+    // 6, 7
+    object_t
+      *titleobj = object_new(t_realchar, (const void * const) namebuf),
+      *compobj  = finished
+                ? object_new(t_fixwid, (const void * const) n)
+                : object_new(t_F, NULL);
 
     array_append(titles, titleobj);
     array_append(fins, compobj);
 
-    number_destruct(n);
-    object_destruct(titleobj), object_destruct(compobj);
+    fixwid_destruct(n); // ~5
+    object_dtor_args(2, titleobj, compobj); // ~6, 7
 
-    if ( (cmplt[0] == 4) || (namebuf[0] == 4) ) {
-      safefree(namebuf), safefree(cmplt);
-      break;
-    }
-    safefree(namebuf), safefree(cmplt);
+    safefree(namebuf), safefree(cmplt); // ~3, ~4
 
     ++count;
   }
 
-  hash_t* books = hash_new(titles, fins, count);
+  hash_t* books = hash_new_boa(titles, fins, count); // 8
 
-  hash_destruct(books);
+  hash_destruct(books); // ~8
 
-  array_destruct(titles), array_destruct(fins);
+  array_destruct(titles), array_destruct(fins); // ~1, ~2
 }

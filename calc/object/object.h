@@ -8,11 +8,19 @@ typedef long double number_t;
 #else
 
 #include "array.h"
-#include "string.h"
+#include "fixwid.h"
 #include "hash.h"
 #include "number.h"
 #include "pair.h"
+#include "string.h"
 
+/*
+  nothing_new returns a new "nothing" object
+  it is the only value which represents a boolean false
+  in a rather lispy / functional-inspired way.
+
+
+*/
 object_t* nothing_new (void) {
   pfn();
 
@@ -45,11 +53,12 @@ object_t* object_new (const objtype_t valtype, const void* const val) {
       break;
     }
     case t_realint: {
-      //obj->fwi = fixwid_new(const size_t n, bool sign)
+      obj->fwi = fixwid_copy( (const fixwid_t* const) val);
       break;
     }
     case t_fixwid: {
-      obj->fwi = fixwid_copy( (const fixwid_t * const) val);
+      // i'm an awful person
+      obj->fwi = fixwid_new( *(const ssize_t* const) val);
       break;
     }
     case t_string: {
@@ -122,7 +131,8 @@ void** object_getval (const object_t* const obj) {
     (void **) (obj->ary),
     (void **) (obj->hsh),
     (void **) (obj->cel),
-    (void *)  (obj->str->data) // t_realchar returns str's realchar
+    (void **) (obj->fwi),
+    (void **) (obj->str) // t_realchar returns str's realchar
   };
 
   _Static_assert(
@@ -138,19 +148,17 @@ void object_destruct (object_t* const obj) {
 
   report_dtor(obj);
 
-  if ( t_number == obj->type) {
-    printf("DESTRUCT NUMBER ID: %zu\n", obj->num->uid);
-  }
-
   switch (obj->type) {
     case t_array: {
       array_destruct(obj->ary);
+      safefree(obj);
       break;
     }
 
     case t_func: {
       safefree(obj->fnc->code);
       safefree(obj->fnc->name);
+      safefree(obj->fnc);
       break;
     }
 
@@ -160,12 +168,43 @@ void object_destruct (object_t* const obj) {
       break;
     }
 
-    default: {}
+    case t_hash: {
+      hash_destruct(obj->hsh);
+      break;
+    }
+
+    case t_pair: {
+      pair_destruct(obj->cel);
+      break;
+    }
+
+    case t_fixwid: {
+      fixwid_destruct(obj->fwi);
+    }
+
+    default: {
+      safefree( object_getval(obj) );
+    }
   }
 
-
-  safefree( object_getval(obj) );
   safefree(obj);
+}
+
+void object_dtor_args (size_t argc, ...) {
+  va_list vl;
+  va_start(vl, argc);
+
+  for (size_t i = 0; i < argc; i++) {
+    // hopefully this just takes the address
+    object_t** v = alloca( sizeof (object_t) );
+    *v = va_arg(vl, object_t*);
+
+    // 0 allocs, 1 free
+    object_destruct( *v );
+
+  }
+
+  va_end(vl);
 }
 
 char* objtype_repr (const objtype_t t) {
@@ -182,6 +221,7 @@ char* objtype_repr (const objtype_t t) {
     "array_t",
     "hash_t",
     "pair_t",
+    "s?size_t (fixwid_t.svalue)",
     "char* (string_t.data)",
   };
 
@@ -191,8 +231,11 @@ char* objtype_repr (const objtype_t t) {
   );
 
   const char* const this = obj_strings[t];
-  char* out = safemalloc(safestrnlen(this) + 1);
-  snprintf(out, 20, "%s", this);
+  const size_t       len = safestrnlen(this) + 1;
+
+  char* out = safemalloc(sizeof (char) * len);
+  snprintf(out, len, "%s", this);
+
   return out;
 }
 
@@ -203,6 +246,7 @@ char* object_repr (const object_t* const obj) {
   switch (obj->type) {
     case NUM_OBJTYPES: {
       buf = NULL;
+      // you can't repr that, you can't fix stupid
       object_error(NOT_A_TYPE, "object_repr", true);
       break;
     }
@@ -216,6 +260,7 @@ char* object_repr (const object_t* const obj) {
       break;
     }
 
+    case t_realint: // fallthrough
     case t_fixwid: {
       buf = fixwid_see(obj->fwi);
       break;
@@ -223,9 +268,9 @@ char* object_repr (const object_t* const obj) {
 
     case t_realchar: // fallthrough
     case t_string: {
-      size_t buflen = sizeof (char) * obj->str->len;
+      size_t buflen = sizeof (char) * (obj->str->len + 3);
       buf = safemalloc(buflen);
-      snprintf(buf, buflen, "%s", obj->str->data);
+      snprintf(buf, buflen, "\"%s\"", obj->str->data);
       break;
     }
 
@@ -243,6 +288,7 @@ char* object_repr (const object_t* const obj) {
       size_t len = safestrnlen(code) + safestrnlen(name) + 2;
       buf = safemalloc(sizeof (char) * len);
       snprintf(buf, len, "%s:%s", code, name);
+      safefree(code), safefree(name);
       break;
     }
     case t_array: {
@@ -251,9 +297,11 @@ char* object_repr (const object_t* const obj) {
     }
     case t_hash: {
       buf = hash_see(obj->hsh);
+      break;
     }
     case t_pair: {
       buf = pair_see(obj->cel);
+      break;
     }
   }
 
@@ -280,37 +328,46 @@ bool object_equals (const object_t* const a, const object_t* const b) {
     return true;
   }
 
+  object_t *oa = object_copy(a),
+           *ob = object_copy(b);
+
+  bool same;
+
   switch (a->type) {
     case NUM_OBJTYPES: {
       object_error(NOT_A_TYPE, "object_equals", false);
       return false;
     }
 
-    case t_fixwid: return fixwid_equals(a->fwi, b->fwi);
-    case t_number: return a->num == b->num;
-    case t_point:  return point_equals(a->pt, b->pt);
-    case t_shape:  return shape_equals(a->sp, b->sp);
-    case t_hash:   return hash_equals(a->hsh, b->hsh);
-    case t_array:  return array_equals(a->ary, b->ary);
-    case t_pair:   return pair_equals(a->cel, b->cel);
+    // fallthrough, since it must be lying
+    case t_realint: oa->type = t_fixwid, ob->type = t_fixwid;
+    case t_fixwid:  same =     fixwid_eq(oa->fwi, ob->fwi); break;
+    case t_number:  same =     number_eq(a->num, b->num);   break;
+    case t_point:   same =  point_equals(a->pt, b->pt);     break;
+    case t_shape:   same =  shape_equals(a->sp, b->sp);     break;
+    case t_hash:    same =   hash_equals(a->hsh, b->hsh);   break;
+    case t_array:   same =  array_equals(a->ary, b->ary);   break;
+    case t_pair:    same =   pair_equals(a->cel, b->cel);   break;
 
     case t_func: {
-      bool same;
       char *fa = object_repr(a),
            *fb = object_repr(b);
       same = strcmp(fa, fb) == 0;
       safefree(fa), safefree(fa);
-      return same;
+      break;
     }
 
     case t_string:
-    case t_realchar:
+    case t_realchar: // already cmpd
     case t_F: {
-      // satisfy the compiler
+      // always compares equal with itself
+      same = true;
     }
   }
 
-  return false;
+  object_dtor_args(2, oa, ob);
+
+  return same;
 }
 
 bool object_id_equals (const object_t* const a, const object_t* const b) {

@@ -14,13 +14,14 @@ void test (void) {
   symb = readln(3);
 */
 
-  isotope_t** isos = safemalloc( sizeof (isotope_t*) * 3);
+  size_t b = 2;
+  isotope_t** isos = safemalloc( sizeof (isotope_t*) * b);
 
-  isos[0] = isotope_new(.365, .48);
-  isos[1] = isotope_new(.123, .157);
-  isos[2] = isotope_new(.438, .18);
+  isos[0] = isotope_new(.5069, 078.92);
+  isos[1] = isotope_new(.4931, 80.92);
 
-  printf("%LG\n", amass_from_isos((const isotope_t* const * const) isos, 3));
+
+  printf("%LG\n", amass_from_isos((const isotope_t* const * const) isos, b));
 }
 
 int main(void) {

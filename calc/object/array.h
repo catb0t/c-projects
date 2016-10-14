@@ -34,13 +34,16 @@ void array_destruct (array_t* const array) {
   report_dtor(array);
 
   if ( ! array_isempty(array) ) {
-    for (ssize_t i = 0; i < array->idx; i++) {
-      object_destruct( array_get(array, i, NULL) );
+    for (ssize_t i = 0; i < (array->idx + 1); i++) {
+      // because array_get returns a copy, not a reference
+      // so we need to destruct by address
+      object_destruct( *array_get_ref(array, i, NULL) );
     }
   }
   if (NULL != array->data) {
     safefree(array->data);
   }
+
   safefree(array);
 }
 
@@ -98,32 +101,44 @@ void array_append (array_t* const a, const object_t* const o) {
   (a->data) [a->idx] = object_copy(o);
 }
 
+// WARN: POINTER MATH INCOMING
+// thankfully, without threatening aliasing or alignment
+// because we are working only with char and size_t
 char* array_see (const array_t* const a) {
 
-  size_t total_len = 0;
-  char *outbuf = safemalloc(4),
+  char *outbuf = safemalloc(10),
        *bufptr = outbuf;
 
-  bufptr += snprintf(bufptr, 3, "%s", "{ ");
+  str_append(bufptr, 3, "%s", "{ ");
 
   if ( array_isempty(a) ) {
-    bufptr += snprintf(bufptr, 3, "%s", "}\n");
+    str_append(bufptr, 3, "%s", "}\n");
     return outbuf;
   }
 
-  for (ssize_t i = 0; i < a->idx; i++) {
-    object_t* this = array_get(a, i, NULL);
+  size_t total_len = 3;
+
+  for (ssize_t i = 0; i < (a->idx + 1); i++) {
+    object_t* this = array_get_copy(a, i, NULL);
     char*  strthis = object_repr(this);
-    size_t thislen = safestrnlen(strthis);
+    size_t thislen = safestrnlen(strthis) + 3;
 
     outbuf     = realloc(outbuf, total_len + thislen);
-    bufptr     = outbuf + total_len;
+    bufptr     = outbuf + (total_len - 1);
 
-    bufptr    += snprintf(bufptr, thislen, "%s ", strthis);
+    str_append(bufptr, thislen, "%s ", strthis);
     total_len += thislen;
+
+    object_destruct(this), safefree(strthis);
   }
 
-  bufptr += snprintf(bufptr, 3, "%s", "}\n");
+  // for my own sanity
+  total_len = safestrnlen(outbuf);
+
+  outbuf  = realloc(outbuf, total_len + 3);
+
+  bufptr  = outbuf + total_len;
+  str_append(bufptr, 3, "%s", "}\n");
 
   return outbuf;
 }
@@ -131,7 +146,7 @@ char* array_see (const array_t* const a) {
 ssize_t array_find (const array_t* const a, const object_t* const obj) {
 
   for (ssize_t i = 0; i < a->idx; i++) {
-    if ( object_equals(obj, array_get(a, i, NULL) )) {
+    if ( object_equals(obj, array_get_copy(a, i, NULL) )) {
       return i;
     }
   }
@@ -139,17 +154,30 @@ ssize_t array_find (const array_t* const a, const object_t* const obj) {
   return -1;
 }
 
-object_t* array_get (const array_t* const a, const ssize_t idx, bool* ok) {
+object_t* array_get_copy (const array_t* const a, const ssize_t idx, bool* ok) {
 
-  *ok = true;
+  if (NULL != ok) { *ok = true; }
 
   if ( array_isempty(a) || idx > a->idx || -1 == idx ) {
-    *ok = false;
-    return object_new(t_F, NULL);
+    if (NULL != ok) { *ok = false; }
+    return nothing_new();
   }
 
   size_t uidx = signed2un(idx);
   return object_copy( (a->data) [uidx] );
+}
+
+object_t** array_get_ref (const array_t* const a, const ssize_t idx, bool* ok) {
+
+  if (NULL != ok) { *ok = true; }
+
+  if ( array_isempty(a) || idx > a->idx || -1 == idx ) {
+    if (NULL != ok) { *ok = false; }
+    return NULL;
+  }
+
+  size_t uidx = signed2un(idx);
+  return &( (a->data) [uidx] );
 }
 
 bool array_equals (const array_t* const a, const array_t* const b) {
@@ -162,8 +190,8 @@ bool array_equals (const array_t* const a, const array_t* const b) {
   }
 
   for (ssize_t i = 0; i < a->idx; i++) {
-    object_t *oa = array_get(a, i, NULL),
-             *ob = array_get(b, i, NULL);
+    object_t *oa = array_get_copy(a, i, NULL),
+             *ob = array_get_copy(b, i, NULL);
     if ( ! object_equals(oa, ob) ) {
       object_destruct(oa), object_destruct(ob);
       return false;

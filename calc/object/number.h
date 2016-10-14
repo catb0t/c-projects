@@ -4,7 +4,7 @@
 
 #include "objcommon.h"
 
-number_t* number_new (const long double val) {
+number_t* number_new (const numderlying_t val) {
   pfn();
 
   number_t* number = safemalloc(sizeof (number_t));
@@ -35,4 +35,28 @@ char* number_see (const number_t* const num) {
   buf = realloc(buf, safestrnlen(buf));
 
   return buf;
+}
+
+bool number_eq (const number_t* const a, const number_t* const b) {
+  pfn();
+
+  numderlying_t
+    an = a->value,
+    bn = b->value;
+
+  return fabsl(an - bn) < LD_EPSILON;
+}
+
+bool number_gt (const number_t* const a, const number_t* const b) {
+  pfn();
+
+  numderlying_t an = a->value, bn = b->value;
+  return an > bn;
+}
+
+bool number_lt (const number_t* const a, const number_t* const b) {
+  pfn();
+
+  numderlying_t an = a->value, bn = b->value;
+  return an > bn;
 }

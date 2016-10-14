@@ -2,9 +2,12 @@
 #line 2 "objcommon"
 #endif
 
+#include <stdarg.h>
 #pragma once
 #include "../../common.h"
 #include "../../points/points.h"
+
+#define LD_EPSILON 0.001L // this is how to compare floating point, right??
 
 typedef enum {
   t_F, // only false value
@@ -35,6 +38,8 @@ typedef struct st_F_t     F_t;
 // arithmetic types
 //  arbitrary precision
 typedef struct st_numb_t  number_t;
+//  convenience:
+typedef       long double numderlying_t;
 //  fixed width signed integral type -- underlying uses ssize_t and size_t
 typedef struct st_fxwd_t  fixwid_t;
 
@@ -95,24 +100,42 @@ struct st_array_t {
   OBJ_UID_SLOT;
 };
 
+/*
+  again, the point of having this primitive as a struct
+  type is that it can be cast between void* and itself
+
+  or void** in the case of struct pointers, which are primarily used
+*/
 struct st_numb_t {
-  long double value;
+  numderlying_t value;
 
   OBJ_UID_SLOT;
 };
 
+/*
+  another wrapper for void*?* convenience
+  note that sign_active only indicates which union member should be used
+  and should not be correlated to the actual sign of the union's 'active' value
+
+  if sign_active is true, refer to `svalue`, and value otherwise.
+*/
 struct st_fxwd_t {
-  bool sign;
-  union {
-    ssize_t svalue;
-    size_t  value;
-  };
+  ssize_t value;
+
+  OBJ_UID_SLOT;
 };
 
-// like an array, except only two values
+/*
+  a pair is a very simple concept -- a collection which holds at most two things
+
+  especially useful for e.g a singly linked list, in which each node contains data
+  and a pointer to the next node, or NULL / an object of objtype_t t_F for the end of the list.
+*/
 struct st_pair_t {
   object_t* car;
   object_t* cdr;
+
+  OBJ_UID_SLOT;
 };
 
 /*
@@ -221,25 +244,27 @@ char*    objtype_repr (const objtype_t t);
 bool object_id_equals (const object_t* const a, const object_t* const b);
 bool    object_equals (const object_t* const a, const object_t* const b);
 void  object_destruct (object_t* obj);
+void object_dtor_args (size_t args, ...);
 
 // provided by array.h
-array_t*    array_new (const object_t* const * const objs, const ssize_t len);
-array_t*   array_copy (const array_t* const a);
-char*       array_see (const array_t* const a);
-object_t*   array_get (const array_t* const a, const ssize_t idx, bool* ok);
-ssize_t    array_find (const array_t* const a, const object_t* const obj);
-bool     array_equals (const array_t* const a, const array_t* const b);
-bool    array_isempty (const array_t* const a);
-void     array_resize (array_t* const a, const ssize_t new_len);
-void     array_delete (array_t* const a, const ssize_t idx);
-void     array_append (array_t* const a, const object_t* const o);
-void   array_destruct (array_t* const a);
+array_t*       array_new (const object_t* const * const objs, const ssize_t len);
+array_t*      array_copy (const array_t* const a);
+char*          array_see (const array_t* const a);
+object_t* array_get_copy (const array_t* const a, const ssize_t idx, bool* ok);
+object_t** array_get_ref (const array_t* const a, const ssize_t idx, bool* ok);
+ssize_t       array_find (const array_t* const a, const object_t* const obj);
+bool        array_equals (const array_t* const a, const array_t* const b);
+bool       array_isempty (const array_t* const a);
+void        array_resize (array_t* const a, const ssize_t new_len);
+void        array_delete (array_t* const a, const ssize_t idx);
+void        array_append (array_t* const a, const object_t* const o);
+void      array_destruct (array_t* const a);
 
 // provided by string.h
 string_t*  string_new (const char* const str);
 string_t* string_copy (const string_t* const s);
-void  string_destruct (string_t* s);
 bool   string_isempty (const string_t* const s);
+void  string_destruct (string_t* const s);
 
 // provided by hash.h
 hash_t* hash_new_skele (void);
@@ -254,30 +279,33 @@ bool          hash_add (hash_t* const h, const object_t* const key, const object
 bool    hash_keyexists (const hash_t* const h, const object_t* const key);
 bool       hash_exists (const hash_t* const h, const object_t* const key);
 void       hash_delete (hash_t* const h, const object_t* const key);
-void       hash_resize (hash_t* h, const size_t new_len);
-void     hash_destruct (hash_t* h);
+void       hash_resize (hash_t* const h, const size_t new_len);
+void     hash_destruct (hash_t* const h);
 
 // provided by pair.h
 // yes, it's cons, but the idiomatic thing here is typename_new
 pair_t*   pair_new (const object_t* const car, const object_t* const cdr);
 pair_t*  pair_copy (const pair_t* const p);
-void pair_destruct (pair_t* const p);
 char*     pair_see (const pair_t* const p);
 object_t* pair_car (const pair_t* const p);
 object_t* pair_cdr (const pair_t* const p);
 bool   pair_equals (const pair_t* const a, const pair_t* const b);
+void pair_destruct (pair_t* const p);
 
 // provided by number.h
 number_t*  number_new (const long double val);
 number_t* number_copy (const number_t* const n);
 char*      number_see (const number_t* const n);
-bool        number_eq (const number_t* const n);
-bool        number_gt (const number_t* const n);
-bool        number_lt (const number_t* const n);
-void  number_destruct (number_t* n);
+bool        number_eq (const number_t* const a, const number_t* const b);
+bool        number_gt (const number_t* const a, const number_t* const b);
+bool        number_lt (const number_t* const a, const number_t* const b);
+void  number_destruct (number_t* const n);
 
 // provided by fixdsz.h
-fixwid_t*  fixwid_new (const size_t n, bool sign);
+fixwid_t*  fixwid_new (const ssize_t n);
 fixwid_t* fixwid_copy (const fixwid_t* const n);
 char*      fixwid_see (const fixwid_t* const n);
-bool    fixwid_equals (const fixwid_t* const a, const fixwid_t* const b);
+void  fixwid_destruct (fixwid_t* const n);
+bool    fixwid_eq (const fixwid_t* const a, const fixwid_t* const b);
+bool    fixwid_gt (const fixwid_t* const a, const fixwid_t* const b);
+bool    fixwid_lt (const fixwid_t* const a, const fixwid_t* const b);

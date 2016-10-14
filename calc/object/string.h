@@ -36,4 +36,5 @@ void string_destruct (string_t* const string) {
   report_dtor(string);
 
   safefree(string->data);
+  safefree(string);
 }

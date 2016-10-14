@@ -5,22 +5,22 @@
 #pragma once
 #define _GNU_SOURCE
 
-#include <errno.h>
 #include <assert.h>
+#include <errno.h>
 #include <inttypes.h>
 #include <limits.h>
 #include <math.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
 #define DEC_BASE    10
 #define DEC_DIGITS  "0123456789"
-#define ULL_DIGITS  20
-#define NUM_PROBS   5
 #define MAX_STR_LEN 4096
+#define NUM_PROBS   5
 #define SHORT_INSTR 256
+#define ULL_DIGITS  20
 
 #ifndef NODEBUG
 #define DEBUG
@@ -32,26 +32,28 @@
   #define _printfunc(file, line, func) printf("\n\033[30;1m%s#%d:%s\033[0m\n", \
     file, line, func)
   #define pfn() _printfunc(__FILE__, __LINE__, __func__)
-
   #define __PURE_FUNC
   #define __CONST_FUNC
-  #define report_ctor(obj) \
-    static size_t uid = 0; \
-    ++uid;                 \
-    (obj)->uid = uid;      \
-    printf("ctor %s #%zu\n", #obj, uid)
-
-  #define report_dtor(obj) printf("dtor %s #%zu\n", #obj, obj->uid)
 #else
   #define dbg_prn(...)
   #define pfn()
   #define __PURE_FUNC  __attribute_pure__
   #define __CONST_FUNC __attribute_const__
-  #define report_ctor(x)
-  #define report_dtor(x)
 #endif
 
 #define dealloc_printf(x) do { printf("%s\n", (x)); safefree((x)); } while (0);
+
+#define str_append(dest, len, fmt, ...) (dest) += snprintf((dest), (len), (fmt), (__VA_ARGS__));
+
+
+#define report_ctor(obj) \
+  static size_t uid = 0; \
+  ++uid;                 \
+  (obj)->uid = uid;      \
+  dbg_prn("ctor %s #%zu\n", #obj, uid)
+
+#define report_dtor(obj) dbg_prn("dtor %s #%zu\n", #obj, obj->uid)
+
 
 #define OBJ_UID_SLOT size_t uid
 
@@ -348,7 +350,7 @@ char*  str_repeat (
        *bufptr = out;
 
   for (size_t i = 0; i < *out_len; i++) {
-    bufptr += snprintf(bufptr, in_len + 1, "%s", in_str);
+    str_append(bufptr, in_len + 1, "%s", in_str);
   }
 
   return out;
@@ -416,7 +418,7 @@ char* concat_lines (char** string_lines, const size_t lines_len, const size_t to
   for (size_t i = 0; i < lines_len; i++) {
     char* tl = string_lines[i];
     dbg_prn("tl: %s len: %zu", tl, safestrnlen(tl));
-    bufptr += snprintf(bufptr, safestrnlen(tl) + 2, "%s ", tl);
+    str_append(bufptr, safestrnlen(tl) + 2, "%s ", tl);
   }
   printf("o: %s total_len: %zu\n", output, total_len);
   //output[total_len] = '\0';
