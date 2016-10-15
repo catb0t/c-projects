@@ -18,7 +18,15 @@ void test (void) {
   // add something else to it
   infer o2 = object_new(t_realchar, "456");
   array_append(a, o2);
+  printf("before dtor\n");
   object_destruct(o2);
+  printf("after  dtor\n");
+
+  // see it again
+  ca = array_see(a);
+  dealloc_printf(ca);
+
+  array_delete(a, 2);
 
   // see it again
   ca = array_see(a);

@@ -368,6 +368,24 @@ char* hash_see (const hash_t* const h) {
   return buf;
 }
 
+void hash_inspect (const hash_t* const h) {
+  printf("WARN: LONG OUTPUT\n");
+
+  printf("hash #%zu\n", h->uid);
+
+  printf("%zu keys:\n", h->keys->idx);
+  dealloc_printf( array_see(h->keys) );
+
+  printf("%zu vals:\n", h->vals->idx);
+  dealloc_printf( array_see(h->vals) );
+
+  printf("%zu idxs:\n", h->idxs_len);
+  for (size_t i = 0; i < h->idxs_len; i++) {
+    printf("i:%zu d:%zu ", i, h->idxs[i]);
+  }
+
+}
+
 bool hash_equals (const hash_t* const a, const hash_t* const b) {
   pfn();
 

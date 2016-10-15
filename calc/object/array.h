@@ -82,14 +82,22 @@ bool array_isempty (const array_t* const a) {
   not be called.
 */
 void array_resize (array_t* const a, const ssize_t new_idx) {
+  pfn();
+
   if ( -1 == new_idx ) {
     a->data = realloc(a->data, 0);
     a->idx = -1;
     return;
   }
 
+  if (new_idx < a->idx) {
+    for (ssize_t i = new_idx + 1; i < a->idx; i++) {
+      object_destruct( *array_get_ref(a, i, NULL) );
+    }
+  }
+
   a->idx  = new_idx;
-  a->data = realloc(a->data, sizeof (object_t*) * signed2un(new_idx));
+  a->data = realloc(a->data, sizeof (object_t*) * signed2un(new_idx + 1));
 }
 
 /*
@@ -103,6 +111,7 @@ void array_resize (array_t* const a, const ssize_t new_idx) {
     resize the array by -1.
 */
 void array_delete (array_t* const a, const ssize_t idx) {
+  pfn();
 
   if ( idx > a->idx ) {
     object_error(INDEXERROR, __func__, false);
@@ -135,6 +144,7 @@ void array_delete (array_t* const a, const ssize_t idx) {
     put the new element at its index
 */
 void array_insert (array_t* const a, const object_t* const o, const ssize_t idx) {
+  pfn();
 
   if ( array_isempty(a) || -1 == idx ) {
     array_append(a, o);
@@ -161,6 +171,7 @@ void array_insert (array_t* const a, const object_t* const o, const ssize_t idx)
     put the new object at the end.
 */
 void array_append (array_t* const a, const object_t* const o) {
+  pfn();
 
   ++(a->idx);
   a->data = realloc(a->data, (sizeof (object_t *) * signed2un(a->idx + 1) ));
@@ -178,6 +189,7 @@ void array_append (array_t* const a, const object_t* const o) {
 // thankfully, without threatening aliasing or alignment
 // because we are working only with char and size_t
 char* array_see (const array_t* const a) {
+  pfn();
 
   char *outbuf = safemalloc(10),
        *bufptr = outbuf;
@@ -222,6 +234,7 @@ char* array_see (const array_t* const a) {
   not a binary search.
 */
 ssize_t array_find (const array_t* const a, const object_t* const obj) {
+  pfn();
 
   for (ssize_t i = 0; i < a->idx; i++) {
     if ( object_equals(obj, *array_get_ref(a, i, NULL) )) {
@@ -243,6 +256,7 @@ ssize_t array_find (const array_t* const a, const object_t* const obj) {
   index will never go out of bounds).
 */
 object_t* array_get_copy (const array_t* const a, const ssize_t idx, bool* ok) {
+  pfn();
 
   if (NULL != ok) { *ok = true; }
 
@@ -267,6 +281,7 @@ object_t* array_get_copy (const array_t* const a, const ssize_t idx, bool* ok) {
   index will never go out of bounds).
 */
 object_t** array_get_ref (const array_t* const a, const ssize_t idx, bool* ok) {
+  pfn();
 
   if (NULL != ok) { *ok = true; }
 
@@ -290,6 +305,8 @@ object_t** array_get_ref (const array_t* const a, const ssize_t idx, bool* ok) {
   references to each object from the arrays are given to object_equals.
 */
 bool array_equals (const array_t* const a, const array_t* const b) {
+  pfn();
+
   if ( array_isempty(a) && array_isempty(b) ) {
     return true;
   }

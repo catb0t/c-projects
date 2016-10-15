@@ -27,7 +27,7 @@ char* pair_see (const pair_t* const p) {
 
   size_t buflen = safestrnlen(scar) + safestrnlen(scdr) + 11;
   buf = safemalloc(sizeof (char) * buflen);
-  snprintf(buf, buflen, "pair{ %s %s }", scar, scdr);
+  snprintf(buf, buflen, "{ %s . %s }", scar, scdr);
 
   safefree(scar), safefree(scdr);
 

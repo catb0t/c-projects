@@ -236,13 +236,13 @@ void object_error (objerror_t errt, const char* const info, const bool fatal) {
     "too many or too few error strings in object_error"
   );
 
-  fprintf(stderr, "%s: %s", info, errmsgs[errt]);
+  fprintf(stderr, "\033[31m%s: %s\033[0m", info, errmsgs[errt]);
 
   if ( fatal ) {
     fprintf(
       stderr,
-      "That error was fatal, aborting.\n\n"
-      "I'm melting!"
+      "\033[31mThat error was fatal, aborting.\n\n"
+      "I'm melting!\033[0m"
     );
   }
 
@@ -297,6 +297,7 @@ bool        hash_exists (const hash_t* const h, const object_t* const key);
 void        hash_delete (hash_t* const h, const object_t* const key);
 void      hash_destruct (hash_t* const h);
 void     hash_recompute (const hash_t* h);
+void       hash_inspect (const hash_t* const h);
 
 // provided by pair.h
 // yes, it's cons, but the idiomatic thing here is typename_new
