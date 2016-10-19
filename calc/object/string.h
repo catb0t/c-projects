@@ -1,13 +1,13 @@
-#ifdef GCC
-#line 2 "string"
-#endif
-
 #include "objcommon.h"
+
+#ifdef GCC
+#line __LINE__ "string"
+#endif
 
 string_t* string_new (const char* const c) {
   pfn();
 
-  string_t* string = safemalloc(sizeof (string_t));
+  string_t*  string = (typeof(string)) safemalloc(sizeof (string_t));
   size_t       len = safestrnlen(c);
 
   string->len  = len;

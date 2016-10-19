@@ -68,10 +68,10 @@ void test (void) {
     *in   = readln(MAX_STR_LEN),
     **spl = str_split(in, ' ', &len);
 
-  grade_t* gs = safemalloc(sizeof (grade_t) * len);
+  grade_t*  gs = (typeof(gs)) safemalloc(sizeof (grade_t) * len);
 
   for (size_t i = 0; i < len; i++) {
-    // grades will never be 0 so this is ok
+    // grades will never be 0 so thisp is ok
     grade_t j = (grade_t) strtoull(spl[i], NULL, 10);
     gs[i] = j;
   }

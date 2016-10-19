@@ -28,7 +28,7 @@ element_t* new_element (
   char*   full_name,
   el_category_t el_type
 ) {
-  element_t* el = safemalloc(sizeof(element_t));
+  element_t*  el = (typeof(el)) safemalloc(sizeof(element_t));
   el -> atomic_number = atomic_number;
   el -> symbol        = symbol;
   el -> full_name     = full_name;

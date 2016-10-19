@@ -11,11 +11,11 @@ astnode_t* ast_newnode (const object_t* const obj, const char* const code) {
 
   pfn();
 
-  astnode_t* ast    = safemalloc( sizeof (astnode_t) );
+  astnode_t* ast    = (typeof(ast)) safemalloc( sizeof (astnode_t) );
   ast->code         = strndup(code, MAX_STR_LEN);
   ast->obj          = object_copy(obj);
   ast->type         = ast->obj->type;
-  ast->chldn        = safemalloc( sizeof (astnode_t *) );
+  ast->chldn        = (typeof(ast->chldn)) safemalloc( sizeof (astnode_t *) );
   ast->chldn_idx    = -1;
 
   report_ctor(ast);
@@ -59,11 +59,12 @@ char* ast_see (astnode_t* n) {
   if ((n->chldn_idx) != -1) {
 
     size_t nc = signed2un(n->chldn_idx);
-    chldlns   = safemalloc(sizeof (char *) * 2);
+    chldlns   = (typeof(chldlns)) safemalloc(sizeof (char *) * 2);
 
     for (size_t i = 0; i < nc; i++) {
-      chldlns    = realloc(chldlns, sizeof (char *) * (i + 1));
-      chldlns[i] = safemalloc(MAX_ASTSEE_LEN);
+      chldlns    = (typeof(chldlns)) realloc(chldlns, sizeof (char *) * (i + 1));
+      // with typeof: Error: C-style cast from rvalue reference type 'decltype(*chldns)' (aka 'char *&')
+      chldlns[i] = (char *) safemalloc(MAX_ASTSEE_LEN);
 
       snprintf(chldlns[i], MAX_ASTSEE_LEN, "%s", ast_see( (n->chldn)[i] ));
       ++lines;
@@ -71,8 +72,9 @@ char* ast_see (astnode_t* n) {
     }
 
   } else {
-    chldlns    = safemalloc(sizeof (char *));
-    chldlns[0] = safemalloc(2);
+    chldlns    = (typeof(chldlns)) safemalloc(sizeof (char *));
+    // with typeof: Error: C-style cast from rvalue reference type 'decltype(*chldns)' (aka 'char *&')
+    chldlns[0] = (char *) safemalloc(2);
     snprintf(chldlns[0], 2, "%s", "");
     lines = 1, total = 0;
   }
@@ -101,7 +103,7 @@ char* ast_see (astnode_t* n) {
     len = MAX_ASTSEE_LEN;
   }
 
-  out = safemalloc(len);
+   out = (typeof(out)) safemalloc(len);
   snprintf(
     out,
     len,

@@ -1,6 +1,7 @@
-#ifdef GCC
-#line 2 "lex"
-#endif
-
+#pragma once
 #include "ast.h"
 #include "lxutil.h"
+
+#ifdef GCC
+#line __LINE__ "lex"
+#endif

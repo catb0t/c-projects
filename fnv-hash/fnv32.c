@@ -64,7 +64,7 @@
 
 #define BUF_SIZE (32*1024)	/* number of bytes to hash at a time */
 
-static char *usage =
+static char usage[] =
 "usage: %s [-b bcnt] [-m] [-s arg] [-t code] [-v] [arg ...]\n"
 "\n"
 "\t-b bcnt\tmask off all but the lower bcnt bits (default 32)\n"

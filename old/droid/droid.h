@@ -20,7 +20,7 @@ uint8_t droid_get_battlvl (droid_t* dr);
 uint8_t   droid_checkbatt (droid_t* dr);
 
 droid_t* droid_new (void) {
-  droid_t* out = safemalloc(sizeof (droid_t));
+  droid_t*  out = (typeof(out)) safemalloc(sizeof (droid_t));
   out->batt_lvl = 100;
   return out;
 }

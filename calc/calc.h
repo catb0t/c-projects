@@ -108,7 +108,7 @@ char** file_lines (const char* const fname, size_t* out_len) {
   }
 
   size_t lines_idx = 0;//, total_read = 0;
-  char **in_lines = safemalloc( sizeof (char *) );
+  char  **in_lines = (typeof(in_lines)) safemalloc( sizeof (char *) );
 
   while ( true ) {
 
@@ -121,8 +121,10 @@ char** file_lines (const char* const fname, size_t* out_len) {
       break;
     }
 
-    in_lines = realloc(in_lines, sizeof (char *) * (lines_idx + 1));
-    in_lines[lines_idx] = safemalloc( sizeof (char) * signed2un(bytes_read) );
+    in_lines = (typeof(in_lines)) realloc(in_lines, sizeof (char *) * (lines_idx + 1));
+
+    // With decltype(), gives "Error: C-style cast from rvalue to reference type `char *&`"
+    in_lines[lines_idx] = ( char * ) safemalloc( sizeof (char) * signed2un(bytes_read) );
 
     snprintf(in_lines[lines_idx], signed2un(bytes_read), "%s", line);
 

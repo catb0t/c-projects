@@ -15,7 +15,7 @@ void test (void) {
 */
 
   size_t b = 2;
-  isotope_t** isos = safemalloc( sizeof (isotope_t*) * b);
+  isotope_t**  isos = (typeof(isos)) safemalloc( sizeof (isotope_t*) * b);
 
   isos[0] = isotope_new(.5069, 078.92);
   isos[1] = isotope_new(.4931, 80.92);

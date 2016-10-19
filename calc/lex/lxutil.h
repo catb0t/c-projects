@@ -52,7 +52,7 @@ astnode_t* lex_string (const char* const prog) {
     s = ast_see(thisnode);
     dealloc_printf(s);
 
-    ast->chldn = realloc(ast->chldn, sizeof (astnode_t *) * (i + 1));
+    ast->chldn = (typeof(ast->chldn)) realloc(ast->chldn, sizeof (astnode_t *) * (i + 1));
     (ast->chldn)[i] = thisnode;
     ++(ast->chldn_idx);
 
@@ -100,7 +100,7 @@ srcchar_t get_srcobj_type (const char c) {
   return EASCII;
 }
 
-static void getfilepos (const char* const prog, const size_t idx, uint64_t* restrict lineno, uint64_t* restrict chrpos) {
+static void getfilepos (const char* const prog, const size_t idx, uint64_t* lineno, uint64_t* chrpos) {
   pfn();
 
   size_t plen = safestrnlen(prog);
@@ -141,9 +141,9 @@ ssize_t build_string (const char* const code, const size_t idx, astnode_t** out_
   } else {
     printf("non-empty\n");
     char
-      *delim   = safemalloc(2),
+      *delim   = (typeof(delim)) safemalloc(2),
       *newstr  = strndup(&(code[idx]), MAX_STR_LEN),
-      *str_lit = safemalloc(MAX_STR_LEN + 3);
+      *str_lit = (typeof(str_lit)) safemalloc(MAX_STR_LEN + 3);
 
     snprintf(delim, 2, "%c", thisch);
 
@@ -158,7 +158,7 @@ ssize_t build_string (const char* const code, const size_t idx, astnode_t** out_
 
     printf("found at %zu\n", nextd);
     new_len = udifference(nextd, idx);
-    newstr  = realloc(newstr, (sizeof (char) * new_len) + 2);
+    newstr  = (typeof(newstr)) realloc(newstr, (sizeof (char) * new_len) + 2);
     newstr[ new_len + 1 ] = '\0';
 
     printf("new_len: %zu actual: %zu str: %s\n",
@@ -190,8 +190,8 @@ ssize_t build_number (const char* const code, const size_t idx, astnode_t** out_
   assert (clen > idx);
 
   char
-    *newstr  = safemalloc(100),
-    *str_lit = safemalloc(103);
+    *newstr  = (typeof(newstr)) safemalloc(100),
+    *str_lit = (typeof(str_lit)) safemalloc(103);
 
   bool foundpt;
   size_t i;
@@ -201,18 +201,19 @@ ssize_t build_number (const char* const code, const size_t idx, astnode_t** out_
 
     if (c == '.') {
       if (foundpt) {
-        newstr = realloc(newstr, sizeof (char) * (i + 1));
+        newstr = (typeof(newstr)) realloc(newstr, sizeof (char) * (i + 1));
         newstr[i] = '\0';
         break;
       }
       foundpt = true;
     }
 
-    if ( (n = strchr(DEC_DIGITS, c)) != NULL) {
+    extern char* strchr_c (const char* const, const char);
+    if ( (n = strchr_c(DEC_DIGITS, c)) != NULL) {
       newstr[i] = n[0];
-
+      safefree(n);
     } else {
-      newstr = realloc(newstr, sizeof (char) * (i + 1));
+      newstr = (typeof(newstr)) realloc(newstr, sizeof (char) * (i + 1));
       newstr[i] = '\0';
       break;
     }
@@ -226,7 +227,7 @@ ssize_t build_number (const char* const code, const size_t idx, astnode_t** out_
 
   printf("%s\n", newstr);
 
-  number_t* n = safemalloc( sizeof (number_t) );
+  number_t*  n = (typeof(n)) safemalloc( sizeof (number_t) );
   n->value = strtold(newstr, NULL);
   object_t* o = object_new(t_number, n);
 

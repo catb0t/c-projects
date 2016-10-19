@@ -74,6 +74,9 @@ NO64BIT_OBJ= no64bit_fnv64.o no64bit_hash_64.o \
 OTHEROBJ= fnv32.o fnv64.o
 TARGETS= ${LIBOBJ} ${LIBS} ${PROGS}
 
+# for c++
+CFLAGS += -Wno-cast-qual -fpermissive
+
 # default rule
 #
 all: ${TARGETS}

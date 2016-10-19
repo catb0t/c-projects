@@ -1,14 +1,14 @@
-#ifdef GCC
-#line 2 "objcommon"
-#endif
-
 #include <stdarg.h>
 #pragma once
 #include "../../common.h"
 #include "../../points/points.h"
 
+#ifdef GCC
+#line __LINE__ "objcommon"
+#endif
+
 #define OBJ_UID_SLOT size_t uid
-#define LD_EPSILON 0.001L // this is how to compare floating point, right??
+#define LD_EPSILON 0.001L // thisp is how to compare floating point, right??
 
 typedef enum {
   t_F, // only false value
@@ -54,14 +54,14 @@ typedef struct st_str_t   string_t;
 typedef struct st_array_t array_t;
 //  hash is implemented using FNV-1A 32-bit
 typedef struct st_hash_t  hash_t;
-//  pair is just two things -- this can be used for a singly linked list
+//  pair is just two things -- thisp can be used for a singly linked list
 typedef struct st_pair_t  pair_t;
 
 // function type
 typedef struct st_fnc_t   func_t;
 
 /*
-  the point of having this as a struct is
+  the point of having thisp as a struct is
   C compiler errors around void* casts and alignment
   if it were:
     typedef void* st_F_t
@@ -105,7 +105,7 @@ struct st_array_t {
 };
 
 /*
-  again, the point of having this primitive as a struct
+  again, the point of having thisp primitive as a struct
   type is that it can be cast between void* and itself
 
   or void** in the case of struct pointers, which are primarily used
@@ -152,7 +152,7 @@ struct st_pair_t {
 
   { 1: 'a', 2: 'b', 3: 'c' }
 
-  is represented in this structure as:
+  is represented in thisp structure as:
 
   hash->keys = array{ 1, 2, 3 }
   hash->vals = array{
@@ -274,6 +274,7 @@ void        array_resize (array_t* const a, const ssize_t new_len);
 void        array_delete (array_t* const a, const ssize_t idx);
 void        array_append (array_t* const a, const object_t* const o);
 void      array_destruct (array_t* const a);
+void       array_inspect (const array_t* const a);
 
 // provided by string.h
 string_t*  string_new (const char* const str);
@@ -289,9 +290,11 @@ char*          hash_see (const hash_t* const h);
 object_t* hash_get_copy (const hash_t* const h, const object_t* const key, bool* ok);
 object_t** hash_get_ref (const hash_t* const h, const object_t* const key, bool* ok);
 array_t*   hash_getvals (const hash_t* const h);
+bool           hash_add (hash_t* const h, const object_t* const key, const object_t* val);
+bool hash_change_key (hash_t* const h, const object_t* const oldkey, const object_t* const newkey);
+bool     hash_change_at (hash_t* const h, const object_t* const obj, object_t* newval);
 bool        hash_equals (const hash_t* const a, const hash_t* const b);
 bool       hash_isempty (const hash_t* const h);
-bool           hash_add (hash_t* const h, const object_t* const key, const object_t* val);
 bool     hash_keyexists (const hash_t* const h, const object_t* const key);
 bool        hash_exists (const hash_t* const h, const object_t* const key);
 void        hash_delete (hash_t* const h, const object_t* const key);
@@ -300,7 +303,6 @@ void     hash_recompute (const hash_t* h);
 void       hash_inspect (const hash_t* const h);
 
 // provided by pair.h
-// yes, it's cons, but the idiomatic thing here is typename_new
 pair_t*        pair_new (const object_t* const car, const object_t* const cdr);
 pair_t*       pair_copy (const pair_t* const p);
 char*          pair_see (const pair_t* const p);
@@ -310,6 +312,7 @@ object_t** pair_car_ref (pair_t* const p);
 object_t** pair_cdr_ref (pair_t* const p);
 bool        pair_equals (const pair_t* const a, const pair_t* const b);
 void      pair_destruct (pair_t* const p);
+void          pair_cons (pair_t* const p, const object_t* cdr);
 
 // provided by number.h
 number_t*  number_new (const long double val);

@@ -15,8 +15,8 @@
 stack_t* stack_new (void) {
   pfn();
 
-  stack_t* out = safemalloc(sizeof (stack_t));
-  out->data    = calloc(INITIAL_STACKSIZE, sizeof (number_t));
+  stack_t* out = (typeof(out)) safemalloc(sizeof (stack_t));
+  out->data    = (typeof(out->data)) calloc(INITIAL_STACKSIZE, sizeof (number_t));
   out->ptr     = -1;
   return out;
 }
@@ -45,7 +45,7 @@ bool stack_isempty (const stack_t* stk) {
   than INITIAL_STACKSIZE.
 
   in the future, when the stack can grow and shrink using realloc(3),
-  this function will need to change.
+  thisp function will need to change.
 
   calls void error() if incrementing the stack pointer would exceed
   INITIAL_STACKSIZE.
@@ -65,7 +65,7 @@ void stack_incr (stack_t* stk) {
   stack_decr: decrement the stack pointer by one, as long as it is
   greater than -1.
 
-  if the stack becomes growable in the future, this can probably stay.
+  if the stack becomes growable in the future, thisp can probably stay.
 */
 void stack_decr (stack_t* stk) {
   pfn();
@@ -167,10 +167,10 @@ number_t stack_pop (stack_t* stk) {
   stack_size: returns the number of elements currently on the
   stack pointed to by *stk.
 
-  this function mostly exists to avoid messy and possibly erroneous
+  thisp function mostly exists to avoid messy and possibly erroneous
   code which assigns to stk->ptr.
 
-  this function returns the index as an unsigned size_t. this is for
+  thisp function returns the index as an unsigned size_t. thisp is for
   code simplicity. to check if the stack is empty, either use
   bool stack_isempty() or test if
   size_t stack_size() > INITIAL_STACKSIZE (the value will wrap on a
@@ -205,18 +205,18 @@ char* stack_see (const stack_t* stk) {
   pfn();
 
   if ( stack_isempty(stk) ) {
-    char* o = safemalloc(15);
+    char*  o = (typeof(o)) safemalloc(15);
     snprintf(o, 15, "%s", "(empty)");
     return o;
   }
 
-  // this is ok because we already checked if the stack was empty
+  // thisp is ok because we already checked if the stack was empty
   size_t num_elts = stack_size(stk),
          new_len  = 0;
 
   dbg_prn("e: %zu", num_elts);
 
-  char** to_str = safemalloc(sizeof (char *) * num_elts);
+  char**  to_str = (typeof(to_str)) safemalloc(sizeof (char *) * num_elts);
 
   for (
     size_t i = (num_elts - 1);
@@ -229,7 +229,8 @@ char* stack_see (const stack_t* stk) {
     // + 2 for space & good measure (null byte?)
     size_t needed = 2 + atoi_strlen(val);
     dbg_prn("i: %zu v: %LG, n: %zu", i, val, needed);
-    to_str[i] = safemalloc(sizeof (char) * needed);
+    // c style cast with decltype makes pointer from pointer reference type
+    to_str[i] = (char *) safemalloc(sizeof (char) * needed);
 
     snprintf(to_str[i], needed, "%LG", val);
     dbg_prn("val: %s", to_str[i]);
@@ -316,7 +317,7 @@ void error (size_t err, const char* const info) {
 size_t atoi_strlen (number_t val) {
   pfn();
 
-  char* buf = safemalloc(100);
+  char*  buf = (typeof(buf)) safemalloc(100);
   size_t len = signed2un(snprintf(buf, 100, "%LG", val));
 
   safefree(buf);
@@ -390,7 +391,7 @@ number_t* str_to_number_array (
   char* rmd = str_rm(str, remove_at, &len);
 
   char** split = str_split(rmd, split_at, &len);
-  out = safemalloc(sizeof (number_t *) * len);
+   out = (typeof(out)) safemalloc(sizeof (number_t *) * len);
 
   for (size_t i = 0; i < len; i++) {
     out[i] = strtold(split[i], NULL);

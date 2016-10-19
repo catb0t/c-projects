@@ -2,7 +2,11 @@
 
 void test (void);
 
-#define infer __auto_type
+#ifndef __cplusplus
+  #define infer __auto_type
+#else
+  #define infer auto
+#endif
 
 void test (void) {
   // create a new array and print it
@@ -18,19 +22,25 @@ void test (void) {
   // add something else to it
   infer o2 = object_new(t_realchar, "456");
   array_append(a, o2);
-  printf("before dtor\n");
   object_destruct(o2);
-  printf("after  dtor\n");
+
+  // add something else to it
+  infer o3 = object_new(t_realchar, "789");
+  array_append(a, o3);
+  object_destruct(o3);
+
+  array_inspect(a);
+
+  array_delete(a, 1);
+
+/*  // see it again
+  ca = array_see(a);
+  dealloc_printf(ca);
+
 
   // see it again
   ca = array_see(a);
   dealloc_printf(ca);
-
-  array_delete(a, 2);
-
-  // see it again
-  ca = array_see(a);
-  dealloc_printf(ca);
-
+*/
   array_destruct(a);
 }

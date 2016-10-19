@@ -1,11 +1,12 @@
-#ifdef GCC
-#line 2 "lexcommon"
-#endif
-
 #pragma once
 
 #include "../../common.h"
 #include "../object/object.h"
+
+#ifdef GCC
+#line __LINE__ "lexcommon"
+#endif
+
 
 typedef struct st_astnode astnode_t;
 

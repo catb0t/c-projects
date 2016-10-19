@@ -1,8 +1,8 @@
-#ifdef GCC
-#line 2 "hash"
-#endif
-
 #include "objcommon.h"
+
+#ifdef GCC
+#line __LINE__ "hash"
+#endif
 
 #include "../../fnv-hash/fnv.h"
 
@@ -13,11 +13,11 @@ hashkey_t hash_obj (const object_t* const obj);
 hash_t* hash_new_skele (void) {
   pfn();
 
-  hash_t* hash = safemalloc( sizeof(hash_t) );
+  hash_t*  hash = (typeof(hash)) safemalloc( sizeof(hash_t) );
 
   hash->keys     = array_new(NULL, -1);
   hash->vals     = array_new(NULL, -1);
-  hash->idxs     = safemalloc( sizeof (size_t) * 1 );
+  hash->idxs     = (typeof(hash->idxs)) safemalloc( sizeof (size_t) * 1 );
   hash->idxs_len = 0;
 
   report_ctor(hash);
@@ -48,14 +48,14 @@ hash_t* hash_new_boa (
 
   for (size_t i = 0; i < klen; i++) {
     object_t
-      *k = object_copy((keys->data) [i]), // 2
-      *v = object_copy((vals->data) [i]); // 3
+      **k = &( (keys->data) [i] ),
+      **v = &( (vals->data) [i] );
 
-    hash_add(hash, k, v);
-    object_dtor_args(2, k, v); // ~2, ~3
+    // references are okay because thisp will copy them anyways
+    hash_add(hash, *k, *v);
   }
 
-  // 3 allocs, 2 frees, last free is caller's problem
+  // 1 alloc, 0 frees, last free is caller's problem
   return hash;
 }
 
@@ -145,7 +145,7 @@ object_t* hash_get_copy (const hash_t* const h, const object_t* const key, bool*
 
   implemented with the same semantics as hash_get_copy.
 
-  it's not provided to change members of the keys array, because this
+  it's not provided to change members of the keys array, because thisp
   would cause the hashtable to be in an invalid state, in which the keys no longer
   hash to the hashes stored. recomputing just one hash of the entire table could result
   in a hash collision.
@@ -181,6 +181,68 @@ object_t** hash_get_ref (const hash_t* const h, const object_t* const key, bool*
   // get the first item, which should be the value
   return pair_car_ref( (*valpair)->cel );     // 1
 }
+
+/*
+  change a value at a key in a hash
+
+  returns false and does nothing if an error occurs.
+
+  does nothing successfully if the new and old keys compare equal.
+*/
+bool hash_change_at (hash_t* const h, const object_t* const obj, object_t* newval) {
+
+  bool ok = true;
+
+  object_t** ref = hash_get_ref(h, obj, &ok);
+
+  if ( false == ok ) {
+    return false;
+  }
+
+  if ( object_equals(*ref, newval) ) {
+    return true;
+  }
+
+  *ref = newval;
+
+  return ok;
+}
+
+/*
+  change the key oldkey to newkey, preserving the value.
+
+  returns false if an error occurs.
+
+  does nothing successfully if oldkey and newkey compare equal.
+*/
+bool hash_change_key (hash_t* const h, const object_t* const oldkey, const object_t* const newkey) {
+
+  if ( object_equals(oldkey, newkey) ) {
+    return true;
+  }
+
+  bool ok = true;
+
+  object_t
+    *val = hash_get_copy(h, oldkey, &ok);
+
+  if ( false == ok ) {
+    return false;
+  }
+
+  ok = hash_add(h, newkey, val);
+
+  if ( false == ok ) {
+    return false;
+  }
+
+  hash_delete(h, oldkey);
+
+  object_destruct(val);
+
+  return ok;
+}
+
 /*
   return the list of values, eg the car of every pair in hash->vals
 */
@@ -194,7 +256,7 @@ array_t* hash_getvals (const hash_t* h) {
 
   for (size_t i = 0; i < vlen; i++) {
     object_t
-      // get a reference to this value's pair
+      // get a reference to thisp value's pair
       **p   = array_get_ref(vs, un2signed(i), NULL),
       // get a reference to its first item
       **car = pair_car_ref( (*p)->cel );
@@ -249,7 +311,7 @@ bool hash_add (hash_t* const h, const object_t* const key, const object_t* const
   // add the pair to values
   array_append(h->vals, pairobj);
   // resize the idxs array by the needed amount
-  h->idxs = realloc(h->idxs, sizeof (size_t) * kh + 1);
+  h->idxs = (typeof(h->idxs)) realloc(h->idxs, sizeof (size_t) * kh + 1);
   // increment the pointer
   ++(h->idxs_len);
   // assign the index of the pair in values to idxs
@@ -259,7 +321,7 @@ bool hash_add (hash_t* const h, const object_t* const key, const object_t* const
 }
 
 /*
-  test, by simple search, whether this key is in the list of keys
+  test, by simple search, whether thisp key is in the list of keys
 */
 bool hash_keyexists (const hash_t* const h, const object_t* const key) {
   pfn();
@@ -337,21 +399,21 @@ void hash_delete (hash_t* const h, const object_t* const key) {
   size_t lastval = signed2un( findlast(h->idxs, h->idxs_len, -1, true) );
 
   // resize to be as small as possible
-  h->idxs = realloc(h->idxs, sizeof(size_t *) * lastval);
+  h->idxs = (typeof(h->idxs)) realloc(h->idxs, sizeof(size_t *) * lastval);
 
 }
 
 /*
   recompute the hash of every key and value.
 
-  the simple way to do this is to change h to point to a new hash with the data of the
+  the simple way to do thisp is to change h to point to a new hash with the data of the
   old one.
 
   useful if you modified a key in place. you're dumb in that case.
 
   =====
   recompute base encryption hash key sequence
-  this may take forever. do not interrupt the hash recompute or you may be required
+  thisp may take forever. do not interrupt the hash recompute or you may be required
   to relicense all your products. don't believe us? try it.
 
   -- The Website is Down Episode #4: Sales Demolition
@@ -364,7 +426,7 @@ char* hash_see (const hash_t* const h) {
   pfn();
 
   (void) h;
-  char* buf = safemalloc(1);
+  char*  buf = (typeof(buf)) safemalloc(1);
   return buf;
 }
 

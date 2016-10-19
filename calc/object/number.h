@@ -1,13 +1,13 @@
-#ifdef GCC
-#line 2 "number"
-#endif
-
 #include "objcommon.h"
+
+#ifdef GCC
+#line __LINE__ "number"
+#endif
 
 number_t* number_new (const numderlying_t val) {
   pfn();
 
-  number_t* number = safemalloc(sizeof (number_t));
+  number_t*  number = (typeof(number)) safemalloc(sizeof (number_t));
   number->value = val;
 
   report_ctor(number);
@@ -30,9 +30,9 @@ void number_destruct (number_t* const number) {
 char* number_see (const number_t* const num) {
   pfn();
 
-  char* buf = safemalloc(30);
+  char*  buf = (typeof(buf)) safemalloc(30);
   snprintf(buf, 30, "%LG", num->value);
-  buf = realloc(buf, safestrnlen(buf));
+  buf = (typeof(buf)) realloc(buf, safestrnlen(buf));
 
   return buf;
 }

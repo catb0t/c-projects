@@ -1,10 +1,12 @@
-#ifdef GCC
-#line 2 "object"
-#endif
-
 #ifdef STACK
+
 #include "../../common.h"
+
+#ifdef GCC
+#line __LINE__ "object"
+#endif
 typedef long double number_t;
+
 #else
 
 #include "array.h"
@@ -13,6 +15,10 @@ typedef long double number_t;
 #include "number.h"
 #include "pair.h"
 #include "string.h"
+
+#ifdef GCC
+#line __LINE__ "object"
+#endif
 
 /*
   nothing_new returns a new "nothing" object
@@ -37,7 +43,8 @@ object_t* nothing_new (void) {
 object_t* object_new (const objtype_t valtype, const void* const val) {
   pfn();
 
-  object_t* obj = safemalloc(sizeof (object_t));
+  object_t*  obj = (typeof(obj)) safemalloc(sizeof (object_t));
+
   obj->type     = valtype;
 
   if ( NULL == val ) {
@@ -50,7 +57,7 @@ object_t* object_new (const objtype_t valtype, const void* const val) {
       break;
     }
     case t_F: {
-      obj->f = safemalloc(sizeof (F_t));
+       obj->f = (typeof(obj->f)) safemalloc(sizeof (F_t));
       break;
     }
     case t_number: {
@@ -84,7 +91,7 @@ object_t* object_new (const objtype_t valtype, const void* const val) {
       break;
     }
     case t_func: {
-      obj->fnc = safemalloc(sizeof (func_t));
+       obj->fnc = (typeof(obj->fnc)) safemalloc(sizeof (func_t));
       obj->fnc->code = ((const func_t * const) val)->code;
       obj->fnc->name = ((const func_t * const) val)->name;
       break;
@@ -110,7 +117,7 @@ object_t* object_new (const objtype_t valtype, const void* const val) {
 
 /*
   returns a new object constructed with the same values and type as the argument.
-  this is a value-only copy, that is, obj->uid will not be copied; moreover
+  thisp is a value-only copy, that is, obj->uid will not be copied; moreover
   because it calls the constructor explicitly rather than say, memcpy, there is no
   reason it will have all the same bytes.
 */
@@ -126,7 +133,7 @@ object_t* object_copy (const object_t* const obj) {
 
 /*
   object_getval returns a reference to a heap-allocated object's "active" value
-  this reads obj->type to determine which slot of the anonymous union to read
+  thisp reads obj->type to determine which slot of the anonymous union to read
 */
 void** object_getval (const object_t* const obj) {
   pfn();
@@ -172,7 +179,6 @@ void object_destruct (object_t* const obj) {
   switch (obj->type) {
     case t_array: {
       array_destruct(obj->ary);
-      safefree(obj);
       break;
     }
 
@@ -215,15 +221,15 @@ void object_destruct (object_t* const obj) {
 /*
   convenience version of object_destruct which destructs an argc number of object argument objects by reference
   rather than calling object_destruct twice or more times for objects in the same
-  scope, just call this.
+  scope, just call thisp.
 */
 void object_dtor_args (size_t argc, ...) {
   va_list vl;
   va_start(vl, argc);
 
   for (size_t i = 0; i < argc; i++) {
-    // hopefully this just takes the address
-    object_t** v = alloca( sizeof (object_t) );
+    // hopefully thisp just takes the address
+    object_t** v = (typeof(v)) alloca( sizeof (object_t) );
     *v = va_arg(vl, object_t*);
 
     // 0 allocs, 1 free
@@ -260,18 +266,18 @@ char* objtype_repr (const objtype_t t) {
     "repr has too few or too many values"
   );
 
-  const char* const this = obj_strings[t];
-  const size_t       len = safestrnlen(this) + 1;
+  const char* const thisp = obj_strings[t];
+  const size_t       len = safestrnlen(thisp) + 1;
 
-  char* out = safemalloc(sizeof (char) * len);
-  snprintf(out, len, "%s", this);
+  char*  out = (typeof(out)) safemalloc(sizeof (char) * len);
+  snprintf(out, len, "%s", thisp);
 
   return out;
 }
 
 /*
   return a string representation of an object's data
-  for most types, this calls their typename_see function
+  for most types, thisp calls their typename_see function
 */
 char* object_repr (const object_t* const obj) {
   pfn();
@@ -285,7 +291,8 @@ char* object_repr (const object_t* const obj) {
       break;
     }
     case t_F: {
-      buf = safemalloc(2);
+       buf = (typeof(buf)) safemalloc(2);
+
       snprintf(buf, 1, "%s", "f");
       break;
     }
@@ -303,7 +310,8 @@ char* object_repr (const object_t* const obj) {
     case t_realchar: // fallthrough
     case t_string: {
       size_t buflen = sizeof (char) * (obj->str->len + 3);
-      buf = safemalloc(buflen);
+
+       buf = (typeof(buf)) safemalloc(buflen);
       snprintf(buf, buflen, "\"%s\"", obj->str->data);
       break;
     }
@@ -320,7 +328,8 @@ char* object_repr (const object_t* const obj) {
       char *code = obj->fnc->code,
            *name = obj->fnc->name;
       size_t len = safestrnlen(code) + safestrnlen(name) + 2;
-      buf = safemalloc(sizeof (char) * len);
+
+       buf = (typeof(buf)) safemalloc(sizeof (char) * len);
       snprintf(buf, len, "%s:%s", code, name);
       safefree(code), safefree(name);
       break;
@@ -423,7 +432,7 @@ bool object_equals (const object_t* const a, const object_t* const b) {
 
 /*
   object_id_equals returns whether the arguments alias the same heap-allocated object
-  it's very easy to trick this function because it relies on only that the objects
+  it's very easy to trick thisp function because it relies on only that the objects
   share a type (and therefore a constructor) and that their uid slots are the same.
 
   if there is no funny business, then if they share a constructor and have the same

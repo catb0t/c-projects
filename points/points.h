@@ -71,7 +71,7 @@ point_t* point_new (const int64_t x, const int64_t y, const char id) {
 
   assert ( isalnum(id) );
 
-  point_t* p = safemalloc(sizeof (point_t));
+  point_t*  p = (typeof(p)) safemalloc(sizeof (point_t));
 
   p->x       = x;
   p->y       = y;
@@ -99,7 +99,7 @@ shape_t* shape_new (
   const ssize_t primeness
 ) {
 
-  shape_t* s = safemalloc(sizeof (shape_t));
+  shape_t*  s = (typeof(s)) safemalloc(sizeof (shape_t));
 
   if (len < 0) {
     if (points != NULL ) {
@@ -115,8 +115,8 @@ shape_t* shape_new (
 
   }
 
-  char*     name       = safemalloc((sizeof (char) * signed2un(len)) + 1);
-  point_t** new_points = safemalloc(sizeof (point_t *) * signed2un(len));
+  char*     name       = (typeof(name)) safemalloc((sizeof (char) * signed2un(len)) + 1);
+  point_t** new_points = (typeof(new_points)) safemalloc(sizeof (point_t *) * signed2un(len));
 
   ssize_t i;
   for (i = 0; i < len; i++) {
@@ -147,7 +147,7 @@ point_t* point_copy (const point_t* const p) {
 shape_t* shape_copy (const shape_t* const s) {
 
   if ( ! shape_isempty(s) ) {
-    point_t** points = safemalloc(sizeof (point_t *) * signed2un(s->num_points));
+    point_t**  points = (typeof(points)) safemalloc(sizeof (point_t *) * signed2un(s->num_points));
 
     for (size_t i = 0; i < ( signed2un(s->num_points) ); i++) {
       points[i] = point_copy( (s->points) [i]);
@@ -160,7 +160,7 @@ shape_t* shape_copy (const shape_t* const s) {
   return shape_new(NULL, -1, s->primeness);
 }
 
-__attribute_pure__
+__PURE_FUNC
 bool shape_isempty (const shape_t* s) {
   return s->num_points == -1;
 }
@@ -186,7 +186,7 @@ char* point_see (const point_t* p) {
   ));
 
   /*
-  "If the output was truncated due to this limit, then
+  "If the output was truncated due to thisp limit, then
   the return value is the number of characters (excluding
   the terminating null byte) which would have been written
   to the final string if enough space had been available.
@@ -198,7 +198,7 @@ char* point_see (const point_t* p) {
     len = MOST_POSSIBLE_POINTSEE_CHARS;
   }
 
-  char* o = safemalloc(sizeof (char) * len);
+  char*  o = (typeof(o)) safemalloc(sizeof (char) * len);
 
   snprintf(
     o,
@@ -216,7 +216,7 @@ char* shape_see (const shape_t* s, const bool lines) {
 #define STR_ERRMARGIN 8
 
   if ( shape_isempty(s) ) {
-    char* o = safemalloc(sizeof (char));
+    char*  o = (typeof(o)) safemalloc(sizeof (char));
     snprintf(o, 1, "%c", 0);
     return o;
   }
@@ -224,7 +224,7 @@ char* shape_see (const shape_t* s, const bool lines) {
   size_t count_ps = signed2un(s->num_points);
   size_t new_len = 0;
 
-  char** pts_tos = safemalloc(sizeof (char *) * count_ps);
+  char**  pts_tos = (typeof(pts_tos)) safemalloc(sizeof (char *) * count_ps);
 
   for (size_t i = 0; i < count_ps; i++) {
 
@@ -235,7 +235,7 @@ char* shape_see (const shape_t* s, const bool lines) {
     new_len   += safestrnlen(st) + STR_ERRMARGIN;
   }
 
-  char *out    = safemalloc(sizeof (char) * new_len),
+  char *out    = (typeof(out)) safemalloc(sizeof (char) * new_len),
        *bufend = out;
 
   for (size_t i = 0; i < count_ps; i++) {
@@ -253,14 +253,14 @@ char* shape_see (const shape_t* s, const bool lines) {
 
   size_t len,
          flen = new_len + safestrnlen(s->qual_name);
-  char* final = safemalloc(sizeof (char) * flen);
+  char*  final = (typeof(final)) safemalloc(sizeof (char) * flen);
 
   char* primes;
   if ( (s->primeness) >= 0 ) {
     primes = str_repeat("'", signed2un(s->primeness) + 1, &len);
 
   } else {
-    primes = safemalloc(1);
+     primes = (typeof(primes)) safemalloc(1);
     snprintf(primes, 1, "%s", "\0");
   }
 
@@ -292,7 +292,7 @@ void shape_print (const shape_t* const s, const bool lines) {
   safefree(c);
 }
 
-__attribute_pure__ __attribute_const__
+__PURE_FUNC __CONST_FUNC
 sector_t point_get_sector (const point_t* const p) {
   int64_t x = p->x, y = p->y;
 
@@ -392,7 +392,7 @@ void shape_reflect (shape_t* s, const axis_t axs, const int64_t val) {
 }
 
 // inclusive
-static bool uint16_inrange (const uint16_t n, const uint16_t min, const uint16_t max) {
+static inline bool uint16_inrange (const uint16_t n, const uint16_t min, const uint16_t max) {
   return (n >= min) && (n <= max);
 }
 

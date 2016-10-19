@@ -43,7 +43,7 @@ char* element_see (const element_t* elem);
 isotope_t* isotope_new (const double abun, const amu_t mass) {
   pfn();
 
-  isotope_t* isotope = safemalloc( sizeof (isotope_t) );
+  isotope_t*  isotope = (typeof(isotope)) safemalloc( sizeof (isotope_t) );
   isotope->abun = abun;
   isotope->mass = mass;
 
@@ -70,10 +70,10 @@ element_t* element_new (
 ) {
   pfn();
 
-  element_t* out = safemalloc(sizeof (element_t));
+  element_t*  out = (typeof(out)) safemalloc(sizeof (element_t));
 
   if (isosidx != -1 && NULL != isos) {
-    out->isos = safemalloc(sizeof (isotope_t *) * signed2un(isosidx + 1) );
+     out->isos = (typeof(out->isos)) safemalloc(sizeof (isotope_t *) * signed2un(isosidx + 1) );
 
     for (ssize_t i = 0; i < isosidx; i++) {
       out->isos[i] = isotope_copy(isos[i]);
@@ -117,12 +117,12 @@ char* isotope_see (const isotope_t* iso) {
 
   char* out;
   if (NULL == iso) {
-    out = safemalloc(5);
+     out = (typeof(out)) safemalloc(5);
     snprintf(out, 5, "(null)");
     return out;
   }
 
-  out = safemalloc(ISOSEE_LEN);
+   out = (typeof(out)) safemalloc(ISOSEE_LEN);
   snprintf(
     out,
     ISOSEE_LEN,
@@ -139,7 +139,7 @@ char* isotope_see (const isotope_t* iso) {
 
 char* element_see (const element_t* elem) {
   if (NULL == elem) {
-    char* out = safemalloc(5);
+    char*  out = (typeof(out)) safemalloc(5);
     snprintf(out, 5, "(null)");
     return out;
   }
@@ -195,7 +195,7 @@ char* element_see (const element_t* elem) {
     len = MAX_SEE_LEN;
   }
 
-  out = safemalloc(len);
+   out = (typeof(out)) safemalloc(len);
   snprintf(
     out,
     len,
@@ -224,8 +224,8 @@ amu_t amass_from_isos (const isotope_t* const * const isos, const size_t len) {
   amu_t total = 0;
 
   for (size_t i = 0; i < len; i++) {
-    const isotope_t* const this = isos[i];
-    total += (this->abun * this->mass);
+    const isotope_t* const thisp = isos[i];
+    total += (thisp->abun * thisp->mass);
   }
 
   return total;

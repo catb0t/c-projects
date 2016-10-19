@@ -1,27 +1,24 @@
-#ifdef GCC
-#line 2 "array"
-#endif
-
 #include "objcommon.h"
 
+#ifdef GCC
+#line __LINE__ "array"
+#endif
 
 /*
   returns a newly constructed, unique array object.
-  if objs is NULL or len is -1, an empty array will be returned, instead of building a new one by copying the objects from the first argument.
+  if objs is NULL or len is -1, an empty array will be returned, instead of building
+  a new one by copying the objects from the first argument.
 */
 array_t* array_new (const object_t* const * const objs, const ssize_t len) {
   pfn();
 
-  array_t* array = safemalloc( sizeof (array_t) );
-  array->data    = safemalloc( sizeof (object_t *) );
+  array_t* array = (typeof(array)) safemalloc( sizeof (array_t) );
+  array->data    = (typeof(array->data)) safemalloc( sizeof (object_t *) );
 
-  if (-1 != len) {
+  if ( (-1 != len) && (NULL != objs) ) {
     for (ssize_t i = 0; i < len; i++) {
-      object_t* o = object_copy(objs[i]);
-      array_append(array, o);
-      object_destruct(o);
+      array_append(array, objs[i]);
     }
-
   }
   array->idx = len;
 
@@ -59,15 +56,18 @@ void array_destruct (array_t* const array) {
       object_destruct( *array_get_ref(array, i, NULL) );
     }
   }
+
   if (NULL != array->data) {
-    safefree(array->data);
+    safefree( array->data );
   }
 
   safefree(array);
 }
 
 /*
-  tests whether an array contains no elements or if its data pointer is NULL
+  tests whether an array contains no elements (its index is -1),
+  or if its data pointer is NULL
+
   effectively, there is little difference, except in referencing NULL pointers.
 */
 bool array_isempty (const array_t* const a) {
@@ -85,8 +85,8 @@ void array_resize (array_t* const a, const ssize_t new_idx) {
   pfn();
 
   if ( -1 == new_idx ) {
-    a->data = realloc(a->data, 0);
-    a->idx = -1;
+    a->data = (typeof(a->data)) realloc(a->data, 0);
+    a->idx  = -1;
     return;
   }
 
@@ -97,7 +97,7 @@ void array_resize (array_t* const a, const ssize_t new_idx) {
   }
 
   a->idx  = new_idx;
-  a->data = realloc(a->data, sizeof (object_t*) * signed2un(new_idx + 1));
+  a->data = (typeof(a->data)) realloc(a->data, sizeof (object_t*) * signed2un(new_idx + 1));
 }
 
 /*
@@ -107,26 +107,26 @@ void array_resize (array_t* const a, const ssize_t new_idx) {
     if the array is empty, return
     if idx is the same as array->idx, return
 
-    shift elements left by one by changing the pointers, not copying them
+    shift elements above the index left by one by changing the pointers, not by
+      ...copying them
     resize the array by -1.
 */
 void array_delete (array_t* const a, const ssize_t idx) {
   pfn();
 
-  if ( idx > a->idx ) {
+  if ( ( idx > a->idx ) || ( array_isempty(a) ) || ( -1 == idx ) ) {
     object_error(INDEXERROR, __func__, false);
     return;
   }
 
-  if ( array_isempty(a) || idx == a->idx ) {
-    // no point continuing
-    return;
-  }
+  // if idx and a->idx are equal we can just resize
+  if ( (idx != a->idx) ) {
 
-  ssize_t i;
-  for (i = idx + 1; i < (a->idx); i++) {
-    // change pointer (?)
-    (a->data) [i - 1] = (a->data) [i];
+    for (ssize_t i = idx + 1; i < (a->idx); i++) {
+      // change pointer (?)
+      (a->data) [i - 1] = (a->data) [i];
+    }
+
   }
 
   array_resize(a, a->idx - 1);
@@ -145,11 +145,6 @@ void array_delete (array_t* const a, const ssize_t idx) {
 */
 void array_insert (array_t* const a, const object_t* const o, const ssize_t idx) {
   pfn();
-
-  if ( array_isempty(a) || -1 == idx ) {
-    array_append(a, o);
-    return;
-  }
 
   array_resize(a, a->idx + 1);
 
@@ -174,7 +169,7 @@ void array_append (array_t* const a, const object_t* const o) {
   pfn();
 
   ++(a->idx);
-  a->data = realloc(a->data, (sizeof (object_t *) * signed2un(a->idx + 1) ));
+  a->data = (typeof(a->data)) realloc(a->data, (sizeof (object_t *)) * signed2un(a->idx + 1) );
 
   (a->data) [a->idx] = object_copy(o);
 }
@@ -191,7 +186,7 @@ void array_append (array_t* const a, const object_t* const o) {
 char* array_see (const array_t* const a) {
   pfn();
 
-  char *outbuf = safemalloc(10),
+  char *outbuf = (typeof(outbuf)) safemalloc(10),
        *bufptr = outbuf;
 
   str_append(bufptr, 3, "%s ", "{");
@@ -205,11 +200,11 @@ char* array_see (const array_t* const a) {
 
   for (ssize_t i = 0; i < (a->idx + 1); i++) {
     // 'tis but a reference
-    object_t** this = array_get_ref(a, i, NULL);
-    char*   strthis = object_repr(*this);
+    object_t** thisp = array_get_ref(a, i, NULL);
+    char*   strthis = object_repr(*thisp);
     size_t  tlen    = safestrnlen(strthis) + 2;
 
-    outbuf = realloc(outbuf, total_len + tlen);
+    outbuf = (typeof(outbuf)) realloc(outbuf, total_len + tlen);
     bufptr = outbuf + total_len;
 
     str_append(bufptr, tlen, "%s ", strthis);
@@ -221,12 +216,22 @@ char* array_see (const array_t* const a) {
   // for my own sanity
   total_len = safestrnlen(outbuf);
 
-  outbuf  = realloc(outbuf, total_len + 3);
+  outbuf  = (typeof(outbuf)) realloc(outbuf, total_len + 3);
 
   bufptr  = outbuf + total_len;
   str_append(bufptr, 3, "%s\n", "}");
 
   return outbuf;
+}
+
+void array_inspect (const array_t* const a) {
+
+  for (ssize_t i = 0; i < (a->idx + 1); i++) {
+    char* x = object_repr(*array_get_ref(a, i, NULL));
+    printf("%zu: %s\n", i, x);
+    safefree(x);
+  }
+
 }
 
 /*
@@ -271,7 +276,7 @@ object_t* array_get_copy (const array_t* const a, const ssize_t idx, bool* ok) {
 /*
   return a reference to an object in an array.
 
-  realistically this does little more than add the array's data address to the
+  realistically thisp does little more than add the array's data address to the
   element's offset.
 
   if some error occurred, ok will be false and NULL is returned.
@@ -297,7 +302,7 @@ object_t** array_get_ref (const array_t* const a, const ssize_t idx, bool* ok) {
 /*
   test if two arrays are equal by value.
 
-  this is done by comparing each element in one with each element in another, and
+  thisp is done by comparing each element in one with each element in another, and
   returning when a difference is found.
 
   arrays of disparate length cannot be equal.

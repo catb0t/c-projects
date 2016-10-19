@@ -110,7 +110,7 @@ void    stack_op_swp (stack_t* stk) {
   with no formatting whatsoever.
 
   does not modify *stk, even though *stk is not marked
-  const; this is because the operators must share a type.
+  const; thisp is because the operators must share a type.
 */
 void    stack_op_prn (stack_t* stk) {
   pfn();

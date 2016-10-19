@@ -1,9 +1,47 @@
-#ifdef GCC
-#line 2 "common"
+#pragma once
+
+// unistd.h
+#if defined(unix) || defined(__unix__) || defined(__unix) || defined(__linux__)
+
+  #define HAVE_POSIX
+
+#elif defined(_WIN32)
+
+  //#pragma message "Windows"
+  #include <windows.h>
+  #define WINDOWS
+  #define NO_POSIX
+
 #endif
 
-#pragma once
+// clang defines all the macros gcc does but gcc doesn't define __clang__
+#if !defined(__clang__) && defined(__GNUC__)
+
+  #define GCC
+  #define COMPILER "GCC"
+
+#elif defined(__GNUC__) && defined(__clang__)
+
+  #define CLANG
+  #define COMPILER "Clang"
+
+#else
+  // Something else (?)
+  #define NONGNU
+  #define COMPILER "nongnu"
+#endif
+
+#if defined(GCC) || defined(CLANG)
+  #define GCC_COMPAT
+#endif
+
+#ifdef GCC
+#line __LINE__ "common"
+#endif
+
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 
 #include <assert.h>
 #include <errno.h>
@@ -18,12 +56,34 @@
 #define DEC_BASE    10
 #define DEC_DIGITS  "0123456789"
 #define MAX_STR_LEN 4096
-#define NUM_PROBS   5
 #define SHORT_INSTR 256
 #define ULL_DIGITS  20
 
+#ifndef __GLIBC__
+
+  #include "gnustring.h"
+  #define NOGLIBC
+  extern char* strndup(const char* const, const size_t);
+  typedef uint64_t u_int64_t;
+  typedef uint32_t u_int32_t;
+
+#endif
+
+#ifdef GCC_COMPAT
+  #pragma GCC poison strcpy strdup sprintf gets atoi // poison unsafe functions
+
+  #ifndef NOGLIBC
+    #define __PURE_FUNC  __attribute_pure__
+    #define __CONST_FUNC __attribute_const__
+
+  #else
+    #define __PURE_FUNC
+    #define __CONST_FUNC
+  #endif
+#endif
+
 #ifndef NODEBUG
-#define DEBUG
+  #define DEBUG
 #endif
 
 #ifdef DEBUG
@@ -32,13 +92,9 @@
   #define _printfunc(file, line, func) printf("\n\033[30;1m%s#%d:%s\033[0m\n", \
     file, line, func)
   #define pfn() _printfunc(__FILE__, __LINE__, __func__)
-  #define __PURE_FUNC
-  #define __CONST_FUNC
 #else
   #define dbg_prn(...)
   #define pfn()
-  #define __PURE_FUNC  __attribute_pure__
-  #define __CONST_FUNC __attribute_const__
 #endif
 
 #define dealloc_printf(x) do { printf("%s\n", (x)); safefree((x)); } while (0);
@@ -53,10 +109,13 @@
 
 #define report_dtor(obj) dbg_prn("dtor %s #%zu\n", #obj, obj->uid)
 
-#undef strdup
-#pragma GCC poison strcpy strdup sprintf gets atoi // poison unsafe functions
+#ifdef __cplusplus
+  #define _Static_assert(expr, diag) static_assert(expr, diag)
+  #define typeof(x) decltype(x)
+#endif
 
 // utils
+char*       strchr_c (const char* const str, const char c);
 char* make_empty_str (void);
 void       str_chomp (char* str);
 char*         readln (const size_t len);
@@ -68,8 +127,8 @@ char*         str_rm (const char* const str, const char* const omit, size_t* out
 char*   concat_lines (char** string_lines,   const size_t lines_len, const size_t total_len);
 
 bool     isEOL (const char* const str);
-bool  getint64 (int64_t*    restrict dest);
-bool getuint64 (uint64_t*   restrict dest);
+bool  getint64 (int64_t*    dest);
+bool getuint64 (uint64_t*   dest);
 
 uint64_t        pow_uint64 (uint64_t in, uint64_t power);
 uint64_t* str_to_ull_array (
@@ -95,23 +154,23 @@ void*   _safemalloc (size_t   len, const uint64_t lineno);
 #define safefree(x)     _safefree(x, __LINE__)
 #define safemalloc(x) _safemalloc(x, __LINE__)
 
-__attribute_const__ __attribute_pure__
+__PURE_FUNC __CONST_FUNC
 size_t signed2un (const ssize_t val) {
   return val < 0 ? 0 : (size_t) val;
 }
 
-__attribute_const__ __attribute_pure__
+__PURE_FUNC __CONST_FUNC
 ssize_t un2signed (const size_t val) {
   return (ssize_t) (val > (SIZE_MAX / 2) ? SIZE_MAX / 2 : val);
 }
 
-__attribute_const__ __attribute_pure__
+__PURE_FUNC __CONST_FUNC
 size_t usub (const size_t a, const size_t b) {
 
   return signed2un(un2signed(a) - un2signed(b));
 }
 
-__attribute_const__ __attribute_pure__
+__PURE_FUNC __CONST_FUNC
 size_t  udifference (const size_t x, const size_t y) {
   return (x < y ? y - x : x - y);
 }
@@ -156,6 +215,11 @@ void free_ptr_array (void** ptr, const size_t len) {
   safefree(ptr);
 }
 
+char* strchr_c (const char* const str, const char c) {
+  char* nw = (typeof(nw)) strndup (str, safestrnlen(str));
+  while ( (++*nw) != c);
+  return nw;
+}
 
 char* str_reverse (const char* const str) {
   pfn();
@@ -163,17 +227,17 @@ char* str_reverse (const char* const str) {
   if (!str) { return NULL; }
 
   size_t len = safestrnlen(str);
-  char*  new = safemalloc( sizeof(char) * len );
+  char*   newp = (typeof(newp)) safemalloc( sizeof(char) * len );
 
   size_t i;
   for (i = 0; i < len; i++) {
-    new[i] = str[ udifference(i + 1, len) ];
+    newp[i] = str[ udifference(i + 1, len) ];
   }
 
-  return new;
+  return newp;
 }
 
-// chomp -- cuts the last char (a newline?) from a string
+// chomp -- cuts the last char (a newpline?) from a string
 void str_chomp (char* str) {
   pfn();
 
@@ -186,14 +250,15 @@ void str_chomp (char* str) {
 char* readln (const size_t len) {
   pfn();
 
-  char *ret,
-       *buf = safemalloc( sizeof(char) * len );
+  char
+    *ret,
+    *buf = (typeof(buf)) safemalloc( sizeof(char) * len );
 
   ret = fgets(buf, len > INT_MAX ? INT_MAX : (int) len, stdin);
 
   if ( ret == NULL ) {
     safefree(buf);
-    char* out = safemalloc(2);
+    char*  out = (typeof(out)) safemalloc(2);
     snprintf(out, 2, "%c", '\04');
     return out;
   }
@@ -207,12 +272,12 @@ char* str_copy (const char* str) {
   pfn();
 
   size_t len = safestrnlen(str);
-  char* new = safemalloc(sizeof (char) * len);
+  char*  newp = (typeof(newp)) safemalloc(sizeof (char) * len);
 
   for (size_t i = 0; i < len; i++) {
-    new[i] = str[i];
+    newp[i] = str[i];
   }
-  return new;
+  return newp;
 }
 
 char** str_split (
@@ -231,18 +296,18 @@ char** str_split (
   size_t len = safestrnlen(str);
   size_t num_delim = str_count(str, delim_str);
 
-  char** new;
+  char** newp;
 
   if (0 == num_delim) {
     // no separator found
-    new      = safemalloc( sizeof (char *) );
-    new[0]   = scopy;
+    newp      = (typeof(newp)) safemalloc( sizeof (char *) );
+    newp[0]   = scopy;
     *out_len = 1;
 
   } else if (1 == num_delim) {
 
     // one separator
-    new = safemalloc( sizeof (char *) * 2 );
+     newp = (typeof(newp)) safemalloc( sizeof (char *) * 2 );
     size_t i;
     for (
       i = 0;
@@ -250,15 +315,15 @@ char** str_split (
       i++
     );
     scopy[i] = '\0';
-    new[0] = scopy;
-    new[1] = &(scopy[i + 1]);
+    newp[0] = scopy;
+    newp[1] = &(scopy[i + 1]);
     *out_len = 2;
 
   } else {
     // separators found, alloc two more
     size_t num_pieces = num_delim + 1;
 
-    new = safemalloc( sizeof (char *) * num_pieces );
+     newp = (typeof(newp)) safemalloc( sizeof (char *) * num_pieces );
 
     size_t i;
     char* token;
@@ -268,18 +333,18 @@ char** str_split (
       i++
     ) {
       dbg_prn("i: %zu, token: %s\n", i, token);
-      new[i] = token;
+      newp[i] = token;
     }
 
     *out_len = i;
 
   }
 
-  return new;
+  return newp;
 }
 
 /*
-  str_rm -- remove all instances of the contents of *omit from str and return new memory
+  str_rm -- remove all instances of the contents of *omit from str and return newp memory
   result must be freed!
 */
 char*     str_rm (
@@ -290,24 +355,24 @@ char*     str_rm (
   pfn();
 
   size_t len_str = safestrnlen(str);
-  // malloc one more than exactly enough for the new string
-  const size_t len_new = ( ( ( sizeof(char) * len_str ) - str_count(str, omit) ) );
-  char*            new = safemalloc( len_new + 1 );
+  // malloc one more than exactly enough for the newp string
+  const size_t len_newp = ( ( ( sizeof(char) * len_str ) - str_count(str, omit) ) );
+  char*             newp = (typeof(newp)) safemalloc( len_newp + 1 );
 
   char c[3];
 
   size_t i, j;
-  for (i = 0, j = 0; j < len_new; i++) {
+  for (i = 0, j = 0; j < len_newp; i++) {
     snprintf(c, 3, "%c%c", str[i], 0);
     if (!str_count(omit, c)) {
-      new[j] = str[i];
+      newp[j] = str[i];
       j++;
     }
   }
-  new[j] = 0;
-  *out_len = len_new;
+  newp[j] = 0;
+  *out_len = len_newp;
   assert(out_len != NULL);
-  return new;
+  return newp;
 }
 
 __PURE_FUNC
@@ -342,7 +407,7 @@ char*  str_repeat (
   size_t in_len = safestrnlen(in_str);
   *out_len = in_len * times;
 
-  char *out = safemalloc( 1 + *out_len ),
+  char *out = (typeof(out)) safemalloc( 1 + *out_len ),
        *bufptr = out;
 
   for (size_t i = 0; i < *out_len; i++) {
@@ -368,7 +433,7 @@ bool isEOL (const char* str) {
   return !str || !safestrnlen(str) || str[0] == '\n';
 }
 
-bool getint64 (int64_t* restrict dest) {
+bool getint64 (int64_t* dest) {
   pfn();
 
   char* in = readln(ULL_DIGITS);
@@ -381,7 +446,7 @@ bool getint64 (int64_t* restrict dest) {
   return true;
 }
 
-bool getuint64 (uint64_t* restrict dest) {
+bool getuint64 (uint64_t* dest) {
   pfn();
 
   char* in = readln(ULL_DIGITS);
@@ -408,7 +473,7 @@ uint64_t pow_uint64 (const uint64_t in, const uint64_t power) {
 char* concat_lines (char** string_lines, const size_t lines_len, const size_t total_len) {
   pfn();
 
-  char *output = safemalloc( (sizeof (char) * total_len) + 1),
+  char *output = (typeof(output)) safemalloc( (sizeof (char) * total_len) + 1),
        *bufptr = output;
 
   for (size_t i = 0; i < lines_len; i++) {
@@ -427,7 +492,7 @@ char* concat_lines (char** string_lines, const size_t lines_len, const size_t to
 char* make_empty_str (void) {
   pfn();
 
-  char* out = safemalloc(1);
+  char*  out = (typeof(out)) safemalloc(1);
   snprintf(out, 1, "%s", "");
   return out;
 }

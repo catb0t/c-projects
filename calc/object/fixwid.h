@@ -1,13 +1,13 @@
-#ifdef GCC
-#line 2 "fixwid"
-#endif
-
 #include "objcommon.h"
+
+#ifdef GCC
+#line __LINE__ "fixwid"
+#endif
 
 fixwid_t* fixwid_new (const ssize_t n) {
   pfn();
 
-  fixwid_t* fixwid = safemalloc( sizeof(fixwid_t) );
+  fixwid_t*  fixwid = (typeof(fixwid)) safemalloc( sizeof(fixwid_t) );
 
   fixwid->value = n;
 
@@ -32,10 +32,10 @@ fixwid_t* fixwid_copy (const fixwid_t* const n) {
 char* fixwid_see (const fixwid_t* const n) {
   pfn();
 
-  char* buf = safemalloc( sizeof(char) * ULL_DIGITS );
+  char*  buf = (typeof(buf)) safemalloc( sizeof(char) * ULL_DIGITS );
   snprintf( buf, ULL_DIGITS, "%zd", n->value );
 
-  buf = realloc(buf, sizeof (char) * safestrnlen(buf));
+  buf = (typeof(buf)) realloc(buf, sizeof (char) * safestrnlen(buf));
   return buf;
 }
 

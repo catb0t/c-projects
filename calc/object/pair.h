@@ -1,11 +1,11 @@
-#ifdef GCC
-#line 2 "pair"
-#endif
-
 #include "objcommon.h"
 
+#ifdef GCC
+#line __LINE__ "pair"
+#endif
+
 pair_t*   pair_new (const object_t* const car, const object_t* const cdr) {
-  pair_t* pair = safemalloc( sizeof (pair_t) );
+  pair_t*  pair = (typeof(pair)) safemalloc( sizeof (pair_t) );
 
   pair->car = object_copy(car),
   pair->cdr = object_copy(cdr);
@@ -26,7 +26,7 @@ char* pair_see (const pair_t* const p) {
     *buf;
 
   size_t buflen = safestrnlen(scar) + safestrnlen(scdr) + 11;
-  buf = safemalloc(sizeof (char) * buflen);
+   buf = (typeof(buf)) safemalloc(sizeof (char) * buflen);
   snprintf(buf, buflen, "{ %s . %s }", scar, scdr);
 
   safefree(scar), safefree(scdr);
@@ -52,3 +52,5 @@ void pair_destruct (pair_t* const pair) {
   object_dtor_args(2, pair->car, pair->cdr);
   safefree(pair);
 }
+
+// void pair_cons (pair_t* const p, const object_t* cdr) { }
