@@ -27,13 +27,13 @@ DEBUG_OPTS := -Wall -Wextra -Wfloat-equal -Winline -Wundef -Werror -fverbose-asm
 
 MEM_OPTS := -fstack-protector -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer
 
-OPTS := ../fnv-hash/libfnv.a -lm
+OPTS := -lm ../fnv-hash/libfnv.a
 ifeq ($(CCPLUS), 1)
 	OPTS += -std=c++14
-	CC := g++
+	CC := c++
 else
-	DEBUG_OPTS += -Wstrict-prototypes -Wmissing-prototypes
 	OPTS += -std=gnu11
+	DEBUG_OPTS += -Wstrict-prototypes -Wmissing-prototypes
 endif
 
 ifeq ($(CC), g++)
@@ -93,6 +93,8 @@ DIRS=$(find . -maxdepth 1 -regextype sed -type d -iregex '\./[^\.].*' -exec echo
 
 function build_targets () {
 
+	(cd "fnv-hash" || exit; make -j)
+
   targets="$1"
   # if there are none, set some defaults
   if [[ "$targets" == "" ]]; then
@@ -110,16 +112,11 @@ function build_targets () {
   for dir in $DIRS; do
 
     if [[ "$dir" = "./old" ]] ; then continue ; fi
+		if [[ "$dir" = "./fnv-hash" ]] ; then continue ; fi
 
-    ee "$COLOR_CYN\nMaking $dir...$COLOR_OFF\n"
+		ee "$COLOR_CYN\nMaking $dir...$COLOR_OFF\n"
 
     pushd "$dir" # || ( ee "$COLOR_RED\nFatally failed $dir...$COLOR_OFF\n"; exit )
-
-    if [[ "$dir" = "./fnv-hash" ]] ; then
-      make -j
-      popd
-      continue
-    fi
 
     echo "$SKELE_MAKE" > Makefile
 

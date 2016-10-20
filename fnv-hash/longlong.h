@@ -6,7 +6,7 @@
 #define __LONGLONG_H__
 
 /* do we have/want to use a long long type? */
-#undef HAVE_64BIT_LONG_LONG	/* no */
+#define HAVE_64BIT_LONG_LONG	/* yes */
 
 /*
  * NO64BIT_LONG_LONG undef HAVE_64BIT_LONG_LONG

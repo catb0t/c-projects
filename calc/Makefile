@@ -6,13 +6,13 @@ DEBUG_OPTS := -Wall -Wextra -Wfloat-equal -Winline -Wundef -Werror -fverbose-asm
 
 MEM_OPTS := -fstack-protector -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer
 
-OPTS := ../fnv-hash/libfnv.a -lm
+OPTS := -lm ../fnv-hash/libfnv.a
 ifeq ($(CCPLUS), 1)
 	OPTS += -std=c++14
-	CC := g++
+	CC := c++
 else
-	DEBUG_OPTS += -Wstrict-prototypes -Wmissing-prototypes
 	OPTS += -std=gnu11
+	DEBUG_OPTS += -Wstrict-prototypes -Wmissing-prototypes
 endif
 
 ifeq ($(CC), g++)

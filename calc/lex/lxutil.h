@@ -208,7 +208,6 @@ ssize_t build_number (const char* const code, const size_t idx, astnode_t** out_
       foundpt = true;
     }
 
-    extern char* strchr_c (const char* const, const char);
     if ( (n = strchr_c(DEC_DIGITS, c)) != NULL) {
       newstr[i] = n[0];
       safefree(n);
