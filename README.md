@@ -1,4 +1,4 @@
-# Exercises in C11
+# Exercises in C
 
 ---
 
@@ -24,7 +24,7 @@ To:
 
 * **Remove all binaries and make release builds: `./build.bash -- CMD_ARGS=-DNODEBUG`**
 
-* Build all the exercises: `./build.bash all`.
+* Remove all binaries and make release builds using the C++ toolchain: `./build.bash -- CMD_ARGS=-DNODEBUG CCPLUS=1` (you will probably need to `make CC=c++` inside `fnv-hash` first)
 
 * Remove all binaries: `./build.bash clean`
 
@@ -39,23 +39,27 @@ Read `build.bash` and the Makefile contained within for more information.
 
 ## Dependencies
 
-```
-GNU(?) + POSIX C11 library
-clang / gcc, or supply your GCC-compatible compiler: CC=compiler
-make
-bash
-python3
-other gnu coreutils (rm, pwd, basename, head / tail)
-```
+* One of:
+ * a C11   C   compiler and `libc`   ( >= ISO/IEC C99   ) (Clang, GCC, not MSVC)
+ * a C++14 C++ compiler and `libc++` ( >= ISO/IEC C++98 ) (MSVC will suffice)
 
-The `mem` target requires GCC's or clang's AddressSanitizer, and if you want line numbers in the output, `/usr/bin/llvm-symbolizer` to be installed and symlinked to `/usr/bin/llvm-symbolizer-3.8`.
-if you don't want to or can't install these, just remove the `mem` target from the Makefile in `build.bash`. You will need these if you want to verify that there are no memory
-leaks. Alternatively, you can just run the given `memdebug_*` binaries I build if you are using 64-bit linux.
+  to which `cc` or `c++` is symlinked, respectively
 
-You may be able to install the needed tools using
+
+* GNU-compatible `make`
+* GNU `coreutils` (`rm`, `basename`, `pwd`...)
+* a vaguely POSIX conformant shell (`bash`, `sh`, `ksh93`...)
+* for `build.bash` to work:
+  * GNU Bash
+  * Python3
+
+
+The `mem` target requires GCC or Clang's AddressSanitizer, and if you want line numbers in the output, `/usr/bin/llvm-symbolizer` to be installed and symlinked to `/usr/bin/llvm-symbolizer-3.8`.
+
+On Debian-likes, you may be able to install the needed tools using
 
 ```bash
-sudo apt-get install build-essential bash coreutils make python3 clang llvm llvm-3.8*
+apt-get install build-essential bash coreutils make python3 clang llvm llvm-3.8*
 ```
 
-or so.
+or so, or a simliar with your favourite package manager.

@@ -1,5 +1,9 @@
 #pragma once
 
+#ifndef NODEBUG
+  #define DEBUG
+#endif
+
 // unistd.h
 #if defined(unix) || defined(__unix__) || defined(__unix) || defined(__linux__)
 
@@ -82,10 +86,6 @@
   #endif
 #endif
 
-#ifndef NODEBUG
-  #define DEBUG
-#endif
-
 #ifdef DEBUG
   #define dbg_prn(...) printf(__VA_ARGS__)
 
@@ -112,10 +112,21 @@
 #ifdef __cplusplus
   #define _Static_assert(expr, diag) static_assert(expr, diag)
   #define typeof(x) decltype(x)
+  #define infer auto
+#else
+  #ifdef GCC_COMPAT
+    #define infer __auto_type
+  #else
+    #error "can't use GNU auto-type"
+  #endif
 #endif
+
 
 // utils
 char*       strchr_c (const char* const str, const char c);
+char*      strncat_c (const char* const a, const char* const b, const size_t maxlen);
+char*       vstrncat (const size_t argc, ...);
+char*     vstrncat_c (const size_t argc, ...);
 char* make_empty_str (void);
 void       str_chomp (char* str);
 char*         readln (const size_t len);
@@ -221,13 +232,78 @@ char* strchr_c (const char* const str, const char c) {
   return nw;
 }
 
+char* strncat_c (const char* const a, const char* const b, const size_t maxlen) {
+  size_t tlen   = safestrnlen(a) + safestrnlen(b),
+         outlen = (tlen > maxlen ? maxlen : tlen) - 1;
+
+  char* outbuf = (typeof(outbuf)) safemalloc(sizeof (char) * outlen);
+
+  snprintf(outbuf, outlen, "%s%s", a, b);
+
+  return outbuf;
+}
+
+/*
+  frees its arguments
+*/
+char*       vstrncat (const size_t argc, ...) {
+  va_list vl;
+  va_start(vl, argc);
+
+  size_t tlen = 0;
+  char** outbuf = safemalloc(sizeof (char *) * argc);
+
+  for (size_t i = 0; i < argc; i++) {
+    // hopefully thisp just takes the address
+    char** v = (typeof(v)) alloca( sizeof (char *) );
+    *v       = va_arg(vl, char*);
+    size_t l = safestrnlen(*v);
+
+    outbuf[i] = strndup(*v, l);
+    tlen     += l;
+
+    safefree(v);
+  }
+
+  va_end(vl);
+
+  return concat_lines(outbuf, argc, tlen);
+}
+
+/*
+  doesn't free its const char* const arguments hence *_c
+*/
+char*     vstrncat_c (const size_t argc, ...) {
+  va_list vl;
+  va_start(vl, argc);
+
+  size_t tlen = 0;
+  char** outbuf = safemalloc(sizeof (char *) * argc);
+
+  for (size_t i = 0; i < argc; i++) {
+    // hopefully thisp just takes the address
+    char*  v = va_arg(vl, char*);
+    size_t l = safestrnlen(v);
+
+    outbuf[i] = strndup(v, l);
+    tlen += l;
+
+    safefree(v);
+  }
+
+  va_end(vl);
+
+  return concat_lines(outbuf, argc, tlen);
+}
+
+
 char* str_reverse (const char* const str) {
   pfn();
 
   if (!str) { return NULL; }
 
   size_t len = safestrnlen(str);
-  char*   newp = (typeof(newp)) safemalloc( sizeof(char) * len );
+  char* newp = (typeof(newp)) safemalloc( sizeof(char) * len );
 
   size_t i;
   for (i = 0; i < len; i++) {

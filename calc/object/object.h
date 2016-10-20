@@ -276,6 +276,37 @@ char* objtype_repr (const objtype_t t) {
 }
 
 /*
+  self-explanatory
+*/
+void object_error (objerror_t errt, const char* const info, const bool fatal) {
+  pfn();
+
+  static const char* const errmsgs[] = {
+    "NUM_OBJTYPES isn't a real type, dummy. Don't do that.\n"
+      "Have you considered trying to match wits with a rutabaga?", // NOT_A_TYPE
+    "no such key",         // KEYERROR
+    "index out of bounds", // INDEXERROR
+    "pointer math error (invalid read or write) -- probably a bug", // PTRMATH_BUG
+  };
+
+  _Static_assert(
+    (sizeof (errmsgs) / sizeof (char*) ) == NUM_ERRTYPES,
+    "too many or too few error strings in object_error"
+  );
+
+  fprintf(stderr, "\033[31m%s: %s\033[0m\n", info, errmsgs[errt]);
+
+  if ( fatal ) {
+    fprintf(
+      stderr,
+      "\033[31mThat error was fatal, aborting.\n\n"
+      "I'm melting!\033[0m"
+    );
+  }
+
+}
+
+/*
   return a string representation of an object's data
   for most types, thisp calls their typename_see function
 */

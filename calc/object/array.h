@@ -90,14 +90,18 @@ void array_resize (array_t* const a, const ssize_t new_idx) {
     return;
   }
 
-  if (new_idx < a->idx) {
+  if (new_idx <= a->idx) {
     for (ssize_t i = new_idx + 1; i < a->idx; i++) {
       object_destruct( *array_get_ref(a, i, NULL) );
     }
   }
 
+  a->data = (typeof(a->data)) realloc(
+    a->data,
+    (signed2un(new_idx) + 1) * (sizeof (object_t * ))
+  );
+
   a->idx  = new_idx;
-  a->data = (typeof(a->data)) realloc(a->data, sizeof (object_t*) * signed2un(new_idx + 1));
 }
 
 /*
@@ -115,22 +119,31 @@ void array_delete (array_t* const a, const ssize_t idx) {
   pfn();
 
   if ( ( idx > a->idx ) || ( array_isempty(a) ) || ( -1 == idx ) ) {
-    object_error(INDEXERROR, __func__, false);
+    char* er = safemalloc(100);
+    snprintf(er, 99, "%s: delete index %zu but the highest is %zu", __func__, idx, a->idx);
+    object_error(INDEXERROR, er, false);
+    safefree(er);
     return;
   }
 
-  // if idx and a->idx are equal we can just resize
-  if ( (idx != a->idx) ) {
+  object_destruct( *array_get_ref(a, idx, NULL));
 
-    for (ssize_t i = idx + 1; i < (a->idx); i++) {
+  // if idx and a->idx (that is, if it's the last element) are equal we can just resize
+  if ( (idx != a->idx) ) {
+    printf("not equal\n" );
+    for (ssize_t i = idx; i < (a->idx); i++) {
       // change pointer (?)
-      (a->data) [i - 1] = (a->data) [i];
+      (a->data) [i] = (a->data) [i + 1];
     }
 
   }
 
   array_resize(a, a->idx - 1);
 
+}
+
+void array_clear (array_t* const a) {
+  array_resize(a, -1);
 }
 
 /*
@@ -226,11 +239,13 @@ char* array_see (const array_t* const a) {
 
 void array_inspect (const array_t* const a) {
 
+  printf("array uid:%zu idx:%zu sz:%zu {\n", a->uid, a->idx, (signed2un(a->idx) + 1) * (sizeof a->data));
   for (ssize_t i = 0; i < (a->idx + 1); i++) {
     char* x = object_repr(*array_get_ref(a, i, NULL));
-    printf("%zu: %s\n", i, x);
+    printf("\t%zu: %s\n", i, x);
     safefree(x);
   }
+  puts("}\n");
 
 }
 

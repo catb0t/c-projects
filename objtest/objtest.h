@@ -2,12 +2,6 @@
 
 void test (void);
 
-#ifndef __cplusplus
-  #define infer __auto_type
-#else
-  #define infer auto
-#endif
-
 void test (void) {
   // create a new array and print it
   infer a = array_new(NULL, -1);
@@ -31,7 +25,9 @@ void test (void) {
 
   array_inspect(a);
 
-  array_delete(a, 1);
+  array_delete(a, 2);
+
+  array_inspect(a);
 
 /*  // see it again
   ca = array_see(a);

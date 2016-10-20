@@ -218,35 +218,7 @@ struct st_obj_t {
 
 
 
-void object_error (objerror_t, const char* const, const bool);
-
-void object_error (objerror_t errt, const char* const info, const bool fatal) {
-  pfn();
-
-  static const char* const errmsgs[] = {
-    "NUM_OBJTYPES isn't a real type, dummy. Don't do that.\n"
-      "Have you considered trying to match wits with a rutabaga?", // NOT_A_TYPE
-    "no such key",         // KEYERROR
-    "index out of bounds", // INDEXERROR
-    "pointer math error (invalid read or write) -- probably a bug", // PTRMATH_BUG
-  };
-
-  _Static_assert(
-    (sizeof (errmsgs) / sizeof (char*) ) == NUM_ERRTYPES,
-    "too many or too few error strings in object_error"
-  );
-
-  fprintf(stderr, "\033[31m%s: %s\033[0m", info, errmsgs[errt]);
-
-  if ( fatal ) {
-    fprintf(
-      stderr,
-      "\033[31mThat error was fatal, aborting.\n\n"
-      "I'm melting!\033[0m"
-    );
-  }
-
-}
+extern void object_error (objerror_t, const char* const, const bool);
 
 // provided by object.h
 object_t*  object_new (const objtype_t valtype, const void* const val);
@@ -273,8 +245,9 @@ void        array_insert (array_t* const a, const object_t* const o, const ssize
 void        array_resize (array_t* const a, const ssize_t new_len);
 void        array_delete (array_t* const a, const ssize_t idx);
 void        array_append (array_t* const a, const object_t* const o);
-void      array_destruct (array_t* const a);
 void       array_inspect (const array_t* const a);
+void      array_destruct (array_t* const a);
+void         array_clear (array_t* const a);
 
 // provided by string.h
 string_t*  string_new (const char* const str);
