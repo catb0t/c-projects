@@ -26,20 +26,19 @@ void test (void) {
 
     bool finished = cmplt[0] == 'y';
 
-    fixwid_t* n = fixwid_new(1); // 5
+    object_t* t = something_new(); // 5
 
     // 6, 7
     object_t
       *titleobj = object_new(t_realchar, (const void * const) namebuf),
       *compobj  = finished
-                ? object_new(t_fixwid, (const void * const) n)
+                ? object_new(t_T, (const void * const) t)
                 : object_new(t_F, NULL);
 
     array_append(titles, titleobj);
     array_append(fins, compobj);
 
-    fixwid_destruct(n); // ~5
-    object_dtor_args(2, titleobj, compobj); // ~6, 7
+    object_dtor_args(2, t, titleobj, compobj); // ~5, ~6, ~7
 
     safefree(namebuf), safefree(cmplt); // ~3, ~4
 

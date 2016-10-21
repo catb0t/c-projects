@@ -3,6 +3,8 @@
 void test (void);
 
 void test (void) {
+
+  /*
   // create a new array and print it
   infer a = array_new(NULL, -1);
   infer ca = array_see(a);
@@ -29,14 +31,32 @@ void test (void) {
 
   array_inspect(a);
 
-/*  // see it again
-  ca = array_see(a);
-  dealloc_printf(ca);
-
-
   // see it again
   ca = array_see(a);
   dealloc_printf(ca);
-*/
+
   array_destruct(a);
+  */
+  infer a = readln(80);
+  infer b = readln(80);
+
+  object_t *oa = object_new(t_realchar, a), *ob = object_new(t_realchar, b);
+
+  safefree(a), safefree(b);
+
+  array_t *ra = array_new(NULL, -1),
+          *rb = array_new(NULL, -1);
+
+  array_append(ra, oa);
+  array_append(rb, ob);
+
+  hash_t* h = hash_new_boa(ra, rb, 1);
+
+  array_destruct(ra), array_destruct(rb);
+
+  char* s = hash_see(h);
+  dealloc_printf(s);
+
+  hash_destruct(h);
+
 }

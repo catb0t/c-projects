@@ -47,6 +47,7 @@
 #define _GNU_SOURCE
 #endif
 
+#include <stdarg.h>
 #include <assert.h>
 #include <errno.h>
 #include <inttypes.h>
@@ -158,12 +159,15 @@ size_t   signed2un (const ssize_t val);
 ssize_t  un2signed (const  size_t val);
 
 void free_ptr_array (void** array, const size_t len);
-void      _safefree (void*    ptr, const uint64_t lineno);
-void*   _safemalloc (size_t   len, const uint64_t lineno);
+void      _safefree (void*        ptr, const uint64_t lineno, const char* const fname);
+void*   _safemalloc (const size_t len, const uint64_t lineno, const char* const fname);
+void*  _saferealloc (void* ptr, const size_t len, uint64_t lineno, const char* const fname);
+void*   _safecalloc (const size_t nmemb, const size_t len, uint64_t lineno, const char* const fname);
 
-
-#define safefree(x)     _safefree(x, __LINE__)
-#define safemalloc(x) _safemalloc(x, __LINE__)
+#define safefree(x)         _safefree((x), __LINE__, __func__)
+#define safemalloc(x)     _safemalloc((x), __LINE__, __func__)
+#define saferealloc(p,s) _saferealloc((p), (s), __LINE__, __func__)
+#define safecalloc(n,l)   _safecalloc((n), (l), __LINE__, __func__)
 
 __PURE_FUNC __CONST_FUNC
 size_t signed2un (const ssize_t val) {
@@ -191,11 +195,11 @@ size_t  udifference (const size_t x, const size_t y) {
   But if I'm free()-ing a pointer I already free()-d, then something is wrong.
 */
 // _safefree -- free a pointer to allocated memory or die freeing NULL
-void _safefree (void* ptr, uint64_t lineno) {
+void _safefree (void* ptr, const uint64_t lineno, const char* const fname) {
   pfn();
 
   if (NULL == ptr) {
-    printf("You fool! You have tried to free() a null pointer! (line %" PRIu64 ")\n", lineno);
+    printf("You fool! You have tried to free() a null pointer! (line %" PRIu64 " func %s)\n", lineno, fname);
     assert(NULL != ptr);
   } else {
     free(ptr);
@@ -203,16 +207,41 @@ void _safefree (void* ptr, uint64_t lineno) {
 }
 
 // _safemalloc -- allocate memory or die
-void* _safemalloc (size_t len, uint64_t lineno) {
+void* _safemalloc (const size_t len, const uint64_t lineno, const char* const fname) {
   pfn();
 
   void* mem = malloc(len);
   if (!mem) {
-    printf("Couldn't malloc() %zu bytes (perhaps you have run out of memory?) (line %" PRIu64 ")\n", len, lineno);
+    printf("Couldn't malloc() %zu bytes (perhaps you have run out of memory?) (line %" PRIu64 " func %s)\n", len, lineno, fname);
     assert(mem);
   }
   if (ENOMEM == errno) {
     perror("safefree");
+    abort();
+  }
+  return mem;
+}
+
+void* _saferealloc (void* ptr, const size_t len, uint64_t lineno, const char* const fname) {
+  pfn();
+
+  (void) fname, (void) lineno;
+  void* mem = realloc(ptr, len);
+  if (ENOMEM == errno) {
+    perror("saferealloc");
+    abort();
+  }
+  return mem;
+}
+
+void* _safecalloc (const size_t nmemb, const size_t len, uint64_t lineno, const char* const fname) {
+  pfn();
+
+  (void) fname, (void) lineno;
+  void* mem = calloc(nmemb, len);
+  if (ENOMEM == errno) {
+    perror("safecalloc");
+    abort();
   }
   return mem;
 }
@@ -244,7 +273,7 @@ char* strncat_c (const char* const a, const char* const b, const size_t maxlen) 
 }
 
 /*
-  frees its arguments
+  a variadic strncat that frees its arguments
 */
 char*       vstrncat (const size_t argc, ...) {
   va_list vl;
@@ -255,14 +284,14 @@ char*       vstrncat (const size_t argc, ...) {
 
   for (size_t i = 0; i < argc; i++) {
     // hopefully thisp just takes the address
-    char** v = (typeof(v)) alloca( sizeof (char *) );
+    char** v = (typeof(v)) safemalloc( sizeof (char *) );
     *v       = va_arg(vl, char*);
     size_t l = safestrnlen(*v);
 
     outbuf[i] = strndup(*v, l);
     tlen     += l;
 
-    safefree(v);
+    safefree(v), safefree(*v);
   }
 
   va_end(vl);

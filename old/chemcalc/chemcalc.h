@@ -161,7 +161,7 @@ char* element_see (const element_t* elem) {
 
       size_t thislen = safestrnlen(isostrs[i]);
 
-      isostrs[i] = realloc(isostrs[i], thislen);
+      isostrs[i] = saferealloc(isostrs[i], thislen);
       total += thislen;
       ++lines;
     }

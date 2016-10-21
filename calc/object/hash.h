@@ -311,7 +311,7 @@ bool hash_add (hash_t* const h, const object_t* const key, const object_t* const
   // add the pair to values
   array_append(h->vals, pairobj);
   // resize the idxs array by the needed amount
-  h->idxs = (typeof(h->idxs)) realloc(h->idxs, sizeof (size_t) * kh + 1);
+  h->idxs = (typeof(h->idxs)) saferealloc(h->idxs, sizeof (size_t) * kh + 1);
   // increment the pointer
   ++(h->idxs_len);
   // assign the index of the pair in values to idxs
@@ -399,7 +399,7 @@ void hash_delete (hash_t* const h, const object_t* const key) {
   size_t lastval = signed2un( findlast(h->idxs, h->idxs_len, -1, true) );
 
   // resize to be as small as possible
-  h->idxs = (typeof(h->idxs)) realloc(h->idxs, sizeof(size_t *) * lastval);
+  h->idxs = (typeof(h->idxs)) saferealloc(h->idxs, sizeof(size_t *) * lastval);
 
 }
 

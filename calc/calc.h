@@ -121,7 +121,7 @@ char** file_lines (const char* const fname, size_t* out_len) {
       break;
     }
 
-    in_lines = (typeof(in_lines)) realloc(in_lines, sizeof (char *) * (lines_idx + 1));
+    in_lines = (typeof(in_lines)) saferealloc(in_lines, sizeof (char *) * (lines_idx + 1));
 
     // With decltype(), gives "Error: C-style cast from rvalue to reference type `char *&`"
     in_lines[lines_idx] = ( char * ) safemalloc( sizeof (char) * signed2un(bytes_read) );

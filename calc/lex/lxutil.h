@@ -52,7 +52,7 @@ astnode_t* lex_string (const char* const prog) {
     s = ast_see(thisnode);
     dealloc_printf(s);
 
-    ast->chldn = (typeof(ast->chldn)) realloc(ast->chldn, sizeof (astnode_t *) * (i + 1));
+    ast->chldn = (typeof(ast->chldn)) saferealloc(ast->chldn, sizeof (astnode_t *) * (i + 1));
     (ast->chldn)[i] = thisnode;
     ++(ast->chldn_idx);
 
@@ -158,7 +158,7 @@ ssize_t build_string (const char* const code, const size_t idx, astnode_t** out_
 
     printf("found at %zu\n", nextd);
     new_len = udifference(nextd, idx);
-    newstr  = (typeof(newstr)) realloc(newstr, (sizeof (char) * new_len) + 2);
+    newstr  = (typeof(newstr)) saferealloc(newstr, (sizeof (char) * new_len) + 2);
     newstr[ new_len + 1 ] = '\0';
 
     printf("new_len: %zu actual: %zu str: %s\n",
@@ -201,7 +201,7 @@ ssize_t build_number (const char* const code, const size_t idx, astnode_t** out_
 
     if (c == '.') {
       if (foundpt) {
-        newstr = (typeof(newstr)) realloc(newstr, sizeof (char) * (i + 1));
+        newstr = (typeof(newstr)) saferealloc(newstr, sizeof (char) * (i + 1));
         newstr[i] = '\0';
         break;
       }
@@ -212,7 +212,7 @@ ssize_t build_number (const char* const code, const size_t idx, astnode_t** out_
       newstr[i] = n[0];
       safefree(n);
     } else {
-      newstr = (typeof(newstr)) realloc(newstr, sizeof (char) * (i + 1));
+      newstr = (typeof(newstr)) saferealloc(newstr, sizeof (char) * (i + 1));
       newstr[i] = '\0';
       break;
     }

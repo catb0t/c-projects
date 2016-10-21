@@ -32,7 +32,7 @@ char* number_see (const number_t* const num) {
 
   char*  buf = (typeof(buf)) safemalloc(30);
   snprintf(buf, 30, "%LG", num->value);
-  buf = (typeof(buf)) realloc(buf, safestrnlen(buf));
+  buf = (typeof(buf)) saferealloc(buf, safestrnlen(buf));
 
   return buf;
 }

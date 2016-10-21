@@ -1,7 +1,6 @@
 #include <stdarg.h>
 #pragma once
 #include "../../common.h"
-#include "../../points/points.h"
 
 #ifdef GCC
 #line __LINE__ "objcommon"
@@ -12,11 +11,10 @@
 
 typedef enum {
   t_F, // only false value
+  t_T, // canonical true value, but anything not f is true
   t_number,
   t_fixwid,
   t_string,
-  t_point,
-  t_shape,
   t_func,
   t_array,
   t_hash,
@@ -36,8 +34,12 @@ typedef enum {
 
 // object object
 typedef struct st_obj_t   object_t;
-// false singleton compares false with everything except itself
+/* false singleton compares false with everything except itself
+so f == f but 0 != f */
 typedef struct st_F_t     F_t;
+/* true singleton compares true with everything except false
+so t == t and 1 == t but t != f */
+typedef struct st_T_t     T_t;
 
 // arithmetic types
 //  arbitrary precision
@@ -70,6 +72,12 @@ typedef struct st_fnc_t   func_t;
 */
 struct st_F_t {
   void*  nothing;
+
+  OBJ_UID_SLOT;
+};
+
+struct st_T_t {
+  void* something;
 
   OBJ_UID_SLOT;
 };
@@ -202,11 +210,10 @@ struct st_obj_t {
   objtype_t type;
   union {
     F_t*      f;
+    T_t*      t;
     number_t* num;
     fixwid_t* fwi;
     string_t* str;
-    point_t*  pt;
-    shape_t*  sp;
     func_t*   fnc;
     array_t*  ary;
     hash_t*   hsh;
@@ -216,14 +223,71 @@ struct st_obj_t {
   OBJ_UID_SLOT;
 };
 
+static const char* const OBJTYPE_2STRING [] = {
+  "(False)",
+  "(True)",
+  "number_t",
+  "fixwid_t",
+  "string_t",
+  "func_t",
+  "array_t",
+  "hash_t",
+  "pair_t",
+  "ssize_t (fixwid_t.value)",
+  "char* (string_t.data)"
+};
+
+_Static_assert(
+  ( (sizeof OBJTYPE_2STRING) / (sizeof (char *)) == NUM_OBJTYPES),
+  "OBJTYPE_2STRING has too few or too many values"
+);
+
+static const char OBJTYPE_CHARS[] = {
+  [t_F]        = 'f',
+  [t_T]        = 't',
+  [t_number]   = 'n',
+  [t_fixwid]   = 'z',
+  [t_string]   = 's',
+  [t_func]     = 'q',
+  [t_array]    = 'a',
+  [t_hash]     = 'h',
+  [t_pair]     = 'p',
+  [t_realint]  = 'i',
+  [t_realchar] = 'c',
+};
+
+_Static_assert(
+  ( (sizeof OBJTYPE_CHARS) / (sizeof (char)) == NUM_OBJTYPES),
+  "CHAR_2OBJTYPE has too few or too many values"
+);
+
+static const objtype_t CHAR_2OBJTYPE[] = {
+  ['f'] = t_F,
+  ['t'] = t_T,
+  ['n'] = t_number,
+  ['z'] = t_fixwid,
+  ['s'] = t_string,
+  ['q'] = t_func,
+  ['a'] = t_array,
+  ['h'] = t_hash,
+  ['p'] = t_pair,
+  ['i'] = t_realint,
+  ['c'] = t_realchar
+};
+
+_Static_assert(
+  ( (sizeof CHAR_2OBJTYPE) / (sizeof (objtype_t)) == ('z' + 1)),
+  "CHAR_2OBJTYPE has too few or too many values"
+);
 
 
 extern void object_error (objerror_t, const char* const, const bool);
 
 // provided by object.h
+object_t*   nothing_new (void);
+object_t* something_new (void);
 object_t*  object_new (const objtype_t valtype, const void* const val);
 object_t* object_copy (const object_t* const obj);
-object_t* nothing_new (void);
 void**  object_getval (const object_t* const obj);
 char*     object_repr (const object_t* const obj);
 char*    objtype_repr (const objtype_t t);
@@ -245,6 +309,9 @@ void        array_insert (array_t* const a, const object_t* const o, const ssize
 void        array_resize (array_t* const a, const ssize_t new_len);
 void        array_delete (array_t* const a, const ssize_t idx);
 void        array_append (array_t* const a, const object_t* const o);
+void       array_vappend (array_t* const a, const size_t argc, ...);
+void           array_cat (array_t* const a, const array_t* const b);
+void          array_vcat (array_t* const a, const size_t argc, ...);
 void       array_inspect (const array_t* const a);
 void      array_destruct (array_t* const a);
 void         array_clear (array_t* const a);

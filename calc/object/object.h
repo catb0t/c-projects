@@ -33,6 +33,14 @@ object_t* nothing_new (void) {
   return False;
 }
 
+object_t* something_new (void) {
+  pfn();
+
+  object_t* True = object_new(t_T, NULL);
+  report_ctor(True);
+  return True;
+}
+
 /*
   object_new returns a new object with the given objtype_t from the val argument
   which must be either a heap allocated object type structure pointer
@@ -57,7 +65,11 @@ object_t* object_new (const objtype_t valtype, const void* const val) {
       break;
     }
     case t_F: {
-       obj->f = (typeof(obj->f)) safemalloc(sizeof (F_t));
+      obj->f = (typeof(obj->f)) safemalloc(sizeof (F_t));
+      break;
+    }
+    case t_T: {
+      obj->t = (typeof(obj->t)) safemalloc(sizeof (T_t));
       break;
     }
     case t_number: {
@@ -82,16 +94,8 @@ object_t* object_new (const objtype_t valtype, const void* const val) {
       obj->type = t_string;
       break;
     }
-    case t_point: {
-      obj->pt  = point_copy( (const point_t * const) val);
-      break;
-    }
-    case t_shape: {
-      obj->sp  = shape_copy( (const shape_t * const) val);
-      break;
-    }
     case t_func: {
-       obj->fnc = (typeof(obj->fnc)) safemalloc(sizeof (func_t));
+      obj->fnc       = (typeof(obj->fnc)) safemalloc(sizeof (func_t));
       obj->fnc->code = ((const func_t * const) val)->code;
       obj->fnc->name = ((const func_t * const) val)->name;
       break;
@@ -144,11 +148,10 @@ void** object_getval (const object_t* const obj) {
 
   void** types[] = {
     (void **) (obj->f),
+    (void **) (obj->t),
     (void **) (obj->num),
     (void **) (obj->fwi),
     (void **) (obj->str),
-    (void **) (obj->pt),
-    (void **) (obj->sp),
     (void **) (obj->fnc),
     (void **) (obj->ary),
     (void **) (obj->hsh),
@@ -229,12 +232,12 @@ void object_dtor_args (size_t argc, ...) {
 
   for (size_t i = 0; i < argc; i++) {
     // hopefully thisp just takes the address
-    object_t** v = (typeof(v)) alloca( sizeof (object_t) );
+    object_t** v = (typeof(v)) safemalloc( sizeof (object_t *) );
     *v = va_arg(vl, object_t*);
 
-    // 0 allocs, 1 free
+    // 1 alloc, 2 frees, but not double free
     object_destruct( *v );
-
+    safefree(v);
   }
 
   va_end(vl);
@@ -246,27 +249,7 @@ void object_dtor_args (size_t argc, ...) {
 char* objtype_repr (const objtype_t t) {
   pfn();
 
-  static const char* const obj_strings [] = {
-    "F_t",
-    "number_t",
-    "fixwid_t",
-    "string_t",
-    "point_t",
-    "shape_t",
-    "func_t",
-    "array_t",
-    "hash_t",
-    "pair_t",
-    "ssize_t (fixwid_t.value)",
-    "char* (string_t.data)",
-  };
-
-  _Static_assert(
-    ( (sizeof obj_strings) / (sizeof (char *)) == NUM_OBJTYPES),
-    "repr has too few or too many values"
-  );
-
-  const char* const thisp = obj_strings[t];
+  const char* const thisp = OBJTYPE_2STRING[t];
   const size_t       len = safestrnlen(thisp) + 1;
 
   char*  out = (typeof(out)) safemalloc(sizeof (char) * len);
@@ -327,6 +310,12 @@ char* object_repr (const object_t* const obj) {
       snprintf(buf, 1, "%s", "f");
       break;
     }
+    case t_T: {
+       buf = (typeof(buf)) safemalloc(2);
+
+      snprintf(buf, 1, "%s", "t");
+      break;
+    }
     case t_number: {
       buf = number_see(obj->num);
       break;
@@ -347,14 +336,6 @@ char* object_repr (const object_t* const obj) {
       break;
     }
 
-    case t_point: {
-      buf = point_see(obj->pt);
-      break;
-    }
-    case t_shape: {
-      buf = shape_see(obj->sp, false);
-      break;
-    }
     case t_func: {
       char *code = obj->fnc->code,
            *name = obj->fnc->name;
@@ -394,30 +375,44 @@ char* object_repr (const object_t* const obj) {
 bool object_equals (const object_t* const a, const object_t* const b) {
   pfn();
 
+  // False always compares equal with itself
+  if ( t_F == a->type + b->type ) {
+    return true;
+
+  // but always compares false with other things
+  } else if (
+       ( !a->type && b->type )
+    || ( !b->type && a->type )
+  ) {
+    return false;
+  }
+
   // can only compare these specific disparate types
   if (a->type != b->type) {
+    // realchar
     if (
-      ( a->type == t_realchar || a->type == t_string )
+         ( a->type == t_realchar || a->type == t_string )
       && ( b->type == t_realchar || b->type == t_string )
     ) {
       return strcmp(a->str->data, b->str->data) == 0;
 
+    // realint
     } else if (
-      ( a->type == t_realint || a->type == t_fixwid )
+         ( a->type == t_realint || a->type == t_fixwid )
       && ( b->type == t_realint || b->type == t_fixwid )
     ) {
       return a->fwi->value == b->fwi->value;
 
+    // true always true
+    } else if ( (a->type == t_T) || (b->type == t_T) ) {
+      return true;
+
+    // nope
     } else {
       return false;
 
     }
 
-  }
-
-  // False always compares equal
-  if ( a->type == t_F && b->type == t_F ) {
-    return true;
   }
 
   object_t *oa = object_copy(a),
@@ -431,10 +426,11 @@ bool object_equals (const object_t* const a, const object_t* const b) {
       return false;
     }
 
+    // this should be redundant
+    case t_T:       same = true;
+
     case t_fixwid:  same =     fixwid_eq(oa->fwi, ob->fwi); break;
     case t_number:  same =     number_eq(a->num, b->num);   break;
-    case t_point:   same =  point_equals(a->pt, b->pt);     break;
-    case t_shape:   same =  shape_equals(a->sp, b->sp);     break;
     case t_hash:    same =   hash_equals(a->hsh, b->hsh);   break;
     case t_array:   same =  array_equals(a->ary, b->ary);   break;
     case t_pair:    same =   pair_equals(a->cel, b->cel);   break;

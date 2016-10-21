@@ -13,9 +13,10 @@ array_t* array_new (const object_t* const * const objs, const ssize_t len) {
   pfn();
 
   array_t* array = (typeof(array)) safemalloc( sizeof (array_t) );
-  array->data    = (typeof(array->data)) safemalloc( sizeof (object_t *) );
+  array->data    = NULL;
 
   if ( (-1 != len) && (NULL != objs) ) {
+    array->data    = (typeof(array->data)) safemalloc( sizeof (object_t *) );
     for (ssize_t i = 0; i < len; i++) {
       array_append(array, objs[i]);
     }
@@ -26,6 +27,30 @@ array_t* array_new (const object_t* const * const objs, const ssize_t len) {
 
   return array;
 }
+
+/*inline static void validate_typestr (const char* const types) {
+  size_t len = safestrnlen(types);
+
+  // ???
+  assert( str_count(OBJTYPE_CHARS, types) );
+
+  for (size_t i = 0; i < len; i++) {
+    // make sure the chars are all in the range
+    assert( (types[i] <= 'z') && (types[i] >= 'a') );
+    // and that they're allowed
+    char buf[3];
+    snprintf(buf, 1, "%c", types[i]);
+    for (size_t j = 0; j < sizeof OBJTYPE_CHARS; j++) {
+      assert( str_count(buf, OBJTYPE_CHARS) );
+    }
+  }
+}
+*/
+/*
+  makes a new array from an array of pointers to raw C types.
+  well, no it doesn't.
+*/
+//array_t* array_new_fromc (const void* const * const ptr, const size_t len, const char* const types) { }
 
 /*
   copies an array object, by constructing a new one with the argument's
@@ -77,7 +102,7 @@ bool array_isempty (const array_t* const a) {
 }
 
 /*
-  resize an array to the new size. implemented with realloc(2), so if new_idx is
+  resize an array to the new size. implemented with saferealloc(2), so if new_idx is
   smaller than a->idx, the objects past will disappear and their destructors will
   not be called.
 */
@@ -85,7 +110,7 @@ void array_resize (array_t* const a, const ssize_t new_idx) {
   pfn();
 
   if ( -1 == new_idx ) {
-    a->data = (typeof(a->data)) realloc(a->data, 0);
+    a->data = (typeof(a->data)) saferealloc(a->data, 0);
     a->idx  = -1;
     return;
   }
@@ -96,7 +121,7 @@ void array_resize (array_t* const a, const ssize_t new_idx) {
     }
   }
 
-  a->data = (typeof(a->data)) realloc(
+  a->data = (typeof(a->data)) saferealloc(
     a->data,
     (signed2un(new_idx) + 1) * (sizeof (object_t * ))
   );
@@ -182,11 +207,70 @@ void array_append (array_t* const a, const object_t* const o) {
   pfn();
 
   ++(a->idx);
-  a->data = (typeof(a->data)) realloc(a->data, (sizeof (object_t *)) * signed2un(a->idx + 1) );
+  a->data = (typeof(a->data)) saferealloc(a->data, (sizeof (object_t *)) * signed2un(a->idx + 1) );
 
   (a->data) [a->idx] = object_copy(o);
 }
 
+/*
+  variadic version of array_append
+*/
+void array_vappend (array_t* const a, const size_t argc, ...) {
+  va_list vl;
+  va_start(vl, argc);
+
+  for (size_t i = 0; i < argc; i++) {
+    // hopefully thisp just takes the address
+    object_t** v = (typeof(v)) safemalloc( sizeof (object_t *) );
+    *v = va_arg(vl, object_t*);
+
+    array_append(a, *v);
+    safefree(v);
+  }
+}
+
+/*
+  concatenate two array_ts
+*/
+void array_cat (array_t* a, const array_t* const b) {
+  if ( array_isempty(a) && array_isempty(b) ) {
+    return;
+  }
+
+  else if ( array_isempty(a) || array_isempty(b) ) {
+
+    if ( array_isempty(a) ) {
+      a = array_copy(b);
+
+    }
+    return;
+  }
+
+
+  size_t alen = signed2un(a->idx), total_len = alen + signed2un(b->idx);
+
+  a->data = (typeof(a->data)) saferealloc(a->data, sizeof (object_t **) * total_len);
+  for (size_t i = alen; i < total_len; i++) {
+    a->data[i] = array_get_copy(b, un2signed(udifference(i, alen)), NULL);
+  }
+}
+
+/*
+  variadic version of array_cat
+*/
+void array_vcat (array_t* const a, const size_t argc, ...) {
+  va_list vl;
+  va_start(vl, argc);
+
+  for (size_t i = 0; i < argc; i++) {
+    // hopefully thisp just takes the address
+    array_t** v = (typeof(v)) safemalloc( sizeof (array_t *) );
+    *v = va_arg(vl, array_t*);
+
+    array_cat(a, *v);
+    safefree(v);
+  }
+}
 
 /*
   return a string representation of the given array object
@@ -217,7 +301,7 @@ char* array_see (const array_t* const a) {
     char*   strthis = object_repr(*thisp);
     size_t  tlen    = safestrnlen(strthis) + 2;
 
-    outbuf = (typeof(outbuf)) realloc(outbuf, total_len + tlen);
+    outbuf = (typeof(outbuf)) saferealloc(outbuf, total_len + tlen);
     bufptr = outbuf + total_len;
 
     str_append(bufptr, tlen, "%s ", strthis);
@@ -229,7 +313,7 @@ char* array_see (const array_t* const a) {
   // for my own sanity
   total_len = safestrnlen(outbuf);
 
-  outbuf  = (typeof(outbuf)) realloc(outbuf, total_len + 3);
+  outbuf  = (typeof(outbuf)) saferealloc(outbuf, total_len + 3);
 
   bufptr  = outbuf + total_len;
   str_append(bufptr, 3, "%s\n", "}");

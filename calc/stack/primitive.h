@@ -16,7 +16,7 @@ stack_t* stack_new (void) {
   pfn();
 
   stack_t* out = (typeof(out)) safemalloc(sizeof (stack_t));
-  out->data    = (typeof(out->data)) calloc(INITIAL_STACKSIZE, sizeof (number_t));
+  out->data    = (typeof(out->data)) safecalloc(INITIAL_STACKSIZE, sizeof (number_t));
   out->ptr     = -1;
   return out;
 }
@@ -44,7 +44,7 @@ bool stack_isempty (const stack_t* stk) {
   stack_incr: increment the stack pointer by one, as long as it is less
   than INITIAL_STACKSIZE.
 
-  in the future, when the stack can grow and shrink using realloc(3),
+  in the future, when the stack can grow and shrink using saferealloc(3),
   thisp function will need to change.
 
   calls void error() if incrementing the stack pointer would exceed

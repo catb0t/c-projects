@@ -35,7 +35,7 @@ char* fixwid_see (const fixwid_t* const n) {
   char*  buf = (typeof(buf)) safemalloc( sizeof(char) * ULL_DIGITS );
   snprintf( buf, ULL_DIGITS, "%zd", n->value );
 
-  buf = (typeof(buf)) realloc(buf, sizeof (char) * safestrnlen(buf));
+  buf = (typeof(buf)) saferealloc(buf, sizeof (char) * safestrnlen(buf));
   return buf;
 }
 

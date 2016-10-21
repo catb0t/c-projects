@@ -62,7 +62,7 @@ char* ast_see (astnode_t* n) {
     chldlns   = (typeof(chldlns)) safemalloc(sizeof (char *) * 2);
 
     for (size_t i = 0; i < nc; i++) {
-      chldlns    = (typeof(chldlns)) realloc(chldlns, sizeof (char *) * (i + 1));
+      chldlns    = (typeof(chldlns)) saferealloc(chldlns, sizeof (char *) * (i + 1));
       // with typeof: Error: C-style cast from rvalue reference type 'decltype(*chldns)' (aka 'char *&')
       chldlns[i] = (char *) safemalloc(MAX_ASTSEE_LEN);
 
