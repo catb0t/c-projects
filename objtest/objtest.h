@@ -37,12 +37,17 @@ void test (void) {
 
   array_destruct(a);
   */
-  infer a = readln(80);
-  infer b = readln(80);
+  //infer a = readln(80);
+  //infer b = readln(80);
 
-  object_t *oa = object_new(t_realchar, a), *ob = object_new(t_realchar, b);
 
-  safefree(a), safefree(b);
+  ssize_t a = 1, b = 2;
+  object_t *oa = object_new(t_realint, &a),
+           *ob = object_new(t_realint, &b);
+
+  printf("getval: %zu\n", ( (const fixwid_t* const) object_getval(oa))->uvalue);
+
+  //safefree(a), safefree(b);
 
   array_t *ra = array_new(NULL, -1),
           *rb = array_new(NULL, -1);

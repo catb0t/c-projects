@@ -20,6 +20,7 @@ typedef enum {
   t_hash,
   t_pair,
   t_realint,
+  t_realuint,
   t_realchar,
   NUM_OBJTYPES
 } objtype_t;
@@ -132,7 +133,12 @@ struct st_numb_t {
   if sign_active is true, refer to `svalue`, and value otherwise.
 */
 struct st_fxwd_t {
-  ssize_t value;
+  union {
+    ssize_t value;
+    size_t uvalue;
+  };
+
+  bool signed_active;
 
   OBJ_UID_SLOT;
 };
@@ -234,6 +240,7 @@ static const char* const OBJTYPE_2STRING [] = {
   "hash_t",
   "pair_t",
   "ssize_t (fixwid_t.value)",
+  "size_t (fixwid_t.uvalue)",
   "char* (string_t.data)"
 };
 
@@ -364,7 +371,7 @@ bool        number_lt (const number_t* const a, const number_t* const b);
 void  number_destruct (number_t* const n);
 
 // provided by fixdsz.h
-fixwid_t*  fixwid_new (const ssize_t n);
+fixwid_t*  fixwid_new (const ssize_t v, const size_t u, const bool sign);
 fixwid_t* fixwid_copy (const fixwid_t* const n);
 char*      fixwid_see (const fixwid_t* const n);
 void  fixwid_destruct (fixwid_t* const n);

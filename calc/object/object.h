@@ -76,13 +76,19 @@ object_t* object_new (const objtype_t valtype, const void* const val) {
       obj->num = number_copy( (const number_t * const) val);
       break;
     }
+    case t_realuint: {
+      obj->fwi = fixwid_new(-1, *(const size_t* const ) val, false);
+      obj->type = t_fixwid;
+      break;
+    }
     case t_realint: {
-      obj->fwi = fixwid_copy( (const fixwid_t* const) val);
+      // i'm an awful person
+      obj->fwi = fixwid_new( *(const ssize_t* const) val, 0, true);
+      obj->type = t_fixwid;
       break;
     }
     case t_fixwid: {
-      // i'm an awful person
-      obj->fwi = fixwid_new( *(const ssize_t* const) val);
+      obj->fwi = fixwid_copy( (const fixwid_t* const) val);
       break;
     }
     case t_string: {
@@ -147,21 +153,22 @@ void** object_getval (const object_t* const obj) {
   }
 
   void** types[] = {
-    (void **) (obj->f),
-    (void **) (obj->t),
-    (void **) (obj->num),
-    (void **) (obj->fwi),
-    (void **) (obj->str),
-    (void **) (obj->fnc),
-    (void **) (obj->ary),
-    (void **) (obj->hsh),
-    (void **) (obj->cel),
-    (void **) (obj->fwi),
-    (void **) (obj->str) // t_realchar returns str's realchar
+    (void **) (obj->f),   // false
+    (void **) (obj->t),   // true
+    (void **) (obj->num), // number_t
+    (void **) (obj->fwi), // fixwid_t
+    (void **) (obj->str), // string_t
+    (void **) (obj->fnc), // func_t
+    (void **) (obj->ary), // array_t
+    (void **) (obj->hsh), // hash_t
+    (void **) (obj->cel), // pair_t
+    (void **) (obj->fwi), // realint
+    (void **) (obj->fwi), // realuint
+    (void **) (obj->str)  // realchar
   };
 
   _Static_assert(
-    ( (sizeof types) / (sizeof (char *)) == NUM_OBJTYPES),
+    ( (sizeof types) / (sizeof (void **)) == NUM_OBJTYPES),
     "getval types[] has too few or too many values"
   );
 
@@ -322,6 +329,7 @@ char* object_repr (const object_t* const obj) {
     }
 
     case t_realint: // fallthrough
+    case t_realuint: // fallthrough
     case t_fixwid: {
       buf = fixwid_see(obj->fwi);
       break;
@@ -408,9 +416,14 @@ bool object_equals (const object_t* const a, const object_t* const b) {
       return true;
 
     // nope
+    } else if (
+         (a->type == t_realuint && b->type == t_fixwid)
+      || (b->type == t_realuint && a->type == t_fixwid)
+      ) {
+      return fixwid_eq(a->fwi, b->fwi);
+
     } else {
       return false;
-
     }
 
   }
@@ -443,12 +456,14 @@ bool object_equals (const object_t* const a, const object_t* const b) {
       break;
     }
 
+    case t_realuint:
     case t_realint:
     case t_string:
     case t_realchar: // already cmpd
     case t_F: {
       // satisfy the compiler
       same = true;
+      break;
     }
   }
 

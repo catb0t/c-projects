@@ -4,12 +4,18 @@
 #line __LINE__ "fixwid"
 #endif
 
-fixwid_t* fixwid_new (const ssize_t n) {
+fixwid_t* fixwid_new (const ssize_t v, const size_t u, const bool signed_active) {
   pfn();
 
   fixwid_t*  fixwid = (typeof(fixwid)) safemalloc( sizeof(fixwid_t) );
 
-  fixwid->value = n;
+  if (signed_active) {
+    fixwid->value = v;
+  } else {
+    fixwid->uvalue = u;
+  }
+
+  fixwid->signed_active = signed_active;
 
   report_ctor(fixwid);
 
@@ -26,23 +32,49 @@ void  fixwid_destruct (fixwid_t* const fixwid) {
 fixwid_t* fixwid_copy (const fixwid_t* const n) {
   pfn();
 
-  return fixwid_new(n->value);
+  ssize_t a = -1;
+  size_t  b = 0;
+
+  if (n->signed_active) {
+    a = n->value;
+  } else {
+    b = n->uvalue;
+  }
+
+  return fixwid_new(a, b, n->signed_active);
 }
 
 char* fixwid_see (const fixwid_t* const n) {
   pfn();
 
-  char*  buf = (typeof(buf)) safemalloc( sizeof(char) * ULL_DIGITS );
-  snprintf( buf, ULL_DIGITS, "%zd", n->value );
+  char*  buf = (typeof(buf)) safemalloc( ULL_DIGITS + 1 );
 
-  buf = (typeof(buf)) saferealloc(buf, sizeof (char) * safestrnlen(buf));
+  if (n->signed_active) {
+    snprintf( buf, ULL_DIGITS + 1, "%zd", n->value );
+  } else {
+    snprintf( buf, ULL_DIGITS, "%zu", n->uvalue );
+  }
+
+  buf = (typeof(buf)) saferealloc(buf, safestrnlen(buf));
   return buf;
 }
 
 bool fixwid_eq (const fixwid_t* const a, const fixwid_t* const b) {
   pfn();
 
-  return a->value == b->value;
+  if (a->signed_active != b->signed_active) {
+    if (a->signed_active && (a->value >= 0)) {
+      return signed2un(a->value) == b->uvalue;
+
+    } else if (b->signed_active && (b->value >= 0) ) {
+      return signed2un(b->value) == a->uvalue;
+    }
+    return false;
+  }
+
+  return a->signed_active
+    ? a->value  == b->value
+    : a->uvalue == b->uvalue;
 }
 
 bool    fixwid_gt (const fixwid_t* const a, const fixwid_t* const b) {
@@ -56,3 +88,4 @@ bool    fixwid_lt (const fixwid_t* const a, const fixwid_t* const b) {
 
   return a->value < b->value;
 }
+

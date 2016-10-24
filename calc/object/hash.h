@@ -33,16 +33,17 @@ hash_t* hash_new_boa (
   pfn();
 
   size_t
-    klen = signed2un(keys->idx + 1),
-    vlen = signed2un(vals->idx + 1);
+    klen = signed2un(keys->idx + 1); // ,
+    //vlen = signed2un(vals->idx + 1);
 
-  printf("%zu %zu %zu\n", klen, vlen, len);
+  (void) len;
 
+  /*
   assert(
     (klen == vlen)
     && (klen == len)
     && (vlen == len)
-  );
+  );*/
 
   hash_t* hash = hash_new_skele(); // 1
 
@@ -284,10 +285,11 @@ bool hash_add (hash_t* const h, const object_t* const key, const object_t* const
 
   pair_t* newp;
   object_t *pairobj, *khobj;
-  hashkey_t kh;
 
   // hash the key
-  kh = hash_obj(key);
+  const hashkey_t kh = hash_obj(key);
+
+
   // fail if it exists
   if ( hash_exists(h, key) || hash_keyexists(h, key) ) {
     return false;
@@ -297,7 +299,7 @@ bool hash_add (hash_t* const h, const object_t* const key, const object_t* const
   array_append(h->keys, key);
 
   // objectify the key hash
-  khobj = object_new(t_realint, &kh); // 1
+  khobj = object_new(t_realuint, &kh); // 1
   // make a pair out of the value and keyhash obj
   newp  = pair_new(val, khobj); // 2
 
@@ -344,7 +346,12 @@ bool hash_exists (const hash_t* const h, const object_t* const key) {
   return -1 != h->idxs[kh];
 }
 
-inline static ssize_t findlast (const ssize_t* const array, const size_t len, const ssize_t n, const bool invert_cmp) {
+inline static ssize_t findlast (
+  const ssize_t* const array,
+  const size_t         len,
+  const ssize_t        n,
+  const bool           invert_cmp
+) {
 
   for (size_t i = len; i != 0; i--) {
 

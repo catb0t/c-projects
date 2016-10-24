@@ -157,6 +157,7 @@ size_t udifference (const size_t x, const size_t y);
 size_t        usub (const size_t a, const size_t b);
 size_t   signed2un (const ssize_t val);
 ssize_t  un2signed (const  size_t val);
+ssize_t str_issubstring (const char* const a, const char* const b);
 
 void free_ptr_array (void** array, const size_t len);
 void      _safefree (void*        ptr, const uint64_t lineno, const char* const fname);
@@ -224,7 +225,7 @@ void* _safemalloc (const size_t len, const uint64_t lineno, const char* const fn
 
 void* _saferealloc (void* ptr, const size_t len, uint64_t lineno, const char* const fname) {
   pfn();
-
+  printf("Reallocing %zu bytes\n", len);
   (void) fname, (void) lineno;
   void* mem = realloc(ptr, len);
   if (ENOMEM == errno) {
@@ -291,7 +292,7 @@ char*       vstrncat (const size_t argc, ...) {
     outbuf[i] = strndup(*v, l);
     tlen     += l;
 
-    safefree(v), safefree(*v);
+    safefree(*v), safefree(v);
   }
 
   va_end(vl);
@@ -325,6 +326,43 @@ char*     vstrncat_c (const size_t argc, ...) {
   return concat_lines(outbuf, argc, tlen);
 }
 
+ssize_t str_issubstring (const char* const a, const char* const b) {
+  size_t lena = safestrnlen(a),
+         lenb = safestrnlen(b);
+
+  if ( ( !str_count(a, "\0") ) || (!str_count(b, "\0")) ) {
+    errno = EINVAL;
+    perror(__func__);
+    assert (false);
+  }
+
+  if ( NULL == a ) {
+   if ( NULL == b ) {
+     return 0;
+   }
+   return -1;
+  }
+
+  ssize_t begin = -1, end;
+
+  char *ca = strndup(a, lena),
+       *cb = strndup(b, lenb);
+
+  while ( (*++ca) != *cb ) {
+    ++begin;
+  }
+  end = begin;
+
+  while ( *ca == *cb ) {
+    ++ca, ++cb, ++end;
+  }
+
+  if ( signed2un(end) != lenb ) {
+    begin = -1;
+  }
+
+  return begin;
+}
 
 char* str_reverse (const char* const str) {
   pfn();
