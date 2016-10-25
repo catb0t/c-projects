@@ -16,7 +16,7 @@ hash_t* hash_new_skele (void) {
   hash_t*  hash = (typeof(hash)) safemalloc( sizeof(hash_t) );
 
   hash->keys     = array_new(NULL, -1);
-  hash->vals     = array_new(NULL, -1);
+  hash->vals     = assoc_new(NULL, NULL);
   hash->idxs     = (typeof(hash->idxs)) safemalloc( sizeof (size_t) * 1 );
   hash->idxs_len = 0;
 
@@ -32,8 +32,7 @@ hash_t* hash_new_boa (
 ) {
   pfn();
 
-  size_t
-    klen = signed2un(keys->idx + 1); // ,
+  ssize_t klen = keys->idx + 1; // ,
     //vlen = signed2un(vals->idx + 1);
 
   (void) len;
@@ -47,10 +46,10 @@ hash_t* hash_new_boa (
 
   hash_t* hash = hash_new_skele(); // 1
 
-  for (size_t i = 0; i < klen; i++) {
+  for (ssize_t i = 0; i < klen; i++) {
     object_t
-      **k = &( (keys->data) [i] ),
-      **v = &( (vals->data) [i] );
+      **k = array_get_ref(keys, i, NULL),
+      **v = array_get_ref(vals, i, NULL);
 
     char* s = object_repr(*k);
     printf("key: %s\n", s);
@@ -72,7 +71,7 @@ void  hash_destruct (hash_t* const hash) {
   report_dtor(hash);
 
   array_destruct(hash->keys);
-  array_destruct(hash->vals);
+  assoc_destruct(hash->vals);
   safefree(hash->idxs);
   safefree(hash);
 }
@@ -83,7 +82,7 @@ hash_t*   hash_copy (const hash_t* const h) {
   array_t* values = hash_getvals(h); // 1
 
   // 2
-  hash_t* cp = hash_new_boa(h->keys, values, signed2un(h->keys->idx));
+  hash_t* cp = hash_new_boa(h->keys, values, signed2un(h->keys->idx) + 1);
 
   array_destruct(values); // ~1
   return cp;
@@ -128,19 +127,21 @@ object_t* hash_get_copy (const hash_t* const h, const object_t* const key, bool*
   }
 
   hashkey_t kh;
-  object_t **valpair, *finalval;
+  object_t *finalval;
+  pair_t** valpair;
 
   // hash the key
   kh      = hash_obj(key);
   // get the object by copy (accepts NULL)
-  valpair = array_get_ref(h->vals, (h->idxs) [kh], ok);
+  valpair = assoc_get_ref(h->vals, (h->idxs) [kh], ok);
+
   if ( (false == *ok) && (ok != NULL) ) {
     object_error(PTRMATH_BUG, __func__, true);
     return object_new(t_F, NULL);
   }
 
   // get the first item, which should be the value
-  finalval = pair_car_copy( (*valpair)->cel );     // 1
+  finalval = pair_car_copy(*valpair);     // 1
 
   // 1 alloc, 0 frees, the last free is up to the caller
 
@@ -173,12 +174,12 @@ object_t** hash_get_ref (const hash_t* const h, const object_t* const key, bool*
   }
 
   hashkey_t kh;
-  object_t **valpair;
+  pair_t **valpair;
 
   // hash the key
   kh      = hash_obj(key);
   // get the object by copy (accepts NULL)
-  valpair = array_get_ref(h->vals, (h->idxs) [kh], ok);
+  valpair = assoc_get_ref(h->vals, (h->idxs) [kh], ok);
   if (false == *ok && ok != NULL) {
     object_error(PTRMATH_BUG, __func__, true);
     return NULL;
@@ -186,7 +187,7 @@ object_t** hash_get_ref (const hash_t* const h, const object_t* const key, bool*
 
   // 0 allocs, 0 frees, the last free is up to the caller
   // get the first item, which should be the value
-  return pair_car_ref( (*valpair)->cel );     // 1
+  return pair_car_ref( *valpair );     // 1
 }
 
 /*
@@ -253,20 +254,15 @@ bool hash_change_key (hash_t* const h, const object_t* const oldkey, const objec
 /*
   return the list of values, eg the car of every pair in hash->vals
 */
-array_t* hash_getvals (const hash_t* h) {
+array_t* hash_getvals (const hash_t* const h) {
   pfn();
 
   // new empty value store
   array_t* vs = array_new(NULL, -1); // 1
 
-  size_t vlen = signed2un(h->vals->idx);
-
-  for (size_t i = 0; i < vlen; i++) {
-    object_t
-      // get a reference to thisp value's pair
-      **p   = array_get_ref(vs, un2signed(i), NULL),
-      // get a reference to its first item
-      **car = pair_car_ref( (*p)->cel );
+  for (ssize_t i = 0; i < (h->vals->idx); i++) {
+    // get a reference to thisp value's pair's first item
+    object_t **car = pair_car_ref( ( *array_get_ref(vs, i, NULL) )->cel );
 
     // copy it to the end of the array
     array_append(vs, *car);
@@ -274,6 +270,29 @@ array_t* hash_getvals (const hash_t* h) {
 
   // 1 alloc, 0 frees, last is for caller
   return vs;
+}
+
+/*
+  return the list of keys
+*/
+array_t* hash_getkeys (const hash_t* const h) {
+  pfn();
+
+  array_t* ks = array_new(NULL, -1);
+
+  for (ssize_t i = 0; i < (h->keys->idx); i++) {
+    array_append(ks, *array_get_ref(h->keys, i, NULL));
+  }
+
+  return ks;
+}
+
+/*
+  write the keys and values to pointers supplied by caller
+*/
+void hash_unzip (const hash_t* const h, array_t** keys, array_t** vals) {
+  *keys = hash_getkeys(h),
+  *vals = hash_getvals(h);
 }
 
 /*
@@ -289,9 +308,7 @@ array_t* hash_getvals (const hash_t* h) {
 bool hash_add (hash_t* const h, const object_t* const key, const object_t* const val) {
   pfn();
 
-  pair_t* newp;
-  object_t *pairobj, *khobj;
-
+  object_t *khobj;
 
   // fail if it exists
   if ( hash_exists(h, key) || hash_keyexists(h, key) ) {
@@ -306,17 +323,13 @@ bool hash_add (hash_t* const h, const object_t* const key, const object_t* const
 
   // objectify the key hash
   khobj = object_new(t_realuint, &kh); // 1
+  char* s = object_repr(khobj);
+  printf("khobj: %s\n", s);
+  safefree(s);
+
   // make a pair out of the value and keyhash obj
-  newp  = pair_new(val, khobj); // 2
-
-  // objectify the pair
-  pairobj = object_new(t_pair, (const void * const) newp); // 3
-
-  object_destruct(khobj); // ~1
-  pair_destruct(newp); // ~2
-
   // add the pair to values
-  array_append(h->vals, pairobj);
+  assoc_append_boa(h->vals, val, khobj);
   // resize the idxs array by the needed amount
   h->idxs = (typeof(h->idxs)) saferealloc(h->idxs, sizeof (size_t) * kh + 1);
   // increment the pointer
@@ -351,7 +364,7 @@ bool hash_exists (const hash_t* const h, const object_t* const key) {
   return -1 != h->idxs[kh];
 }
 
-inline static ssize_t findlast (
+static inline __CONST_FUNC __PURE_FUNC ssize_t findlast (
   const ssize_t* const array,
   const size_t         len,
   const ssize_t        n,
@@ -402,7 +415,7 @@ void hash_delete (hash_t* const h, const object_t* const key) {
   array_delete(h->keys, keyidx);
 
   // delete the value
-  array_delete(h->vals, h->idxs[kh]);
+  assoc_delete(h->vals, h->idxs[kh]);
 
   // invalidate its position in the index list
   (h->idxs) [kh] = -1;
@@ -451,7 +464,7 @@ void hash_inspect (const hash_t* const h) {
   dealloc_printf( array_see(h->keys) );
 
   printf("%zu vals:\n", h->vals->idx);
-  dealloc_printf( array_see(h->vals) );
+  dealloc_printf( assoc_see(h->vals) );
 
   printf("%zu idxs:\n", h->idxs_len);
   for (size_t i = 0; i < h->idxs_len; i++) {
@@ -471,5 +484,5 @@ bool hash_equals (const hash_t* const a, const hash_t* const b) {
     return false;
   }
 
-  return array_equals(a->keys, b->keys) && array_equals(a->vals, b->vals);
+  return array_equals(a->keys, b->keys) && assoc_equals(a->vals, b->vals);
 }

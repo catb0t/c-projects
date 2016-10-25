@@ -225,7 +225,8 @@ void* _safemalloc (const size_t len, const uint64_t lineno, const char* const fn
 
 void* _saferealloc (void* ptr, const size_t len, uint64_t lineno, const char* const fname) {
   pfn();
-  printf("reallocing %zu byte%s\n", len, len != 1 ? "s" : "");
+
+  dbg_prn("reallocing %zu byte%s\n", len, len != 1 ? "s" : "");
   (void) fname, (void) lineno;
   void* mem = realloc(ptr, len);
   if (ENOMEM == errno) {

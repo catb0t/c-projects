@@ -1,15 +1,16 @@
 #ifdef STACK
 
-#include "../../common.h"
+  #include "../../common.h"
 
-#ifdef GCC
-#line __LINE__ "object"
-#endif
-typedef long double number_t;
+  #ifdef GCC
+  #line __LINE__ "object"
+  #endif
+  typedef long double number_t;
 
-#else
+#else // !STACK
 
 #include "array.h"
+#include "assoc.h"
 #include "fixwid.h"
 #include "hash.h"
 #include "number.h"
@@ -110,6 +111,10 @@ object_t* object_new (const objtype_t valtype, const void* const val) {
       obj->ary = array_copy( (const array_t * const) val);
       break;
     }
+    case t_assoc: {
+      obj->asc = assoc_copy( (const assoc_t* const) val);
+      break;
+    }
     case t_hash: {
       obj->hsh = hash_copy( (const hash_t * const) val);
       break;
@@ -160,6 +165,7 @@ void** object_getval (const object_t* const obj) {
     (void **) (obj->str), // string_t
     (void **) (obj->fnc), // func_t
     (void **) (obj->ary), // array_t
+    (void **) (obj->asc), // array_t
     (void **) (obj->hsh), // hash_t
     (void **) (obj->cel), // pair_t
     (void **) (obj->fwi), // realint
@@ -312,7 +318,7 @@ char* object_repr (const object_t* const obj) {
       break;
     }
     case t_F: {
-       buf = (typeof(buf)) safemalloc(2);
+      buf = (typeof(buf)) safemalloc(2);
 
       snprintf(buf, 1, "%s", "f");
       break;
@@ -356,6 +362,10 @@ char* object_repr (const object_t* const obj) {
     }
     case t_array: {
       buf = array_see(obj->ary);
+      break;
+    }
+    case t_assoc: {
+      buf = assoc_see(obj->asc);
       break;
     }
     case t_hash: {
@@ -440,12 +450,13 @@ bool object_equals (const object_t* const a, const object_t* const b) {
     }
 
     // this should be redundant
-    case t_T:       same = true;
+    case t_T:       same = true; break;
 
     case t_fixwid:  same =     fixwid_eq(oa->fwi, ob->fwi); break;
     case t_number:  same =     number_eq(a->num, b->num);   break;
-    case t_hash:    same =   hash_equals(a->hsh, b->hsh);   break;
     case t_array:   same =  array_equals(a->ary, b->ary);   break;
+    case t_assoc:   same =  assoc_equals(a->asc, b->asc);   break;
+    case t_hash:    same =   hash_equals(a->hsh, b->hsh);   break;
     case t_pair:    same =   pair_equals(a->cel, b->cel);   break;
 
     case t_func: {

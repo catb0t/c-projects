@@ -80,12 +80,38 @@ bool fixwid_eq (const fixwid_t* const a, const fixwid_t* const b) {
 bool    fixwid_gt (const fixwid_t* const a, const fixwid_t* const b) {
   pfn();
 
-  return a->value > b->value;
+  if (a->signed_active != b->signed_active) {
+    if (a->signed_active && (a->value >= 0)) {
+      return signed2un(a->value) > b->uvalue;
+
+    // not a bug
+    } else if (b->signed_active && (b->value >= 0) ) {
+      return signed2un(b->value) < a->uvalue;
+    }
+    return false;
+  }
+
+  return a->signed_active
+    ? a->value  > b->value
+    : a->uvalue > b->uvalue;
 }
 
 bool    fixwid_lt (const fixwid_t* const a, const fixwid_t* const b) {
   pfn();
 
-  return a->value < b->value;
+  if (a->signed_active != b->signed_active) {
+    if (a->signed_active && (a->value >= 0)) {
+      return signed2un(a->value) < b->uvalue;
+
+    // not a bug
+    } else if (b->signed_active && (b->value >= 0) ) {
+      return signed2un(b->value) > a->uvalue;
+    }
+    return false;
+  }
+
+  return a->signed_active
+    ? a->value  < b->value
+    : a->uvalue < b->uvalue;
 }
 

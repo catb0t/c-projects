@@ -12,3 +12,44 @@ the NULL pointer is a valid value to indicate an empty array of primitives or in
 
 nothing_new(), or the F_t object returned by object_new(t_F, ...) || object_new(..., NULL) should be used to indicate false or an empty collection.
 
+ignore me
+
+static const char OBJTYPE_CHARS[] = {
+  [t_F]        = 'f',
+  [t_T]        = 't',
+  [t_number]   = 'n',
+  [t_fixwid]   = 'z',
+  [t_string]   = 's',
+  [t_func]     = 'q',
+  [t_array]    = 'a',
+  [t_assoc]    = 'o',
+  [t_hash]     = 'h',
+  [t_pair]     = 'p',
+  [t_realint]  = 'i',
+  [t_realuint] = 'u',
+  [t_realchar] = 'c',
+};
+
+_Static_assert(
+  ( (sizeof OBJTYPE_CHARS) / (sizeof (char)) == NUM_OBJTYPES),
+  "CHAR_2OBJTYPE has too few or too many values"
+);
+
+static const objtype_t CHAR_2OBJTYPE[] = {
+  ['f'] = t_F,
+  ['t'] = t_T,
+  ['n'] = t_number,
+  ['z'] = t_fixwid,
+  ['s'] = t_string,
+  ['q'] = t_func,
+  ['a'] = t_array,
+  ['h'] = t_hash,
+  ['p'] = t_pair,
+  ['i'] = t_realint,
+  ['c'] = t_realchar
+};
+
+_Static_assert(
+  ( (sizeof CHAR_2OBJTYPE) / (sizeof (objtype_t)) == ('z' + 1)),
+  "CHAR_2OBJTYPE has too few or too many values"
+);
