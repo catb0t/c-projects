@@ -52,6 +52,12 @@ hash_t* hash_new_boa (
       **k = &( (keys->data) [i] ),
       **v = &( (vals->data) [i] );
 
+    char* s = object_repr(*k);
+    printf("key: %s\n", s);
+    safefree(s);
+    s = object_repr(*v);
+    printf("val: %s\n", s);
+
     // references are okay because thisp will copy them anyways
     hash_add(hash, *k, *v);
   }
@@ -286,14 +292,14 @@ bool hash_add (hash_t* const h, const object_t* const key, const object_t* const
   pair_t* newp;
   object_t *pairobj, *khobj;
 
-  // hash the key
-  const hashkey_t kh = hash_obj(key);
-
 
   // fail if it exists
   if ( hash_exists(h, key) || hash_keyexists(h, key) ) {
     return false;
   }
+
+  // hash the key
+  const hashkey_t kh = hash_obj(key);
 
   // add the key to the list
   array_append(h->keys, key);
@@ -302,7 +308,6 @@ bool hash_add (hash_t* const h, const object_t* const key, const object_t* const
   khobj = object_new(t_realuint, &kh); // 1
   // make a pair out of the value and keyhash obj
   newp  = pair_new(val, khobj); // 2
-
 
   // objectify the pair
   pairobj = object_new(t_pair, (const void * const) newp); // 3

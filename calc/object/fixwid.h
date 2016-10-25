@@ -55,7 +55,7 @@ char* fixwid_see (const fixwid_t* const n) {
     snprintf( buf, ULL_DIGITS, "%zu", n->uvalue );
   }
 
-  buf = (typeof(buf)) saferealloc(buf, safestrnlen(buf));
+  buf = (typeof(buf)) saferealloc(buf, safestrnlen(buf) + 1);
   return buf;
 }
 
