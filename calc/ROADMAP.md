@@ -13,12 +13,14 @@ How:
 * the compiler, `compile.h`, translates an AST created by the lexer into C code compiled and linked against `libmouse.a`; see compile/compile.h.
 * using `string_eval()` and its associated operator (TODO), a self-hosting interpreter is possible, which is then compiled into a standalone binary.
 * make libmouse like:
+  
   ```
   cc object/object.h -c -o object.o
   cc lex/lex.h -c -o lex.o
   cc stack/stack.h -c -o stack.o
   ar rv libmouse.a object.o stack.o lex.o
   ```
+  
 * libmouse.a's location must be given as an arg if it's not in the current directory
 * text gets translated into bytecode, which either gets run by the VM or translated into C
 
