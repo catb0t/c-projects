@@ -266,11 +266,11 @@ _Static_assert(
   "OBJTYPE_2STRING has too few or too many values"
 );
 
+extern void object_error (objerror_t error, const char* const info, const bool fatal);
 extern bool _obj_failnull(const void* const o, const char* const file, const uint64_t line, const char* const func);
 
 #define object_failnull(o) _obj_failnull((o), __FILE__, __LINE__, __func__)
-
-extern void object_error (objerror_t error, const char* const info, const bool fatal);
+#define MAX_HASH_SIZE 10000
 
 static inline __PURE_FUNC __CONST_FUNC ssize_t ssize_min (ssize_t a, ssize_t b) {
   pfn();

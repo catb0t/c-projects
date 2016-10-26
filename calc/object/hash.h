@@ -105,7 +105,7 @@ hashkey_t hash_obj (const object_t* const obj) {
 
   safefree(buf);
 
-  return hval;
+  return hval % MAX_HASH_SIZE;
 }
 
 /*
@@ -495,20 +495,21 @@ char* hash_see (const hash_t* const h) {
 void hash_inspect (const hash_t* const h) {
   pfn();
 
-  printf("WARN: LONG OUTPUT\n");
+  printf("hash uid:%zu idxs_len:%zu {\n", h->uid, h->idxs_len);
 
-  printf("hash #%zu\n", h->uid);
-
-  printf("%zu keys:\n", h->keys->idx);
+  printf("\tkeys: %zu\n\t", h->keys->idx);
   dealloc_printf( array_see(h->keys) );
 
-  printf("%zu vals:\n", h->vals->idx);
+  printf("\tvals: %zu\n\t", h->vals->idx);
   dealloc_printf( assoc_see(h->vals) );
 
-  printf("%zu idxs:\n", h->idxs_len);
+  printf("\n\tidxs: %zu {\n", h->idxs_len);
+
   for (size_t i = 0; i < h->idxs_len; i++) {
-    printf("i:%zu d:%zu ", i, h->idxs[i]);
+    printf("\t\ti:%zu d:%zu\n ", i, h->idxs[i]);
   }
+
+  puts("\t}\n}");
 
 }
 

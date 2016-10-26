@@ -59,12 +59,9 @@ void test (void) {
 
   hash_t* h = hash_new_boa(ra, rb);
 
-  hash_inspect(h);
-
   array_destruct(ra), array_destruct(rb);
 
-  char* s = hash_see(h);
-  dealloc_printf(s);
+  hash_inspect(h);
 
   hash_destruct(h);
 
