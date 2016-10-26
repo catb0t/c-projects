@@ -87,7 +87,10 @@ bool   hash_isempty (const hash_t* const h) {
   return 0 == h->idxs_len;
 }
 
-hashkey_t hash_obj (const object_t* const obj) {
+/*
+  hash an object's string representation using Fowler Noll Vo 32-bits
+*/
+static inline hashkey_t hash_obj2fnvkey (const object_t* const obj) {
   pfn();
 
   object_failnull(obj);
@@ -105,7 +108,18 @@ hashkey_t hash_obj (const object_t* const obj) {
 
   safefree(buf);
 
-  return hval % MAX_HASH_SIZE;
+  return hval;
+}
+
+/*
+  mod the hash returned by obj2fnvkey by MAX_HASH_SIZE.
+*/
+hashkey_t hash_obj (const object_t* const obj) {
+  pfn();
+
+  object_failnull(obj);
+
+  return hash_obj2fnvkey(obj) % MAX_HASH_SIZE;
 }
 
 /*
@@ -497,17 +511,13 @@ void hash_inspect (const hash_t* const h) {
 
   printf("hash uid:%zu idxs_len:%zu {\n", h->uid, h->idxs_len);
 
-  printf("\tkeys: %zu\n\t", h->keys->idx);
+  printf("\tkeys: %zu\n\t", h->keys->idx + 1);
   dealloc_printf( array_see(h->keys) );
 
-  printf("\tvals: %zu\n\t", h->vals->idx);
+  printf("\tvals: %zu\n\t", h->vals->idx + 1);
   dealloc_printf( assoc_see(h->vals) );
 
   printf("\n\tidxs: %zu {\n", h->idxs_len);
-
-  for (size_t i = 0; i < h->idxs_len; i++) {
-    printf("\t\ti:%zu d:%zu\n ", i, h->idxs[i]);
-  }
 
   puts("\t}\n}");
 

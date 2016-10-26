@@ -312,13 +312,13 @@ char* array_see (const array_t* const a) {
 
   object_failnull(a);
 
-  char *outbuf = (typeof(outbuf)) safemalloc(10),
+  char *outbuf = (typeof(outbuf)) safemalloc(6),
        *bufptr = outbuf;
 
   str_append(bufptr, 3, "%s ", "{");
 
   if ( array_isempty(a) ) {
-    str_append(bufptr, 3, "%s\n", "}");
+    str_append(bufptr, 2, "%s", "}");
     return outbuf;
   }
 
@@ -345,7 +345,7 @@ char* array_see (const array_t* const a) {
   outbuf  = (typeof(outbuf)) saferealloc(outbuf, total_len + 3);
 
   bufptr  = outbuf + total_len;
-  str_append(bufptr, 3, "%s\n", "}");
+  str_append(bufptr, 3, "%s", "}");
 
   return outbuf;
 }

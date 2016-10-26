@@ -145,9 +145,44 @@ void assoc_delete (assoc_t* const a, const ssize_t idx) {
 char* assoc_see (const assoc_t* const a) {
   pfn();
 
-  (void) a;
-  char*  buf = (typeof(buf)) safemalloc(1);
-  return buf;
+  object_failnull(a);
+
+  char *outbuf = (typeof(outbuf)) safemalloc(7),
+       *bufptr = outbuf;
+
+  str_append(bufptr, 4, "%s ", "a{");
+
+  if ( assoc_isempty(a) ) {
+    str_append(bufptr, 2, "%s", "}");
+    return outbuf;
+  }
+
+  size_t total_len = safestrnlen(outbuf);
+
+  for (ssize_t i = 0; i < (a->idx + 1); i++) {
+    // 'tis but a reference
+    pair_t** thisp = assoc_get_ref(a, i, NULL);
+    char*   strthis = pair_see(*thisp);
+    size_t  tlen    = safestrnlen(strthis) + 2;
+
+    outbuf = (typeof(outbuf)) saferealloc(outbuf, total_len + tlen);
+    bufptr = outbuf + total_len;
+
+    str_append(bufptr, tlen, "%s ", strthis);
+    total_len = safestrnlen(outbuf);
+
+    safefree(strthis);
+  }
+
+  // for my own sanity
+  total_len = safestrnlen(outbuf);
+
+  outbuf  = (typeof(outbuf)) saferealloc(outbuf, total_len + 3);
+
+  bufptr  = outbuf + total_len;
+  str_append(bufptr, 3, "%s", "}");
+
+  return outbuf;
 }
 
 void assoc_inspect (const assoc_t* const a) {
@@ -191,4 +226,12 @@ bool assoc_equals (const assoc_t* const a, const assoc_t* const b) {
   }
 
   return true;
+}
+
+bool assoc_isempty (const assoc_t* const a) {
+  pfn();
+
+  object_failnull(a);
+
+  return -1 == a->idx || NULL == a->data;
 }

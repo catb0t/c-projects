@@ -47,8 +47,6 @@ void test (void) {
 
   printf("getval: %zu\n", ( (const fixwid_t* const) object_getval(oa))->uvalue);
 
-  //safefree(a), safefree(b);
-
   array_t *ra = array_new(NULL, -1),
           *rb = array_new(NULL, -1);
 
