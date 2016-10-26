@@ -61,6 +61,8 @@ array_t* array_new (const object_t* const * const objs, const ssize_t len) {
 array_t* array_copy (const array_t* const a) {
   pfn();
 
+  object_failnull(a);
+
   return array_new( (const object_t* const * const) a->data, a->idx);
 }
 
@@ -98,6 +100,8 @@ void array_destruct (array_t* const array) {
 bool array_isempty (const array_t* const a) {
   pfn();
 
+  object_failnull(a);
+
   return -1 == a->idx || (NULL == a->data);
 }
 
@@ -108,6 +112,8 @@ bool array_isempty (const array_t* const a) {
 */
 void array_resize (array_t* const a, const ssize_t new_idx) {
   pfn();
+
+  object_failnull(a);
 
   if ( -1 == new_idx ) {
     a->data = (typeof(a->data)) saferealloc(a->data, 0);
@@ -143,6 +149,8 @@ void array_resize (array_t* const a, const ssize_t new_idx) {
 void array_delete (array_t* const a, const ssize_t idx) {
   pfn();
 
+  object_failnull(a);
+
   if ( ( idx > a->idx ) || ( array_isempty(a) ) || ( -1 == idx ) ) {
     char* er = safemalloc(100);
     snprintf(er, 99, "%s: delete index %zu but the highest is %zu", __func__, idx, a->idx);
@@ -168,6 +176,10 @@ void array_delete (array_t* const a, const ssize_t idx) {
 }
 
 void array_clear (array_t* const a) {
+  pfn();
+
+  object_failnull(a);
+
   array_resize(a, -1);
 }
 
@@ -183,6 +195,8 @@ void array_clear (array_t* const a) {
 */
 void array_insert (array_t* const a, const object_t* const o, const ssize_t idx) {
   pfn();
+
+  object_failnull(a);
 
   array_resize(a, a->idx + 1);
 
@@ -206,6 +220,8 @@ void array_insert (array_t* const a, const object_t* const o, const ssize_t idx)
 void array_append (array_t* const a, const object_t* const o) {
   pfn();
 
+  object_failnull(a);
+
   ++(a->idx);
   a->data = (typeof(a->data)) saferealloc(a->data, (sizeof (object_t *)) * signed2un(a->idx + 1) );
 
@@ -216,6 +232,10 @@ void array_append (array_t* const a, const object_t* const o) {
   variadic version of array_append
 */
 void array_vappend (array_t* const a, const size_t argc, ...) {
+  pfn();
+
+  object_failnull(a);
+
   va_list vl;
   va_start(vl, argc);
 
@@ -233,6 +253,10 @@ void array_vappend (array_t* const a, const size_t argc, ...) {
   concatenate two array_ts
 */
 void array_cat (array_t* a, const array_t* const b) {
+  pfn();
+
+  object_failnull(a);
+
   if ( array_isempty(a) && array_isempty(b) ) {
     return;
   }
@@ -246,7 +270,6 @@ void array_cat (array_t* a, const array_t* const b) {
     return;
   }
 
-
   size_t alen = signed2un(a->idx), total_len = alen + signed2un(b->idx);
 
   a->data = (typeof(a->data)) saferealloc(a->data, sizeof (object_t **) * total_len);
@@ -259,6 +282,10 @@ void array_cat (array_t* a, const array_t* const b) {
   variadic version of array_cat
 */
 void array_vcat (array_t* const a, const size_t argc, ...) {
+  pfn();
+
+  object_failnull(a);
+
   va_list vl;
   va_start(vl, argc);
 
@@ -282,6 +309,8 @@ void array_vcat (array_t* const a, const size_t argc, ...) {
 // because we are working only with char and size_t
 char* array_see (const array_t* const a) {
   pfn();
+
+  object_failnull(a);
 
   char *outbuf = (typeof(outbuf)) safemalloc(10),
        *bufptr = outbuf;
@@ -322,8 +351,12 @@ char* array_see (const array_t* const a) {
 }
 
 void array_inspect (const array_t* const a) {
+  pfn();
 
-  printf("array uid:%zu idx:%zu sz:%zu {\n", a->uid, a->idx, (signed2un(a->idx) + 1) * (sizeof a->data));
+  object_failnull(a);
+
+  printf("array uid:%zu idx:%zd {\n", a->uid, a->idx);
+
   for (ssize_t i = 0; i < (a->idx + 1); i++) {
     char* x = object_repr(*array_get_ref(a, i, NULL));
     printf("\t%zu: %s\n", i, x);
@@ -339,6 +372,8 @@ void array_inspect (const array_t* const a) {
 */
 ssize_t array_find (const array_t* const a, const object_t* const obj) {
   pfn();
+
+  object_failnull(a);
 
   for (ssize_t i = 0; i < a->idx; i++) {
     if ( object_equals(obj, *array_get_ref(a, i, NULL) )) {
@@ -361,6 +396,8 @@ ssize_t array_find (const array_t* const a, const object_t* const obj) {
 */
 object_t* array_get_copy (const array_t* const a, const ssize_t idx, bool* ok) {
   pfn();
+
+  object_failnull(a);
 
   if (NULL != ok) { *ok = true; }
 
@@ -387,6 +424,8 @@ object_t* array_get_copy (const array_t* const a, const ssize_t idx, bool* ok) {
 object_t** array_get_ref (const array_t* const a, const ssize_t idx, bool* ok) {
   pfn();
 
+  object_failnull(a);
+
   if (NULL != ok) { *ok = true; }
 
   if ( array_isempty(a) || idx > a->idx || -1 == idx ) {
@@ -410,6 +449,8 @@ object_t** array_get_ref (const array_t* const a, const ssize_t idx, bool* ok) {
 */
 bool array_equals (const array_t* const a, const array_t* const b) {
   pfn();
+
+  object_failnull(a);
 
   if ( array_isempty(a) && array_isempty(b) ) {
     return true;

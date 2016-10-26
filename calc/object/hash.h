@@ -27,26 +27,15 @@ hash_t* hash_new_skele (void) {
 
 hash_t* hash_new_boa (
   const array_t* const keys,
-  const array_t* const vals,
-  const size_t         len
+  const array_t* const vals
 ) {
   pfn();
 
-  ssize_t klen = keys->idx + 1; // ,
-    //vlen = signed2un(vals->idx + 1);
-
-  (void) len;
-
-  /*
-  assert(
-    (klen == vlen)
-    && (klen == len)
-    && (vlen == len)
-  );*/
+  ssize_t len = ssize_min(keys->idx, vals->idx) + 1;
 
   hash_t* hash = hash_new_skele(); // 1
 
-  for (ssize_t i = 0; i < klen; i++) {
+  for (ssize_t i = 0; i < len; i++) {
     object_t
       **k = array_get_ref(keys, i, NULL),
       **v = array_get_ref(vals, i, NULL);
@@ -79,17 +68,21 @@ void  hash_destruct (hash_t* const hash) {
 hash_t*   hash_copy (const hash_t* const h) {
   pfn();
 
+  object_failnull(h);
+
   array_t* values = hash_getvals(h); // 1
 
   // 2
-  hash_t* cp = hash_new_boa(h->keys, values, signed2un(h->keys->idx) + 1);
+  hash_t* copy = hash_new_boa(h->keys, values);
 
   array_destruct(values); // ~1
-  return cp;
+  return copy;
 }
 
 bool   hash_isempty (const hash_t* const h) {
   pfn();
+
+  object_failnull(h);
 
   return 0 == h->idxs_len;
 }
@@ -97,8 +90,19 @@ bool   hash_isempty (const hash_t* const h) {
 hashkey_t hash_obj (const object_t* const obj) {
   pfn();
 
+  object_failnull(obj);
+
   char* buf      = object_repr(obj);
   hashkey_t hval = fnv_32a_str(buf, FNV1_32A_INIT);
+
+  printf(
+    "hash of %s uid %zu val %s: %d\n",
+    objtype_repr(obj->type),
+    obj->uid,
+    buf,
+    hval
+  );
+
   safefree(buf);
 
   return hval;
@@ -113,6 +117,8 @@ hashkey_t hash_obj (const object_t* const obj) {
 */
 object_t* hash_get_copy (const hash_t* const h, const object_t* const key, bool* ok) {
   pfn();
+
+  object_failnull(h);
 
   if (NULL != ok) {
     *ok = true;
@@ -161,6 +167,8 @@ object_t* hash_get_copy (const hash_t* const h, const object_t* const key, bool*
 object_t** hash_get_ref (const hash_t* const h, const object_t* const key, bool* ok) {
   pfn();
 
+  object_failnull(h);
+
   if (NULL != ok) {
     *ok = true;
   }
@@ -198,6 +206,9 @@ object_t** hash_get_ref (const hash_t* const h, const object_t* const key, bool*
   does nothing successfully if the new and old keys compare equal.
 */
 bool hash_change_at (hash_t* const h, const object_t* const obj, object_t* newval) {
+  pfn();
+
+  object_failnull(h);
 
   bool ok = true;
 
@@ -224,6 +235,9 @@ bool hash_change_at (hash_t* const h, const object_t* const obj, object_t* newva
   does nothing successfully if oldkey and newkey compare equal.
 */
 bool hash_change_key (hash_t* const h, const object_t* const oldkey, const object_t* const newkey) {
+  pfn();
+
+  object_failnull(h);
 
   if ( object_equals(oldkey, newkey) ) {
     return true;
@@ -257,6 +271,8 @@ bool hash_change_key (hash_t* const h, const object_t* const oldkey, const objec
 array_t* hash_getvals (const hash_t* const h) {
   pfn();
 
+  object_failnull(h);
+
   // new empty value store
   array_t* vs = array_new(NULL, -1); // 1
 
@@ -278,6 +294,8 @@ array_t* hash_getvals (const hash_t* const h) {
 array_t* hash_getkeys (const hash_t* const h) {
   pfn();
 
+  object_failnull(h);
+
   array_t* ks = array_new(NULL, -1);
 
   for (ssize_t i = 0; i < (h->keys->idx); i++) {
@@ -291,6 +309,10 @@ array_t* hash_getkeys (const hash_t* const h) {
   write the keys and values to pointers supplied by caller
 */
 void hash_unzip (const hash_t* const h, array_t** keys, array_t** vals) {
+  pfn();
+
+  object_failnull(h);
+
   *keys = hash_getkeys(h),
   *vals = hash_getvals(h);
 }
@@ -305,8 +327,12 @@ void hash_unzip (const hash_t* const h, array_t** keys, array_t** vals) {
     resize idxs to vals->idx + 1
     idxs [ hash_obj(key) ] = vals->idx
 */
-bool hash_add (hash_t* const h, const object_t* const key, const object_t* const val) {
+bool hash_add (hash_t* h, const object_t* const key, const object_t* const val) {
   pfn();
+
+  if ( NULL == h ) {
+    h = hash_new_skele();
+  }
 
   object_t *khobj;
 
@@ -314,15 +340,15 @@ bool hash_add (hash_t* const h, const object_t* const key, const object_t* const
   if ( hash_exists(h, key) || hash_keyexists(h, key) ) {
     return false;
   }
-
-  // hash the key
-  const hashkey_t kh = hash_obj(key);
-
   // add the key to the list
   array_append(h->keys, key);
 
+  // hash the key
+  const hashkey_t kh = hash_obj(key);
+  const size_t   ikh = (size_t) kh;
+
   // objectify the key hash
-  khobj = object_new(t_realuint, &kh); // 1
+  khobj = object_new(t_realuint, &ikh); // 1
   char* s = object_repr(khobj);
   printf("khobj: %s\n", s);
   safefree(s);
@@ -331,7 +357,7 @@ bool hash_add (hash_t* const h, const object_t* const key, const object_t* const
   // add the pair to values
   assoc_append_boa(h->vals, val, khobj);
   // resize the idxs array by the needed amount
-  h->idxs = (typeof(h->idxs)) saferealloc(h->idxs, sizeof (size_t) * kh + 1);
+  h->idxs = (typeof(h->idxs)) saferealloc(h->idxs, sizeof (size_t) * (kh + 1));
   // increment the pointer
   ++(h->idxs_len);
   // assign the index of the pair in values to idxs
@@ -346,7 +372,9 @@ bool hash_add (hash_t* const h, const object_t* const key, const object_t* const
 bool hash_keyexists (const hash_t* const h, const object_t* const key) {
   pfn();
 
-  return -1 != array_find(h->keys, key);
+  return object_failnull(h)
+    ? -1 != array_find(h->keys, key)
+    : false;
 }
 
 /*
@@ -354,6 +382,8 @@ bool hash_keyexists (const hash_t* const h, const object_t* const key) {
 */
 bool hash_exists (const hash_t* const h, const object_t* const key) {
   pfn();
+
+  object_failnull(h);
 
   hashkey_t kh = hash_obj(key);
 
@@ -370,6 +400,7 @@ static inline __CONST_FUNC __PURE_FUNC ssize_t findlast (
   const ssize_t        n,
   const bool           invert_cmp
 ) {
+  pfn();
 
   for (size_t i = len; i != 0; i--) {
 
@@ -401,6 +432,8 @@ static inline __CONST_FUNC __PURE_FUNC ssize_t findlast (
 */
 void hash_delete (hash_t* const h, const object_t* const key) {
   pfn();
+
+  object_failnull(h);
 
   // hash the key
   hashkey_t kh = hash_obj(key);
@@ -438,17 +471,21 @@ void hash_delete (hash_t* const h, const object_t* const key) {
 
   =====
   recompute base encryption hash key sequence
-  thisp may take forever. do not interrupt the hash recompute or you may be required
+  this may take forever. do not interrupt the hash recompute or you may be required
   to relicense all your products. don't believe us? try it.
 
   -- The Website is Down Episode #4: Sales Demolition
 */
 void hash_recompute (const hash_t* h) {
+  pfn();
+
   h = hash_copy(h);
 }
 
 char* hash_see (const hash_t* const h) {
   pfn();
+
+  object_failnull(h);
 
   (void) h;
   char*  buf = (typeof(buf)) safemalloc(1);
@@ -456,6 +493,8 @@ char* hash_see (const hash_t* const h) {
 }
 
 void hash_inspect (const hash_t* const h) {
+  pfn();
+
   printf("WARN: LONG OUTPUT\n");
 
   printf("hash #%zu\n", h->uid);
@@ -475,6 +514,8 @@ void hash_inspect (const hash_t* const h) {
 
 bool hash_equals (const hash_t* const a, const hash_t* const b) {
   pfn();
+
+  object_failnull(a);
 
   if ( hash_isempty(a) && hash_isempty(b) ) {
     return true;

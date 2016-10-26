@@ -32,6 +32,8 @@ void  fixwid_destruct (fixwid_t* const fixwid) {
 fixwid_t* fixwid_copy (const fixwid_t* const n) {
   pfn();
 
+  object_failnull(n);
+
   ssize_t a = -1;
   size_t  b = 0;
 
@@ -47,6 +49,8 @@ fixwid_t* fixwid_copy (const fixwid_t* const n) {
 char* fixwid_see (const fixwid_t* const n) {
   pfn();
 
+  object_failnull(n);
+
   char*  buf = (typeof(buf)) safemalloc( ULL_DIGITS + 1 );
 
   if (n->signed_active) {
@@ -61,6 +65,8 @@ char* fixwid_see (const fixwid_t* const n) {
 
 bool fixwid_eq (const fixwid_t* const a, const fixwid_t* const b) {
   pfn();
+
+  object_failnull(a);
 
   if (a->signed_active != b->signed_active) {
     if (a->signed_active && (a->value >= 0)) {
@@ -80,6 +86,8 @@ bool fixwid_eq (const fixwid_t* const a, const fixwid_t* const b) {
 bool    fixwid_gt (const fixwid_t* const a, const fixwid_t* const b) {
   pfn();
 
+  object_failnull(a);
+
   if (a->signed_active != b->signed_active) {
     if (a->signed_active && (a->value >= 0)) {
       return signed2un(a->value) > b->uvalue;
@@ -98,6 +106,8 @@ bool    fixwid_gt (const fixwid_t* const a, const fixwid_t* const b) {
 
 bool    fixwid_lt (const fixwid_t* const a, const fixwid_t* const b) {
   pfn();
+
+  object_failnull(a);
 
   if (a->signed_active != b->signed_active) {
     if (a->signed_active && (a->value >= 0)) {

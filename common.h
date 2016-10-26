@@ -90,7 +90,7 @@
 #ifdef DEBUG
   #define dbg_prn(...) printf(__VA_ARGS__)
 
-  #define _printfunc(file, line, func) printf("\n\033[30;1m%s#%d:%s\033[0m\n", \
+  #define _printfunc(file, line, func) printf("\n\033[30;1m%s#%d:\033[36;1m%s\033[0m\n", \
     file, line, func)
   #define pfn() _printfunc(__FILE__, __LINE__, __func__)
 #else
@@ -106,9 +106,9 @@
   static size_t uid = 0; \
   ++uid;                 \
   (obj)->uid = uid;      \
-  dbg_prn("ctor %s #%zu\n", #obj, uid)
+  dbg_prn("\x1b[33;1mctor \x1b[30;1m%s #%zu\x1b[0m\n", #obj, uid)
 
-#define report_dtor(obj) dbg_prn("dtor %s #%zu\n", #obj, obj->uid)
+#define report_dtor(obj) dbg_prn("\x1b[33;1mdtor \x1b[30;1m%s #%zu\x1b[0m\n", #obj, obj->uid)
 
 #ifdef __cplusplus
   #define _Static_assert(expr, diag) static_assert(expr, diag)

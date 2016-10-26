@@ -55,7 +55,11 @@ void test (void) {
   array_append(ra, oa);
   array_append(rb, ob);
 
-  hash_t* h = hash_new_boa(ra, rb, 1);
+  array_inspect(ra), array_inspect(rb);
+
+  hash_t* h = hash_new_boa(ra, rb);
+
+  hash_inspect(h);
 
   array_destruct(ra), array_destruct(rb);
 

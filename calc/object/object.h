@@ -78,13 +78,13 @@ object_t* object_new (const objtype_t valtype, const void* const val) {
       break;
     }
     case t_realuint: {
-      obj->fwi = fixwid_new(-1, *(const size_t* const ) val, false);
+      obj->fwi  = fixwid_new(-1, *(const size_t* const) val, false);
       obj->type = t_fixwid;
       break;
     }
     case t_realint: {
       // i'm an awful person
-      obj->fwi = fixwid_new( *(const ssize_t* const) val, 0, true);
+      obj->fwi  = fixwid_new( *(const ssize_t* const) val, 0, true);
       obj->type = t_fixwid;
       break;
     }
@@ -283,6 +283,7 @@ void object_error (objerror_t errt, const char* const info, const bool fatal) {
     "no such key",         // KEYERROR
     "index out of bounds", // INDEXERROR
     "pointer math error (invalid read or write) -- probably a bug", // PTRMATH_BUG
+    "null pointer encountered where a structure or union was expected" // NULL_OBJECT
   };
 
   _Static_assert(
@@ -298,8 +299,18 @@ void object_error (objerror_t errt, const char* const info, const bool fatal) {
       "\033[31mThat error was fatal, aborting.\n\n"
       "I'm melting!\033[0m"
     );
+    abort();
   }
+}
 
+inline bool _obj_failnull (const void* const obj, const char* const file, uint64_t line, const char* const func) {
+  if (NULL == obj) {
+    char buf[200];
+    snprintf(buf, 200, "%s:%" PRIu64 ": %s", file, line, func);
+    object_error(NULL_OBJECT, buf, true);
+    return false;
+  }
+  return true;
 }
 
 /*

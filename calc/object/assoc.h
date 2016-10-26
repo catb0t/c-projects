@@ -4,20 +4,19 @@
 #line __LINE__ "assoc"
 #endif
 
-static inline __PURE_FUNC __CONST_FUNC ssize_t ssize_min (ssize_t a, ssize_t b) {
-  pfn();
-
-  return a < b ? a : b;
-}
-
 assoc_t* assoc_new (const array_t* const a, const array_t* const b) {
   pfn();
 
   assoc_t* assoc = (typeof(assoc)) safemalloc(sizeof (assoc_t) );
 
-  if ( ! ( (NULL == a) || (NULL == b) ) ) {
+  assoc->idx  = -1;
+  assoc->data = NULL;
+
+  if ( (NULL != a) && (NULL != b) ) {
 
     ssize_t idx = ssize_min(a->idx, b->idx);
+    assoc->idx  = idx;
+    assoc->data = (typeof(assoc->data)) safemalloc( sizeof (pair_t*) * (signed2un(idx) + 1) );
 
     for (ssize_t i = 0; i < idx; i++) {
       object_t
@@ -55,15 +54,16 @@ void assoc_destruct (assoc_t* const assoc) {
   report_dtor(assoc);
 }
 
-void assoc_unzip (const assoc_t* a, array_t** keys, array_t** vals) {
+void assoc_unzip (const assoc_t* a, array_t** car, array_t** cdr) {
   pfn();
 
-  *keys = array_new(NULL, -1),
-  *vals = array_new(NULL, -1);
+  *car = array_new(NULL, -1),
+  *cdr = array_new(NULL, -1);
 
   for (ssize_t i = 0; i < a->idx; i++) {
-    array_append(*keys, *pair_car_ref( (a->data) [i] ) ),
-    array_append(*vals, *pair_cdr_ref( (a->data) [i] ) );
+    pair_t** p = assoc_get_ref(a, i, NULL);
+    array_append(*car, *pair_car_ref( *p ) ),
+    array_append(*cdr, *pair_cdr_ref( *p ) );
   }
 
 }
@@ -103,25 +103,24 @@ void assoc_append_boa (assoc_t* const a, const object_t* const car, const object
   pair_destruct(p);
 }
 
-void assoc_append (assoc_t* a, const pair_t* const b) {
+void assoc_append (assoc_t* const a, const pair_t* const b) {
   pfn();
 
-  ++(a->idx);
-  assoc_resize(a, signed2un(a->idx));
+  assoc_resize(a, signed2un(a->idx) + 1);
   (a->data) [a->idx] = pair_copy(b);
 }
 
-void assoc_resize (assoc_t* a, const size_t newsize) {
+void assoc_resize (assoc_t* const a, const size_t newsize) {
   pfn();
 
-  a = saferealloc(a, sizeof (pair_t*) * (newsize));
-  a->idx = un2signed(newsize) - 1;
+  a->data = saferealloc(a->data, sizeof (pair_t*) * (newsize));
+  a->idx  = un2signed(newsize) - 1;
 }
 
 void assoc_delete (assoc_t* const a, const ssize_t idx) {
   pfn();
 
-  if ( (NULL == a) ) {
+  if ( NULL == a ) {
     return;
   } else if ( (idx > a->idx) || (-1 == idx) ) {
     object_error(INDEXERROR, __func__, false);
@@ -154,17 +153,15 @@ char* assoc_see (const assoc_t* const a) {
 void assoc_inspect (const assoc_t* const a) {
   pfn();
 
-  printf("WARN: LONG OUTPUT\n");
-
-  printf("data: ");
+  printf("assoc uid:%zu idx:%zd sz:%zu {\n", a->uid, a->idx, sizeof a);
 
   for (ssize_t i = 0; i < a->idx; i++) {
     char* s = pair_see( *assoc_get_ref(a, i, NULL) );
-    printf("%s ", s);
+    printf("\t%zd:%s\n", i, s);
     safefree(s);
   }
 
-  printf("\nidx: %zd\n", a->idx);
+  puts("}\n");
 }
 
 bool assoc_equals (const assoc_t* const a, const assoc_t* const b) {
@@ -183,9 +180,12 @@ bool assoc_equals (const assoc_t* const a, const assoc_t* const b) {
 
   for (ssize_t i = 0; i < a->idx; i++) {
 
-    bool same = pair_equals( *assoc_get_ref(a, i, NULL), *assoc_get_ref(b, i, NULL) );
+    bool same = pair_equals(
+      *assoc_get_ref(a, i, NULL),
+      *assoc_get_ref(b, i, NULL)
+    );
 
-    if (! same ) {
+    if (! same) {
       return false;
     }
   }

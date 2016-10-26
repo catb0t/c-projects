@@ -31,6 +31,7 @@ typedef enum {
   KEYERROR,
   INDEXERROR,
   PTRMATH_BUG,
+  NULL_OBJECT,
   NUM_ERRTYPES
 } objerror_t;
 
@@ -265,7 +266,17 @@ _Static_assert(
   "OBJTYPE_2STRING has too few or too many values"
 );
 
+extern bool _obj_failnull(const void* const o, const char* const file, const uint64_t line, const char* const func);
+
+#define object_failnull(o) _obj_failnull((o), __FILE__, __LINE__, __func__)
+
 extern void object_error (objerror_t error, const char* const info, const bool fatal);
+
+static inline __PURE_FUNC __CONST_FUNC ssize_t ssize_min (ssize_t a, ssize_t b) {
+  pfn();
+
+  return a < b ? a : b;
+}
 
 // provided by object.h
 object_t*   nothing_new (void);
@@ -308,7 +319,7 @@ void  string_destruct (string_t* const s);
 
 // provided by hash.h
 hash_t*  hash_new_skele (void);
-hash_t*    hash_new_boa (const array_t* const keys, const array_t* const vals, const size_t len);
+hash_t*    hash_new_boa (const array_t* const keys, const array_t* const vals);
 hash_t*       hash_copy (const hash_t* const h);
 char*          hash_see (const hash_t* const h);
 object_t* hash_get_copy (const hash_t* const h, const object_t* const key, bool* ok);
