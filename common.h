@@ -282,7 +282,7 @@ char*       vstrncat (const size_t argc, ...) {
   va_start(vl, argc);
 
   size_t tlen = 0;
-  char** outbuf = safemalloc(sizeof (char *) * argc);
+  char** outbuf = (typeof(outbuf)) safemalloc(sizeof (char *) * argc);
 
   for (size_t i = 0; i < argc; i++) {
     // hopefully thisp just takes the address
@@ -309,7 +309,7 @@ char*     vstrncat_c (const size_t argc, ...) {
   va_start(vl, argc);
 
   size_t tlen = 0;
-  char** outbuf = safemalloc(sizeof (char *) * argc);
+  char** outbuf = (typeof(outbuf)) safemalloc(sizeof (char *) * argc);
 
   for (size_t i = 0; i < argc; i++) {
     // hopefully thisp just takes the address

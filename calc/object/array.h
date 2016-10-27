@@ -152,7 +152,7 @@ void array_delete (array_t* const a, const ssize_t idx) {
   object_failnull(a);
 
   if ( ( idx > a->idx ) || ( array_isempty(a) ) || ( -1 == idx ) ) {
-    char* er = safemalloc(100);
+    char* er = (typeof(er)) safemalloc(100);
     snprintf(er, 99, "%s: delete index %zu but the highest is %zu", __func__, idx, a->idx);
     object_error(INDEXERROR, er, false);
     safefree(er);

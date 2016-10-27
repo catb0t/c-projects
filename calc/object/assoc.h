@@ -113,7 +113,7 @@ void assoc_append (assoc_t* const a, const pair_t* const b) {
 void assoc_resize (assoc_t* const a, const size_t newsize) {
   pfn();
 
-  a->data = saferealloc(a->data, sizeof (pair_t*) * (newsize));
+  a->data = (typeof(a->data)) saferealloc(a->data, sizeof (pair_t*) * (newsize));
   a->idx  = un2signed(newsize) - 1;
 }
 
