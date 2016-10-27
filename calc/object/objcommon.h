@@ -266,10 +266,11 @@ _Static_assert(
   "OBJTYPE_2STRING has too few or too many values"
 );
 
-extern void object_error (objerror_t error, const char* const info, const bool fatal);
+extern void _object_error (objerror_t error, const char* const info, const bool fatal, const char* const file, const uint64_t line, const char* const func);
 extern bool _obj_failnull(const void* const o, const char* const file, const uint64_t line, const char* const func);
 
 #define object_failnull(o) _obj_failnull((o), __FILE__, __LINE__, __func__)
+#define object_error(er,in,fa) _object_error ((er), (in), (fa), __FILE__, __LINE__, __func__)
 #define MAX_HASH_SIZE 10000
 
 static inline __PURE_FUNC __CONST_FUNC ssize_t ssize_min (ssize_t a, ssize_t b) {
@@ -279,8 +280,6 @@ static inline __PURE_FUNC __CONST_FUNC ssize_t ssize_min (ssize_t a, ssize_t b) 
 }
 
 // provided by object.h
-object_t*   nothing_new (void);
-object_t* something_new (void);
 object_t*  object_new (const objtype_t valtype, const void* const val);
 object_t* object_copy (const object_t* const obj);
 void**  object_getval (const object_t* const obj);
@@ -290,6 +289,13 @@ bool object_id_equals (const object_t* const a, const object_t* const b);
 bool    object_equals (const object_t* const a, const object_t* const b);
 void  object_destruct (object_t* obj);
 void object_dtor_args (size_t args, ...);
+
+// provided by bool.h
+object_t*   nothing_new (void);
+object_t* something_new (void);
+char* F_see (const F_t* const f);
+char* T_see (const T_t* const t);
+
 
 // provided by array.h
 array_t*       array_new (const object_t* const * const objs, const ssize_t len);

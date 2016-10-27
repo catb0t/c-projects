@@ -24,6 +24,22 @@
 #endif
 
 /*
+  fails permanently if the object is NULL. don't bother checking the
+  return value because it doesn't matter what the return value is.
+*/
+inline bool _obj_failnull (const void* const obj, const char* const file, uint64_t line, const char* const func) {
+
+  if ( NULL == obj ) {
+    char buf[200];
+    snprintf(buf, 200, "%s:%" PRIu64 ": %s", file, line, func);
+    object_error(NULL_OBJECT, buf, true);
+    return false;
+  }
+
+  return true;
+}
+
+/*
   nothing_new returns a new "nothing" object
   it is the only value which represents a boolean false
   in a rather lispy / functional-inspired way.
@@ -36,6 +52,11 @@ object_t* nothing_new (void) {
   return False;
 }
 
+/*
+  nothing_new returns a new "something" object
+  it is the only value which compares true with all other values
+  in a rather lispy / functional-inspired way.
+*/
 object_t* something_new (void) {
   pfn();
 
@@ -56,7 +77,7 @@ object_t* object_new (const objtype_t valtype, const void* const val) {
 
   object_t*  obj = (typeof(obj)) safemalloc(sizeof (object_t));
 
-  obj->type     = valtype;
+  obj->type = valtype;
 
   if ( NULL == val ) {
     obj->type = t_F;
@@ -68,11 +89,11 @@ object_t* object_new (const objtype_t valtype, const void* const val) {
       break;
     }
     case t_F: {
-      obj->f = (typeof(obj->f)) safemalloc(sizeof (F_t));
+      obj = (typeof(obj)) safemalloc(sizeof (F_t));
       break;
     }
     case t_T: {
-      obj->t = (typeof(obj->t)) safemalloc(sizeof (T_t));
+      obj = (typeof(obj)) safemalloc(sizeof (T_t));
       break;
     }
     case t_number: {
@@ -104,9 +125,7 @@ object_t* object_new (const objtype_t valtype, const void* const val) {
       break;
     }
     case t_func: {
-      obj->fnc       = (typeof(obj->fnc)) safemalloc(sizeof (func_t));
-      obj->fnc->code = ((const func_t * const) val)->code;
-      obj->fnc->name = ((const func_t * const) val)->name;
+      obj->fnc = func_copy( (const func_t* const) val);
       break;
     }
     case t_array: {
@@ -195,11 +214,11 @@ void object_destruct (object_t* const obj) {
   report_dtor(obj);
 
   switch (obj->type) {
+
     case t_array: {
       array_destruct(obj->ary);
       break;
     }
-
     case t_func: {
       func_destruct(obj->fnc);
       break;
@@ -210,24 +229,36 @@ void object_destruct (object_t* const obj) {
       string_destruct(obj->str);
       break;
     }
-
     case t_hash: {
       hash_destruct(obj->hsh);
       break;
     }
-
     case t_pair: {
       pair_destruct(obj->cel);
       break;
     }
+    case t_assoc: {
+      assoc_destruct(obj->asc);
+      break;
+    }
 
+    case t_realint:
+    case t_realuint:
     case t_fixwid: {
       fixwid_destruct(obj->fwi);
       break;
     }
 
-    default: {
+    case t_F:
+    case t_T:
+    case t_number: {
       safefree( object_getval(obj) );
+      break;
+    }
+
+    case NUM_OBJTYPES: {
+      object_error(NOT_A_TYPE, __func__, true);
+      break;
     }
   }
 
@@ -248,7 +279,7 @@ void object_dtor_args (size_t argc, ...) {
     object_t** v = (typeof(v)) safemalloc( sizeof (object_t *) );
     *v = va_arg(vl, object_t*);
 
-    // 1 alloc, 2 frees, but not double free
+    // 0 allocs, 1 free, but not double free
     object_destruct( *v );
     safefree(v);
   }
@@ -263,7 +294,7 @@ char* objtype_repr (const objtype_t t) {
   pfn();
 
   const char* const thisp = OBJTYPE_2STRING[t];
-  const size_t       len = safestrnlen(thisp) + 1;
+  const size_t        len = safestrnlen(thisp) + 1;
 
   char*  out = (typeof(out)) safemalloc(sizeof (char) * len);
   snprintf(out, len, "%s", thisp);
@@ -274,16 +305,16 @@ char* objtype_repr (const objtype_t t) {
 /*
   self-explanatory
 */
-void object_error (objerror_t errt, const char* const info, const bool fatal) {
+void _object_error (objerror_t errt, const char* const info, const bool fatal, const char* const file, const uint64_t line, const char* const func) {
   pfn();
 
   static const char* const errmsgs[] = {
-    "NUM_OBJTYPES isn't a real type, dummy. Don't do that.\n"
-      "Have you considered trying to match wits with a rutabaga?", // NOT_A_TYPE
-    "no such key",         // KEYERROR
-    "index out of bounds", // INDEXERROR
-    "pointer math error (invalid read or write) -- probably a bug", // PTRMATH_BUG
-    "null pointer encountered where a structure or union was expected" // NULL_OBJECT
+    [NOT_A_TYPE]  = "NUM_OBJTYPES isn't a real type, dummy. Don't do that.\n"
+                    "Have you considered trying to match wits with a rutabaga?",
+    [KEYERROR]    = "no such key",
+    [INDEXERROR]  = "index out of bounds",
+    [PTRMATH_BUG] = "pointer math error (invalid read or write) -- probably a bug",
+    [NULL_OBJECT] = "null pointer encountered where a structure or union was expected"
   };
 
   _Static_assert(
@@ -291,7 +322,7 @@ void object_error (objerror_t errt, const char* const info, const bool fatal) {
     "too many or too few error strings in object_error"
   );
 
-  fprintf(stderr, "\033[31m%s: %s\033[0m\n", info, errmsgs[errt]);
+  fprintf(stderr, "\033[31m \b%s:%" PRIu64 ": %s: %s: %s\033[0m\n", file, line, func, info, errmsgs[errt]);
 
   if ( fatal ) {
     fprintf(
@@ -303,22 +334,14 @@ void object_error (objerror_t errt, const char* const info, const bool fatal) {
   }
 }
 
-inline bool _obj_failnull (const void* const obj, const char* const file, uint64_t line, const char* const func) {
-  if (NULL == obj) {
-    char buf[200];
-    snprintf(buf, 200, "%s:%" PRIu64 ": %s", file, line, func);
-    object_error(NULL_OBJECT, buf, true);
-    return false;
-  }
-  return true;
-}
-
 /*
   return a string representation of an object's data
   for most types, thisp calls their typename_see function
 */
 char* object_repr (const object_t* const obj) {
   pfn();
+
+  object_failnull(obj);
 
   char* buf;
   switch (obj->type) {
@@ -331,11 +354,11 @@ char* object_repr (const object_t* const obj) {
     case t_F: {
       buf = (typeof(buf)) safemalloc(2);
 
-      snprintf(buf, 1, "%s", "f");
+      snprintf(buf, 1, "%s", "t");
       break;
     }
     case t_T: {
-       buf = (typeof(buf)) safemalloc(2);
+      buf = (typeof(buf)) safemalloc(2);
 
       snprintf(buf, 1, "%s", "t");
       break;
@@ -439,9 +462,6 @@ bool object_equals (const object_t* const a, const object_t* const b) {
 
   }
 
-  object_t *oa = object_copy(a),
-           *ob = object_copy(b);
-
   bool same;
 
   switch (a->type) {
@@ -453,7 +473,7 @@ bool object_equals (const object_t* const a, const object_t* const b) {
     // this should be redundant
     case t_T:       same = true; break;
 
-    case t_fixwid:  same =     fixwid_eq(oa->fwi, ob->fwi); break;
+    case t_fixwid:  same =     fixwid_eq(a->fwi, b->fwi); break;
     case t_number:  same =     number_eq(a->num, b->num);   break;
     case t_array:   same =  array_equals(a->ary, b->ary);   break;
     case t_assoc:   same =  assoc_equals(a->asc, b->asc);   break;
@@ -478,8 +498,6 @@ bool object_equals (const object_t* const a, const object_t* const b) {
       break;
     }
   }
-
-  object_dtor_args(2, oa, ob);
 
   return same;
 }

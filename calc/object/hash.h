@@ -89,9 +89,11 @@ static inline hashkey_t hash_obj2fnvkey (const object_t* const obj) {
 
   object_failnull(obj);
 
+
   char* buf      = object_repr(obj);
   hashkey_t hval = fnv_32a_str(buf, FNV1_32A_INIT);
   safefree(buf);
+  //dbg_prn("hash of %s #%zu is %d", objtype_repr(obj->type), obj->uid, hval);
 
   return hval;
 }
@@ -104,7 +106,11 @@ hashkey_t hash_obj (const object_t* const obj) {
 
   object_failnull(obj);
 
-  return hash_obj2fnvkey(obj) % MAX_HASH_SIZE;
+  hashkey_t hval = hash_obj2fnvkey(obj) % MAX_HASH_SIZE;
+
+  dbg_prn("hash of %s #%zu is %d", objtype_repr(obj->type), obj->uid, hval);
+
+  return hval;
 }
 
 /*
@@ -176,7 +182,7 @@ object_t** hash_get_ref (const hash_t* const h, const object_t* const key, bool*
     if (NULL != ok) {
       *ok = false;
     }
-    object_error(KEYERROR, __func__, false);
+    object_error(KEYERROR, "", false);
     return NULL;
   }
 

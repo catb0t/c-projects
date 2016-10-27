@@ -16,7 +16,19 @@ func_t* func_new (const char* const code, const char* const name) {
   return func;
 }
 
+func_t* func_copy (const func_t* const f) {
+  pfn();
+
+  object_failnull(f);
+
+  return func_new(f->code, f->name);
+}
+
 void func_destruct (func_t* const func) {
+  pfn();
+
+  object_failnull(func);
+
   report_dtor(func);
 
   safefree(func->code);
@@ -25,6 +37,10 @@ void func_destruct (func_t* const func) {
 }
 
 char* func_see (const func_t* const f) {
+  pfn();
+
+  object_failnull(f);
+
   char *code = f->code,
        *name = f->name, *buf;
   size_t len = safestrnlen(code) + safestrnlen(name) + 2;

@@ -45,7 +45,7 @@ void test (void) {
     ++count;
   }
 
-  hash_t* books = hash_new_boa(titles, fins, count); // 8
+  hash_t* books = hash_new_boa(titles, fins); // 8
 
   hash_destruct(books); // ~8
 

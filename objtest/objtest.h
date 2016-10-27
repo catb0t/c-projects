@@ -48,7 +48,7 @@ void test (void) {
   array_t *ra = array_new(NULL, -1),
           *rb = array_new(NULL, -1);
 
-  array_append(ra, oa), object_destruct(oa);
+  array_append(ra, oa);//, object_destruct(oa);
   array_append(rb, ob), object_destruct(ob);
 
   hash_t* h = hash_new_boa(ra, rb);
@@ -56,6 +56,14 @@ void test (void) {
   array_destruct(ra), array_destruct(rb);
 
   hash_inspect(h);
+
+  bool ok = false;
+  object_t** g = hash_get_ref(h, oa, &ok);
+
+  char* s = object_repr(*g);
+  dealloc_printf(s);
+
+  //object_destruct(g);
 
   hash_destruct(h);
 
