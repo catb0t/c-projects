@@ -1,7 +1,7 @@
 #include "objcommon.h"
 
 #ifdef GCC
-#line __LINE__ "pair"
+#line __LINE__ "func"
 #endif
 
 func_t* func_new (const char* const code, const char* const name) {
