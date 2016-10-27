@@ -38,3 +38,12 @@ void string_destruct (string_t* const string) {
   safefree(string->data);
   safefree(string);
 }
+
+char* string_see (const string_t* const s) {
+  size_t buflen = sizeof (char) * (s->len + 3);
+
+  char* buf = (typeof(buf)) safemalloc(buflen);
+  snprintf(buf, buflen, "\"%s\"", s->data);
+  return buf;
+}
+

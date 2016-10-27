@@ -316,6 +316,7 @@ string_t*  string_new (const char* const str);
 string_t* string_copy (const string_t* const s);
 bool   string_isempty (const string_t* const s);
 void  string_destruct (string_t* const s);
+char*      string_see (const string_t* const s);
 
 // provided by hash.h
 hash_t*  hash_new_skele (void);
@@ -387,6 +388,14 @@ fixwid_t*  fixwid_new (const ssize_t v, const size_t u, const bool sign);
 fixwid_t* fixwid_copy (const fixwid_t* const n);
 char*      fixwid_see (const fixwid_t* const n);
 void  fixwid_destruct (fixwid_t* const n);
-bool    fixwid_eq (const fixwid_t* const a, const fixwid_t* const b);
-bool    fixwid_gt (const fixwid_t* const a, const fixwid_t* const b);
-bool    fixwid_lt (const fixwid_t* const a, const fixwid_t* const b);
+bool        fixwid_eq (const fixwid_t* const a, const fixwid_t* const b);
+bool        fixwid_gt (const fixwid_t* const a, const fixwid_t* const b);
+bool        fixwid_lt (const fixwid_t* const a, const fixwid_t* const b);
+
+// provided by func.h
+func_t*       func_new (const char* const code, const char* const name);
+func_t*      func_copy (const func_t* const f);
+char*         func_see (const func_t* const f);
+void     func_destruct (func_t* const f);
+void      func_inspect (const func_t* const f);
+bool       func_equals (const func_t* const f);

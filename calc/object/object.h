@@ -16,6 +16,7 @@
 #include "number.h"
 #include "pair.h"
 #include "string.h"
+#include "func.h"
 
 #ifdef GCC
 #line __LINE__ "object"
@@ -199,9 +200,7 @@ void object_destruct (object_t* const obj) {
     }
 
     case t_func: {
-      safefree(obj->fnc->code);
-      safefree(obj->fnc->name);
-      safefree(obj->fnc);
+      func_destruct(obj->fnc);
       break;
     }
 
@@ -354,21 +353,11 @@ char* object_repr (const object_t* const obj) {
 
     case t_realchar: // fallthrough
     case t_string: {
-      size_t buflen = sizeof (char) * (obj->str->len + 3);
-
-       buf = (typeof(buf)) safemalloc(buflen);
-      snprintf(buf, buflen, "\"%s\"", obj->str->data);
+      buf = string_see(obj->str);
       break;
     }
-
     case t_func: {
-      char *code = obj->fnc->code,
-           *name = obj->fnc->name;
-      size_t len = safestrnlen(code) + safestrnlen(name) + 2;
-
-       buf = (typeof(buf)) safemalloc(sizeof (char) * len);
-      snprintf(buf, len, "%s:%s", code, name);
-      safefree(code), safefree(name);
+      buf = func_see(obj->fnc);
       break;
     }
     case t_array: {

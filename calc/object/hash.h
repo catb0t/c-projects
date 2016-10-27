@@ -91,15 +91,6 @@ static inline hashkey_t hash_obj2fnvkey (const object_t* const obj) {
 
   char* buf      = object_repr(obj);
   hashkey_t hval = fnv_32a_str(buf, FNV1_32A_INIT);
-
-  printf(
-    "hash of %s uid %zu val %s: %d\n",
-    objtype_repr(obj->type),
-    obj->uid,
-    buf,
-    hval
-  );
-
   safefree(buf);
 
   return hval;
