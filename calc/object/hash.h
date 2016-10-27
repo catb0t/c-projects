@@ -40,12 +40,6 @@ hash_t* hash_new_boa (
       **k = array_get_ref(keys, i, NULL),
       **v = array_get_ref(vals, i, NULL);
 
-    char* s = object_repr(*k);
-    printf("key: %s\n", s);
-    safefree(s);
-    s = object_repr(*v);
-    printf("val: %s\n", s);
-
     // references are okay because thisp will copy them anyways
     hash_add(hash, *k, *v);
   }
@@ -344,11 +338,7 @@ void hash_unzip (const hash_t* const h, array_t** keys, array_t** vals) {
 bool hash_add (hash_t* h, const object_t* const key, const object_t* const val) {
   pfn();
 
-  if ( NULL == h ) {
-    h = hash_new_skele();
-  }
-
-  object_t *khobj;
+  object_failnull(h);
 
   // fail if it exists
   if ( hash_exists(h, key) || hash_keyexists(h, key) ) {
@@ -362,14 +352,13 @@ bool hash_add (hash_t* h, const object_t* const key, const object_t* const val) 
   const size_t   ikh = (size_t) kh;
 
   // objectify the key hash
-  khobj = object_new(t_realuint, &ikh); // 1
-  char* s = object_repr(khobj);
-  printf("khobj: %s\n", s);
-  safefree(s);
+  object_t* khobj = object_new(t_realuint, &ikh); // 1
 
-  // make a pair out of the value and keyhash obj
-  // add the pair to values
+  // add the value and keyhash obj to values
   assoc_append_boa(h->vals, val, khobj);
+
+  object_destruct(khobj); // ~1
+
   // resize the idxs array by the needed amount
   h->idxs = (typeof(h->idxs)) saferealloc(h->idxs, sizeof (size_t) * (kh + 1));
   // increment the pointer
@@ -377,6 +366,7 @@ bool hash_add (hash_t* h, const object_t* const key, const object_t* const val) 
   // assign the index of the pair in values to idxs
   (h->idxs) [kh] = h->vals->idx;
   // looks like everything went ok
+  // 1 alloc, 1 free
   return true;
 }
 
@@ -512,10 +502,12 @@ void hash_inspect (const hash_t* const h) {
   printf("hash uid:%zu idxs_len:%zu {\n", h->uid, h->idxs_len);
 
   printf("\tkeys: %zu\n\t", h->keys->idx + 1);
-  dealloc_printf( array_see(h->keys) );
+  char* s = array_see(h->keys);
+  dealloc_printf( s );
 
   printf("\tvals: %zu\n\t", h->vals->idx + 1);
-  dealloc_printf( assoc_see(h->vals) );
+  s = assoc_see(h->vals);
+  dealloc_printf( s );
 
   printf("\n\tidxs: %zu {\n", h->idxs_len);
 

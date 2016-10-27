@@ -45,15 +45,11 @@ void test (void) {
   object_t *oa = object_new(t_realint, &a),
            *ob = object_new(t_realint, &b);
 
-  printf("getval: %zu\n", ( (const fixwid_t* const) object_getval(oa))->uvalue);
-
   array_t *ra = array_new(NULL, -1),
           *rb = array_new(NULL, -1);
 
-  array_append(ra, oa);
-  array_append(rb, ob);
-
-  array_inspect(ra), array_inspect(rb);
+  array_append(ra, oa), object_destruct(oa);
+  array_append(rb, ob), object_destruct(ob);
 
   hash_t* h = hash_new_boa(ra, rb);
 

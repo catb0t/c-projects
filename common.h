@@ -47,12 +47,12 @@
 #define _GNU_SOURCE
 #endif
 
-#include <stdarg.h>
 #include <assert.h>
 #include <errno.h>
 #include <inttypes.h>
 #include <limits.h>
 #include <math.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>

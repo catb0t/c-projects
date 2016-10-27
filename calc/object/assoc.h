@@ -46,12 +46,13 @@ assoc_t* assoc_copy (const assoc_t* const asc) {
 void assoc_destruct (assoc_t* const assoc) {
   pfn();
 
+  report_dtor(assoc);
+
   for (ssize_t i = 0; i < assoc->idx; i++) {
     pair_destruct( *assoc_get_ref(assoc, i, NULL) );
   }
 
   safefree(assoc->data), safefree(assoc);
-  report_dtor(assoc);
 }
 
 void assoc_unzip (const assoc_t* a, array_t** car, array_t** cdr) {
