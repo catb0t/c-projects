@@ -48,6 +48,31 @@ hash_t* hash_new_boa (
   return hash;
 }
 
+static inline __CONST_FUNC __PURE_FUNC ssize_t findlast (
+  const ssize_t* const array,
+  const size_t         len,
+  const ssize_t        n,
+  const bool           invert_cmp
+) {
+  pfn();
+
+  for (size_t i = len; i != 0; i--) {
+
+    if ( invert_cmp ) {
+
+      if ( array[i] != n ) {
+        return un2signed(i);
+      }
+    } else {
+      if ( array[i] == n ) {
+        return un2signed(i);
+      }
+    }
+  }
+
+  return -1;
+}
+
 void  hash_destruct (hash_t* const hash) {
   pfn();
 
@@ -84,7 +109,7 @@ bool   hash_isempty (const hash_t* const h) {
 /*
   hash an object's string representation using Fowler Noll Vo 32-bits
 */
-static inline hashkey_t hash_obj2fnvkey (const object_t* const obj) {
+static inline __CONST_FUNC hashkey_t hash_obj2fnvkey (const object_t* const obj) {
   pfn();
 
   object_failnull(obj);
@@ -193,7 +218,7 @@ object_t** hash_get_ref (const hash_t* const h, const object_t* const key, bool*
   kh      = hash_obj(key);
   // get the object by copy (accepts NULL)
   valpair = assoc_get_ref(h->vals, (h->idxs) [kh], ok);
-  if (false == *ok && ok != NULL) {
+  if ( (false == *ok) && (ok != NULL) ) {
     object_error(PTRMATH_BUG, __func__, true);
     return NULL;
   }
@@ -358,10 +383,13 @@ bool hash_add (hash_t* h, const object_t* const key, const object_t* const val) 
 
   // resize the idxs array by the needed amount
   h->idxs = (typeof(h->idxs)) saferealloc(h->idxs, sizeof (size_t) * (kh + 1));
+
   // increment the pointer
-  ++(h->idxs_len);
+  h->idxs_len = kh > h->idxs_len ? kh + 1: h->idxs_len ;
+  
   // assign the index of the pair in values to idxs
   (h->idxs) [kh] = h->vals->idx;
+
   // looks like everything went ok
   // 1 alloc, 1 free
   return true;
@@ -395,31 +423,6 @@ bool hash_exists (const hash_t* const h, const object_t* const key) {
   return -1 != h->idxs[kh];
 }
 
-static inline __CONST_FUNC __PURE_FUNC ssize_t findlast (
-  const ssize_t* const array,
-  const size_t         len,
-  const ssize_t        n,
-  const bool           invert_cmp
-) {
-  pfn();
-
-  for (size_t i = len; i != 0; i--) {
-
-    if ( invert_cmp ) {
-
-      if ( array[i] != n ) {
-        return un2signed(i);
-      }
-    } else {
-      if ( array[i] == n ) {
-        return un2signed(i);
-      }
-    }
-  }
-
-  return -1;
-}
-
 /*
   remove a key and value from a hash by key.
 
@@ -441,7 +444,7 @@ void hash_delete (hash_t* const h, const object_t* const key) {
 
   ssize_t keyidx = array_find(h->keys, key);
 
-  if ( -1 == keyidx ) {
+  if ( ! hash_exists(h, key) || ( -1 == keyidx ) ) {
     object_error(KEYERROR, __func__, false);
     return;
   }
@@ -506,9 +509,9 @@ void hash_inspect (const hash_t* const h) {
   s = assoc_see(h->vals);
   dealloc_printf( s );
 
-  printf("\n\tidxs: %zu {\n", h->idxs_len);
+  printf("\n\tidxs: %zu\n", h->idxs_len);
 
-  puts("\t}\n}");
+  puts("\n}");
 
 }
 

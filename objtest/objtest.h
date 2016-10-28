@@ -42,6 +42,7 @@ void test (void) {
 
 
   ssize_t a = 1, b = 2;
+
   object_t *oa = object_new(t_realint, &a),
            *ob = object_new(t_realint, &b);
 
@@ -57,13 +58,13 @@ void test (void) {
 
   hash_inspect(h);
 
-  bool ok = false;
+  bool ok = true;
+
   object_t** g = hash_get_ref(h, oa, &ok);
 
   char* s = object_repr(*g);
-  dealloc_printf(s);
 
-  //object_destruct(g);
+  dealloc_printf(s);
 
   hash_destruct(h);
 

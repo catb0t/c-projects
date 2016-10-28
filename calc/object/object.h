@@ -89,11 +89,11 @@ object_t* object_new (const objtype_t valtype, const void* const val) {
       break;
     }
     case t_F: {
-      obj = (typeof(obj)) safemalloc(sizeof (F_t));
+      obj->f = (typeof(obj->f)) safemalloc(sizeof (F_t));
       break;
     }
     case t_T: {
-      obj = (typeof(obj)) safemalloc(sizeof (T_t));
+      obj->t = (typeof(obj->t)) safemalloc(sizeof (T_t));
       break;
     }
     case t_number: {
