@@ -298,6 +298,7 @@ char* T_see (const T_t* const t);
 
 
 // provided by array.h
+array_t* array_new_fromcptr (const void* const * const ptr, const size_t len, const objtype_t outtype);
 array_t*       array_new (const object_t* const * const objs, const ssize_t len);
 array_t*      array_copy (const array_t* const a);
 char*          array_see (const array_t* const a);

@@ -48,7 +48,7 @@ void assoc_destruct (assoc_t* const assoc) {
 
   report_dtor(assoc);
 
-  for (ssize_t i = 0; i < assoc->idx; i++) {
+  for (ssize_t i = 0; i < (assoc->idx + 1); i++) {
     pair_destruct( *assoc_get_ref(assoc, i, NULL) );
   }
 

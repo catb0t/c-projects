@@ -2,6 +2,9 @@
 
 void test (void);
 
+define_array_new_fromctype(ssize_t, array_new_fromc_ssize_t)
+define_array_new_fromctype(char* const, array_new_fromc_charptr)
+
 void test (void) {
 
   /*
@@ -40,17 +43,30 @@ void test (void) {
   //infer a = readln(80);
   //infer b = readln(80);
 
+  bool ok;
 
-  ssize_t a = 1, b = 2;
+  char* s;
 
-  object_t *oa = object_new(t_realint, &a),
-           *ob = object_new(t_realint, &b);
+  size_t len = 5;
 
-  array_t *ra = array_new(NULL, -1),
-          *rb = array_new(NULL, -1);
+  ssize_t *nums = (typeof(nums)) safemalloc( sizeof (size_t) * len);
 
-  array_append(ra, oa);//, object_destruct(oa);
-  array_append(rb, ob), object_destruct(ob);
+  for (size_t i = 0; i < len; i++) {
+    nums[i] = un2signed(i);
+  }
+
+  const char* const str[] = {
+    "abc",
+    "def",
+    "ghi",
+    "jkl",
+    "mno"
+  };
+
+  array_t *ra = array_new_fromc_ssize_t(nums, len, t_realint),
+          *rb = array_new_fromc_charptr(str, len, t_realchar);
+
+  safefree(nums);
 
   hash_t* h = hash_new_boa(ra, rb);
 
@@ -58,11 +74,9 @@ void test (void) {
 
   hash_inspect(h);
 
-  bool ok = true;
+  ok = true;
 
-  object_t** g = hash_get_ref(h, oa, &ok);
-
-  char* s = object_repr(*g);
+  s = object_repr( *hash_get_ref(h, *array_get_ref(ra, 2, NULL), &ok) );
 
   dealloc_printf(s);
 

@@ -17,7 +17,12 @@ array_t* array_new (const object_t* const * const objs, const ssize_t len) {
 
   if ( (-1 != len) && (NULL != objs) ) {
     array->data    = (typeof(array->data)) safemalloc( sizeof (object_t *) );
+
     for (ssize_t i = 0; i < len; i++) {
+      char* s = object_repr(objs[i]);
+      printf("append: %s\n", s);
+      safefree(s);
+
       array_append(array, objs[i]);
     }
   }
@@ -28,29 +33,45 @@ array_t* array_new (const object_t* const * const objs, const ssize_t len) {
   return array;
 }
 
-/*inline static void validate_typestr (const char* const types) {
-  size_t len = safestrnlen(types);
-
-  // ???
-  assert( str_count(OBJTYPE_CHARS, types) );
-
-  for (size_t i = 0; i < len; i++) {
-    // make sure the chars are all in the range
-    assert( (types[i] <= 'z') && (types[i] >= 'a') );
-    // and that they're allowed
-    char buf[3];
-    snprintf(buf, 1, "%c", types[i]);
-    for (size_t j = 0; j < sizeof OBJTYPE_CHARS; j++) {
-      assert( str_count(buf, OBJTYPE_CHARS) );
-    }
-  }
-}
+/*
+  makes a function which makes a new array from a heap-alloced C array
 */
+#define define_array_new_fromctype(type, funcname) \
+  array_t* funcname (const type * const ptr, const size_t len, const objtype_t conv_to); \
+  \
+  array_t* funcname (const type * const ptr, const size_t len, const objtype_t conv_to) { \
+    \
+    object_t** objs = (typeof(objs)) safemalloc( sizeof(object_t *) * len ); \
+    \
+    for (size_t i = 0; i < len; i++) { objs[i] = object_new(conv_to, (const void* const) &( ptr[i] ) ); } \
+    for (size_t i = 0; i < len; i++) { char* s = object_repr(objs[i]); dealloc_printf(s); } \
+    array_t* a = array_new( (const object_t * const * const) objs, un2signed(len)); \
+    \
+    for (size_t i = 0; i < len; i++) { object_destruct(objs[i]);  } \
+    \
+    return a; \
+  }
+
 /*
   makes a new array from an array of pointers to raw C types.
-  well, no it doesn't.
 */
-//array_t* array_new_fromc (const void* const * const ptr, const size_t len, const char* const types) { }
+array_t* array_new_fromcptr (const void* const * const ptr, const size_t len, const objtype_t conv_to) {
+
+  object_t** objs = (typeof(objs)) safemalloc( sizeof(object_t *) * len);
+
+  for (size_t i = 0; i < len; i++) {
+    objs[i] = object_new(conv_to, ptr[i] );
+  }
+
+  array_t* a = array_new( (const object_t * const * const) objs, un2signed(len));
+
+  for (size_t i = 0; i < len; i++) {
+    object_destruct(objs[i]);
+  }
+
+  return a;
+}
+
 
 /*
   copies an array object, by constructing a new one with the argument's
