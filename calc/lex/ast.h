@@ -45,18 +45,18 @@ void ast_destruct_node (astnode_t* ast) {
 char* ast_see (astnode_t* n) {
   pfn();
 
-#define MAX_ASTSEE_LEN 2048
-
   if (NULL == n) {
     n = ast_newnode(NULL, "(null)");
   }
 
-  char **chldlns,
-       *chlds,
-       *type = objtype_repr(n->type);
+  char
+    **chldlns,
+    *chlds,
+    *type = objtype_repr(n->type);
 
   size_t lines = 0, total = 0;
-  if ((n->chldn_idx) != -1) {
+
+  if (-1 != n->chldn_idx) {
 
     size_t nc = signed2un(n->chldn_idx);
     chldlns   = (typeof(chldlns)) safemalloc(sizeof (char *) * 2);
@@ -66,7 +66,10 @@ char* ast_see (astnode_t* n) {
       // with typeof: Error: C-style cast from rvalue reference type 'decltype(*chldns)' (aka 'char *&')
       chldlns[i] = (char *) safemalloc(MAX_ASTSEE_LEN);
 
-      snprintf(chldlns[i], MAX_ASTSEE_LEN, "%s", ast_see( (n->chldn)[i] ));
+      char* see = ast_see( (n->chldn) [i] );
+      snprintf(chldlns[i], MAX_ASTSEE_LEN, "%s", see);
+      safefree(see);
+
       ++lines;
       total += safestrnlen(chldlns[i]);
     }

@@ -133,7 +133,9 @@ hashkey_t hash_obj (const object_t* const obj) {
 
   hashkey_t hval = hash_obj2fnvkey(obj) % MAX_HASH_SIZE;
 
-  dbg_prn("hash of %s #%zu is %d", objtype_repr(obj->type), obj->uid, hval);
+  char* s = objtype_repr(obj->type);
+  dbg_prn("hash of %s #%zu is %d", s, obj->uid, hval);
+  safefree(s);
 
   return hval;
 }
@@ -171,7 +173,7 @@ object_t* hash_get_copy (const hash_t* const h, const object_t* const key, bool*
   // get the object by copy (accepts NULL)
   valpair = assoc_get_ref(h->vals, (h->idxs) [kh], ok);
 
-  if ( (false == *ok) && (ok != NULL) ) {
+  if ( (NULL != ok) && (false == *ok) ) {
     object_error(PTRMATH_BUG, __func__, true);
     return object_new(t_F, NULL);
   }
@@ -218,7 +220,7 @@ object_t** hash_get_ref (const hash_t* const h, const object_t* const key, bool*
   kh      = hash_obj(key);
   // get the object by copy (accepts NULL)
   valpair = assoc_get_ref(h->vals, (h->idxs) [kh], ok);
-  if ( (false == *ok) && (ok != NULL) ) {
+  if ( (NULL != ok) && (false == *ok) ) {
     object_error(PTRMATH_BUG, __func__, true);
     return NULL;
   }
@@ -279,12 +281,14 @@ bool hash_change_key (hash_t* const h, const object_t* const oldkey, const objec
     *val = hash_get_copy(h, oldkey, &ok);
 
   if ( false == ok ) {
+    object_destruct(val);
     return false;
   }
 
   ok = hash_add(h, newkey, val);
 
   if ( false == ok ) {
+    object_destruct(val);
     return false;
   }
 
@@ -386,7 +390,7 @@ bool hash_add (hash_t* h, const object_t* const key, const object_t* const val) 
 
   // increment the pointer
   h->idxs_len = kh > h->idxs_len ? kh + 1: h->idxs_len ;
-  
+
   // assign the index of the pair in values to idxs
   (h->idxs) [kh] = h->vals->idx;
 
@@ -480,10 +484,10 @@ void hash_delete (hash_t* const h, const object_t* const key) {
 
   -- The Website is Down Episode #4: Sales Demolition
 */
-void hash_recompute (const hash_t* h) {
+void hash_recompute (hash_t** const h) {
   pfn();
 
-  h = hash_copy(h);
+  *h = hash_copy(*h);
 }
 
 char* hash_see (const hash_t* const h) {
@@ -501,11 +505,11 @@ void hash_inspect (const hash_t* const h) {
 
   printf("hash uid:%zu idxs_len:%zu {\n", h->uid, h->idxs_len);
 
-  printf("\tkeys: %zu\n\t", h->keys->idx + 1);
+  printf("\tkeys: %zd\n\t", h->keys->idx + 1);
   char* s = array_see(h->keys);
   dealloc_printf( s );
 
-  printf("\tvals: %zu\n\t", h->vals->idx + 1);
+  printf("\tvals: %zd\n\t", h->vals->idx + 1);
   s = assoc_see(h->vals);
   dealloc_printf( s );
 

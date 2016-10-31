@@ -7,6 +7,7 @@
 #line __LINE__ "lexcommon"
 #endif
 
+#define MAX_ASTSEE_LEN 2048
 
 typedef struct st_astnode astnode_t;
 

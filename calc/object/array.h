@@ -16,13 +16,9 @@ array_t* array_new (const object_t* const * const objs, const ssize_t len) {
   array->data    = NULL;
 
   if ( (-1 != len) && (NULL != objs) ) {
-    array->data    = (typeof(array->data)) safemalloc( sizeof (object_t *) );
+    array->data = (typeof(array->data)) safemalloc( sizeof (object_t *) );
 
     for (ssize_t i = 0; i < len; i++) {
-      char* s = object_repr(objs[i]);
-      printf("append: %s\n", s);
-      safefree(s);
-
       array_append(array, objs[i]);
     }
   }
@@ -44,14 +40,17 @@ array_t* array_new (const object_t* const * const objs, const ssize_t len) {
     object_t** objs = (typeof(objs)) safemalloc( sizeof(object_t *) * len ); \
     \
     for (size_t i = 0; i < len; i++) { objs[i] = object_new(conv_to, (const void* const) &( ptr[i] ) ); } \
-    for (size_t i = 0; i < len; i++) { char* s = object_repr(objs[i]); dealloc_printf(s); } \
-    array_t* a = array_new( (const object_t * const * const) objs, un2signed(len)); \
     \
-    for (size_t i = 0; i < len; i++) { object_destruct(objs[i]);  } \
+    array_t* a = array_new(NULL, -1); \
+    \
+    for (size_t i = 0; i < len; i++) { array_append(a, objs[i]); } \
+    \
+    object_dtorn(objs, len); \
     \
     return a; \
   }
 
+//array_t* a = array_new( (const object_t * const * const) objs, un2signed(len));object_dtorn(objs, len);
 /*
   makes a new array from an array of pointers to raw C types.
 */
@@ -97,17 +96,7 @@ void array_destruct (array_t* const array) {
 
   report_dtor(array);
 
-  if ( ! array_isempty(array) ) {
-    for (ssize_t i = 0; i < (array->idx + 1); i++) {
-      // because array_get returns a copy, not a reference
-      // so we need to destruct by address
-      object_destruct( *array_get_ref(array, i, NULL) );
-    }
-  }
-
-  if (NULL != array->data) {
-    safefree( array->data );
-  }
+  object_dtorn(array->data, signed2un(array->idx + 1));
 
   safefree(array);
 }
@@ -142,16 +131,14 @@ void array_resize (array_t* const a, const ssize_t new_idx) {
     return;
   }
 
-  if (new_idx <= a->idx) {
+  if (new_idx < a->idx) {
     for (ssize_t i = new_idx + 1; i < a->idx; i++) {
       object_destruct( *array_get_ref(a, i, NULL) );
     }
   }
 
   a->data = (typeof(a->data)) saferealloc(
-    a->data,
-    (signed2un(new_idx) + 1) * (sizeof (object_t * ))
-  );
+    a->data, sizeof (object_t*) * signed2un(a->idx + 1));
 
   a->idx  = new_idx;
 }
@@ -174,7 +161,7 @@ void array_delete (array_t* const a, const ssize_t idx) {
 
   if ( ( idx > a->idx ) || ( array_isempty(a) ) || ( -1 == idx ) ) {
     char* er = (typeof(er)) safemalloc(100);
-    snprintf(er, 99, "%s: delete index %zu but the highest is %zu", __func__, idx, a->idx);
+    snprintf(er, 99, "%s: delete index %zd but the highest is %zd", __func__, idx, a->idx);
     object_error(INDEXERROR, er, false);
     safefree(er);
     return;
@@ -244,7 +231,7 @@ void array_append (array_t* const a, const object_t* const o) {
   object_failnull(a);
 
   ++(a->idx);
-  a->data = (typeof(a->data)) saferealloc(a->data, (sizeof (object_t *)) * signed2un(a->idx + 1) );
+  array_resize(a, a->idx);
 
   (a->data) [a->idx] = object_copy(o);
 }
@@ -268,41 +255,44 @@ void array_vappend (array_t* const a, const size_t argc, ...) {
     array_append(a, *v);
     safefree(v);
   }
+
+  va_end(vl);
 }
 
 /*
   concatenate two array_ts
 */
-void array_cat (array_t* a, const array_t* const b) {
+void array_cat (array_t** const a, const array_t* const b) {
   pfn();
 
   object_failnull(a);
 
-  if ( array_isempty(a) && array_isempty(b) ) {
+  if ( array_isempty(*a) && array_isempty(b) ) {
     return;
   }
 
-  else if ( array_isempty(a) || array_isempty(b) ) {
+  else if ( array_isempty(*a) || array_isempty(b) ) {
 
-    if ( array_isempty(a) ) {
-      a = array_copy(b);
-
+    if ( array_isempty(*a) ) {
+      *a = array_copy(b);
     }
+
     return;
   }
 
-  size_t alen = signed2un(a->idx), total_len = alen + signed2un(b->idx);
+  size_t alen = signed2un((*a)->idx), total_len = alen + signed2un(b->idx);
 
-  a->data = (typeof(a->data)) saferealloc(a->data, sizeof (object_t **) * total_len);
+  (*a)->data = (typeof((*a)->data)) saferealloc((*a)->data, sizeof (object_t **) * total_len);
+
   for (size_t i = alen; i < total_len; i++) {
-    a->data[i] = array_get_copy(b, un2signed(udifference(i, alen)), NULL);
+    (*a)->data[i] = array_get_copy(b, un2signed(udifference(i, alen)), NULL);
   }
 }
 
 /*
   variadic version of array_cat
 */
-void array_vcat (array_t* const a, const size_t argc, ...) {
+void array_vcat (array_t** const a, const size_t argc, ...) {
   pfn();
 
   object_failnull(a);
@@ -318,6 +308,8 @@ void array_vcat (array_t* const a, const size_t argc, ...) {
     array_cat(a, *v);
     safefree(v);
   }
+
+  va_end(vl);
 }
 
 /*
@@ -380,7 +372,7 @@ void array_inspect (const array_t* const a) {
 
   for (ssize_t i = 0; i < (a->idx + 1); i++) {
     char* x = object_repr(*array_get_ref(a, i, NULL));
-    printf("\t%zu: %s\n", i, x);
+    printf("\t%zd: %s\n", i, x);
     safefree(x);
   }
   puts("}\n");

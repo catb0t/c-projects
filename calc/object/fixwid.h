@@ -7,7 +7,7 @@
 fixwid_t* fixwid_new (const ssize_t v, const size_t u, const bool signed_active) {
   pfn();
 
-  fixwid_t*  fixwid = (typeof(fixwid)) safemalloc( sizeof(fixwid_t) );
+  fixwid_t* fixwid = (typeof(fixwid)) safemalloc( sizeof(fixwid_t) );
 
   if (signed_active) {
     fixwid->value = v;

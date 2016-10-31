@@ -328,6 +328,13 @@ char*     vstrncat_c (const size_t argc, ...) {
 }
 
 ssize_t str_issubstring (const char* const a, const char* const b) {
+  if ( NULL == a ) {
+    if ( NULL == b ) {
+      return 0;
+    }
+    return -1;
+  }
+
   size_t lena = safestrnlen(a),
          lenb = safestrnlen(b);
 
@@ -335,13 +342,6 @@ ssize_t str_issubstring (const char* const a, const char* const b) {
     errno = EINVAL;
     perror(__func__);
     assert (false);
-  }
-
-  if ( NULL == a ) {
-   if ( NULL == b ) {
-     return 0;
-   }
-   return -1;
   }
 
   ssize_t begin = -1, end;
@@ -361,6 +361,8 @@ ssize_t str_issubstring (const char* const a, const char* const b) {
   if ( signed2un(end) != lenb ) {
     begin = -1;
   }
+
+  safefree(ca), safefree(cb);
 
   return begin;
 }
@@ -515,7 +517,6 @@ char*     str_rm (
   }
   newp[j] = 0;
   *out_len = len_newp;
-  assert(out_len != NULL);
   return newp;
 }
 
@@ -531,9 +532,8 @@ size_t str_count (
          len_needles = safestrnlen(needles);
 
   for (size_t i = 0; i < len_haystack; i++) {
-    char c = haystack[i];
     for (size_t h = 0; h < len_needles; h++) {
-      if (c == needles[h]) {
+      if (haystack[i] == needles[h]) {
          s++;
        }
     }
@@ -585,7 +585,6 @@ bool getint64 (int64_t* dest) {
     return false;
   }
   *dest    = strtoll(in, NULL, DEC_BASE);
-  assert(dest != NULL);
   safefree(in);
   return true;
 }
@@ -598,7 +597,6 @@ bool getuint64 (uint64_t* dest) {
     return false;
   }
   *dest = strtoull(in, NULL, DEC_BASE);
-  assert(dest != NULL);
   safefree(in);
   return true;
 }

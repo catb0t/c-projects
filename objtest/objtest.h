@@ -3,7 +3,6 @@
 void test (void);
 
 define_array_new_fromctype(ssize_t, array_new_fromc_ssize_t)
-define_array_new_fromctype(char* const, array_new_fromc_charptr)
 
 void test (void) {
 
@@ -39,34 +38,25 @@ void test (void) {
   dealloc_printf(ca);
 
   array_destruct(a);
+  infer a = readln(80);
+  infer b = readln(80);
   */
-  //infer a = readln(80);
-  //infer b = readln(80);
-
-  bool ok;
-
-  char* s;
 
   size_t len = 5;
 
-  ssize_t *nums = (typeof(nums)) safemalloc( sizeof (size_t) * len);
+  ssize_t* nums = (typeof(nums)) safemalloc( sizeof (size_t) * len);
 
   for (size_t i = 0; i < len; i++) {
     nums[i] = un2signed(i);
   }
 
-  const char* const str[] = {
-    "abc",
-    "def",
-    "ghi",
-    "jkl",
-    "mno"
-  };
+  array_t* ra = array_new_fromc_ssize_t(nums, len, t_realint);
 
-  array_t *ra = array_new_fromc_ssize_t(nums, len, t_realint),
-          *rb = array_new_fromc_charptr(str, len, t_realchar);
+  array_inspect(ra);
 
-  safefree(nums);
+  safefree(nums), array_destruct(ra);
+
+/*  safefree(nums);
 
   hash_t* h = hash_new_boa(ra, rb);
 
@@ -81,5 +71,5 @@ void test (void) {
   dealloc_printf(s);
 
   hash_destruct(h);
-
+*/
 }

@@ -52,16 +52,16 @@ void run_str (const char* const prog, stack_t* stk) {
   }
 
   size_t len;
-  number_t tmp = 0;
 
-  char *val,
-       *error = NULL,
+  char *error = NULL,
        **spl_prog = str_split(prog, ' ', &len);
 
   dbg_prn("LEN: %zu\n", len);
 
   for (size_t i = 0; i < len; i++) {
-    val = spl_prog[i];
+    number_t tmp = 0;
+
+    char* val = spl_prog[i];
     dbg_prn("%s\n", val);
     tmp = strtold(val, &error);
 

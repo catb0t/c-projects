@@ -288,6 +288,7 @@ char*    objtype_repr (const objtype_t t);
 bool object_id_equals (const object_t* const a, const object_t* const b);
 bool    object_equals (const object_t* const a, const object_t* const b);
 void  object_destruct (object_t* obj);
+void     object_dtorn (object_t** const obj, const size_t len);
 void object_dtor_args (size_t args, ...);
 
 // provided by bool.h
@@ -312,8 +313,8 @@ void        array_resize (array_t* const a, const ssize_t new_len);
 void        array_delete (array_t* const a, const ssize_t idx);
 void        array_append (array_t* const a, const object_t* const o);
 void       array_vappend (array_t* const a, const size_t argc, ...);
-void           array_cat (array_t* const a, const array_t* const b);
-void          array_vcat (array_t* const a, const size_t argc, ...);
+void           array_cat (array_t** const a, const array_t* const b);
+void          array_vcat (array_t** const a, const size_t argc, ...);
 void       array_inspect (const array_t* const a);
 void      array_destruct (array_t* const a);
 void         array_clear (array_t* const a);
@@ -343,7 +344,7 @@ bool     hash_keyexists (const hash_t* const h, const object_t* const key);
 bool        hash_exists (const hash_t* const h, const object_t* const key);
 void        hash_delete (hash_t* const h, const object_t* const key);
 void      hash_destruct (hash_t* const h);
-void     hash_recompute (const hash_t* h);
+void     hash_recompute (hash_t** const h);
 void       hash_inspect (const hash_t* const h);
 void         hash_unzip (const hash_t* const h, array_t** keys, array_t** vals);
 
@@ -375,8 +376,8 @@ void        assoc_delete (assoc_t* const a, const ssize_t idx);
 void        assoc_append (assoc_t* const a, const pair_t* const o);
 void    assoc_append_boa (assoc_t* const a, const object_t* const car, const object_t* const cdr);
 void       assoc_vappend (assoc_t* const a, const size_t argc, ...);
-void           assoc_cat (assoc_t* const a, const assoc_t* const b);
-void          assoc_vcat (assoc_t* const a, const size_t argc, ...);
+void           assoc_cat (assoc_t** const a, const assoc_t* const b);
+void          assoc_vcat (assoc_t** const a, const size_t argc, ...);
 void       assoc_inspect (const assoc_t* const a);
 void      assoc_destruct (assoc_t* const a);
 void         assoc_clear (assoc_t* const a);

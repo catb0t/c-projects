@@ -4,6 +4,9 @@
 #line __LINE__ "assoc"
 #endif
 
+/*
+  new assoc object from two arrays (zip)
+*/
 assoc_t* assoc_new (const array_t* const a, const array_t* const b) {
   pfn();
 
@@ -35,6 +38,9 @@ assoc_t* assoc_new (const array_t* const a, const array_t* const b) {
   return assoc;
 }
 
+/*
+  copies one assoc's data to a new one's; does not copy identity
+*/
 assoc_t* assoc_copy (const assoc_t* const asc) {
   pfn();
 
@@ -55,6 +61,11 @@ void assoc_destruct (assoc_t* const assoc) {
   safefree(assoc->data), safefree(assoc);
 }
 
+/*
+  assoc_unzip: write the cars and cdrs of each pair to the respective pointers
+
+  if assoc is null / empty, then car and cdr will be null.
+*/
 void assoc_unzip (const assoc_t* a, array_t** car, array_t** cdr) {
   pfn();
 
@@ -69,10 +80,17 @@ void assoc_unzip (const assoc_t* a, array_t** car, array_t** cdr) {
 
 }
 
+/*
+  mutable reference to a pair at an index in the assoc.
+
+  returns null and sets ok to false on error.
+*/
 pair_t** assoc_get_ref (const assoc_t* const a, const ssize_t idx, bool* ok) {
   pfn();
 
-  if ( (NULL == a) || (-1 == idx) || (idx > a->idx) ) {
+  object_failnull(a);
+
+  if ( (-1 == idx) || (idx > a->idx) ) {
 
     if (NULL != ok) {
       *ok = false;
@@ -88,12 +106,18 @@ pair_t** assoc_get_ref (const assoc_t* const a, const ssize_t idx, bool* ok) {
   return &( a->data [idx] );
 }
 
+/*
+  copy a pair from an assoc, returning a new one with the same data
+*/
 pair_t* assoc_get_copy (const assoc_t* const a, const ssize_t idx, bool* ok) {
   pfn();
 
   return pair_copy( *assoc_get_ref(a, idx, ok) );
 }
 
+/*
+  append a new pair with the given car and cdr to the assoc
+*/
 void assoc_append_boa (assoc_t* const a, const object_t* const car, const object_t* const cdr) {
   pfn();
 
@@ -104,6 +128,9 @@ void assoc_append_boa (assoc_t* const a, const object_t* const car, const object
   pair_destruct(p);
 }
 
+/*
+  append a pair object to assoc.
+*/
 void assoc_append (assoc_t* const a, const pair_t* const b) {
   pfn();
 
@@ -111,6 +138,12 @@ void assoc_append (assoc_t* const a, const pair_t* const b) {
   (a->data) [a->idx] = pair_copy(b);
 }
 
+/*
+  resize the assoc's data array to newsize.
+
+  if newsize is 0 then the array will be considered empty, and its data
+  will occupy no memory.
+*/
 void assoc_resize (assoc_t* const a, const size_t newsize) {
   pfn();
 
@@ -118,6 +151,9 @@ void assoc_resize (assoc_t* const a, const size_t newsize) {
   a->idx  = un2signed(newsize) - 1;
 }
 
+/*
+  delete a pair from an assoc by index
+*/
 void assoc_delete (assoc_t* const a, const ssize_t idx) {
   pfn();
 
@@ -130,7 +166,7 @@ void assoc_delete (assoc_t* const a, const ssize_t idx) {
 
   pair_destruct( *assoc_get_ref(a, idx, NULL));
 
-  // if idx and a->idx (that is, if it's the last element) are equal we can just resize
+  // if idx and a->idx are equal (that is, if it's the last element) we can just resize
   if ( (idx != a->idx) ) {
     printf("not equal\n" );
     for (ssize_t i = idx; i < (a->idx); i++) {
@@ -143,6 +179,9 @@ void assoc_delete (assoc_t* const a, const ssize_t idx) {
   assoc_resize(a, signed2un(a->idx - 1));
 }
 
+/*
+  get the string representation of an assoc object. round-trips.
+*/
 char* assoc_see (const assoc_t* const a) {
   pfn();
 
@@ -186,6 +225,9 @@ char* assoc_see (const assoc_t* const a) {
   return outbuf;
 }
 
+/*
+  directly writes debug data about the assoc to stdout.
+*/
 void assoc_inspect (const assoc_t* const a) {
   pfn();
 

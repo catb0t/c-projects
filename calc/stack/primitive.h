@@ -349,16 +349,10 @@ bool is_base10 (const char *str) {
     char tmpbuf[2];
     snprintf(tmpbuf, 2, "%c", str[i]);
 
-    bool ismisc   = false,
-         isnum    = false,
-         validch  = false,
+    bool ismisc   = 1 == str_count(sign_chars, tmpbuf),
+         isnum    = ( str[i] >= '0' ) && ( str[i] <= '9' ),
+         validch  = ismisc || isnum,
          validpos = true;
-
-
-    ismisc   = 1 == str_count(sign_chars, tmpbuf);
-
-    isnum    = ( str[i] >= '0' ) && ( str[i] <= '9' );
-    validch  = ismisc || isnum;
 
     if ( ( str[i] == '+' ) || ( str[i] == '-' ) ) {
       validpos = i == 0 ? true : false ;
@@ -402,9 +396,9 @@ number_t* str_to_number_array (
 }
 
 void stack_dbgp (const stack_t* stk) {
-  static unsigned long long count;
+  static uint64_t count;
   ++count;
   char* s = stack_see(stk);
-  dbg_prn("debug(%lld): %s\n", count, s);
+  dbg_prn("debug(%" PRIu64 "): %s\n", count, s);
   safefree(s);
 }

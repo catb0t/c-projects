@@ -3,13 +3,13 @@
 astnode_t* lex_string (const char* const prog) {
   pfn();
 
-  char* s;
   astnode_t*    ast = ast_newtree(prog);
 
 
   size_t plen = safestrnlen(prog);
 
   for (size_t i = 0; i < plen; i++) {
+    char* s;
     ssize_t tmp;
     char c = prog[i];
 
@@ -100,7 +100,7 @@ srcchar_t get_srcobj_type (const char c) {
   return EASCII;
 }
 
-static void getfilepos (const char* const prog, const size_t idx, uint64_t* lineno, uint64_t* chrpos) {
+static inline void getfilepos (const char* const prog, const size_t idx, uint64_t* lineno, uint64_t* chrpos) {
   pfn();
 
   size_t plen = safestrnlen(prog);

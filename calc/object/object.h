@@ -53,7 +53,7 @@ object_t* nothing_new (void) {
 }
 
 /*
-  nothing_new returns a new "something" object
+  something_new returns a new "something" object
   it is the only value which compares true with all other values
   in a rather lispy / functional-inspired way.
 */
@@ -178,20 +178,21 @@ void** object_getval (const object_t* const obj) {
     return NULL;
   }
 
+  // ensures the length and order must be correct
   void** types[] = {
-    (void **) (obj->f),   // false
-    (void **) (obj->t),   // true
-    (void **) (obj->num), // number_t
-    (void **) (obj->fwi), // fixwid_t
-    (void **) (obj->str), // string_t
-    (void **) (obj->fnc), // func_t
-    (void **) (obj->ary), // array_t
-    (void **) (obj->asc), // array_t
-    (void **) (obj->hsh), // hash_t
-    (void **) (obj->cel), // pair_t
-    (void **) (obj->fwi), // realint
-    (void **) (obj->fwi), // realuint
-    (void **) (obj->str)  // realchar
+    [t_F]        = (void **) (obj->f),   // false
+    [t_T]        = (void **) (obj->t),   // true
+    [t_number]   = (void **) (obj->num), // number_t
+    [t_fixwid]   = (void **) (obj->fwi), // fixwid_t
+    [t_string]   = (void **) (obj->str), // string_t
+    [t_func]     = (void **) (obj->fnc), // func_t
+    [t_array]    = (void **) (obj->ary), // array_t
+    [t_assoc]    = (void **) (obj->asc), // array_t
+    [t_hash]     = (void **) (obj->hsh), // hash_t
+    [t_pair]     = (void **) (obj->cel), // pair_t
+    [t_realint]  = (void **) (obj->fwi), // realint
+    [t_realuint] = (void **) (obj->fwi), // realuint
+    [t_realchar] = (void **) (obj->str)  // realchar
   };
 
   _Static_assert(
@@ -265,6 +266,18 @@ void object_destruct (object_t* const obj) {
   safefree(obj);
 }
 
+void object_dtorn (object_t** const objs, const size_t len) {
+  if (NULL == objs) {
+    return;
+  }
+
+  for (size_t i = 0; i < len; i++) {
+    object_destruct(objs[i]);
+  }
+
+  safefree(objs);
+}
+
 /*
   convenience version of object_destruct which destructs an argc number of object argument objects by reference
   rather than calling object_destruct twice or more times for objects in the same
@@ -328,7 +341,7 @@ void _object_error (objerror_t errt, const char* const info, const bool fatal, c
     fprintf(
       stderr,
       "\033[31mThat error was fatal, aborting.\n\n"
-      "I'm melting!\033[0m"
+      "I'm melting!\033[0m\n"
     );
     abort();
   }
@@ -343,10 +356,9 @@ char* object_repr (const object_t* const obj) {
 
   object_failnull(obj);
 
-  char* buf;
+  char* buf = NULL;
   switch (obj->type) {
     case NUM_OBJTYPES: {
-      buf = NULL;
       // you can't repr that, you can't fix stupid
       object_error(NOT_A_TYPE, __func__, true);
       break;
