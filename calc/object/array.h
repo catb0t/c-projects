@@ -39,7 +39,7 @@ array_t* array_new (const object_t* const * const objs, const ssize_t len) {
     \
     object_t** objs = (typeof(objs)) safemalloc( sizeof(object_t *) * len ); \
     \
-    for (size_t i = 0; i < len; i++) { objs[i] = object_new(conv_to, (const void* const) &( ptr[i] ) ); } \
+    for (size_t i = 0; i < len; i++) { objs[i] = object_new(conv_to, (const void* const) ptr[i] ); } \
     \
     array_t* a = array_new(NULL, -1); \
     \

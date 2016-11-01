@@ -2,59 +2,49 @@
 
 void test (void);
 
-define_array_new_fromctype(ssize_t, array_new_fromc_ssize_t)
+define_array_new_fromctype(char* const, array_new_fromc_charptr)
 
 void test (void) {
 
-  /*
-  // create a new array and print it
-  infer a = array_new(NULL, -1);
-  infer ca = array_see(a);
-  dealloc_printf(ca);
+  //infer a = readln(80);
+  //printf("values: ");
+  //infer b = readln(80);
+  //infer sa = safestrnlen(a);
+  //infer sb = safestrnlen(b);
 
-  // add something to it
-  infer o1 = object_new(t_realchar, "123");
-  array_append(a, o1);
-  object_destruct(o1);
+  size_t len = 4;
 
-  // add something else to it
-  infer o2 = object_new(t_realchar, "456");
-  array_append(a, o2);
-  object_destruct(o2);
+  char
+    **keys = safemalloc( sizeof (char *) * len),
+    **vals = safemalloc( sizeof (char *) * len);
 
-  // add something else to it
-  infer o3 = object_new(t_realchar, "789");
-  array_append(a, o3);
-  object_destruct(o3);
-
-  array_inspect(a);
-
-  array_delete(a, 2);
-
-  array_inspect(a);
-
-  // see it again
-  ca = array_see(a);
-  dealloc_printf(ca);
-
-  array_destruct(a);
-  infer a = readln(80);
-  infer b = readln(80);
-  */
-
-  size_t len = 5;
-
-  ssize_t* nums = (typeof(nums)) safemalloc( sizeof (size_t) * len);
-
+  printf("keys\n");
   for (size_t i = 0; i < len; i++) {
-    nums[i] = un2signed(i);
+    printf("\n%zu: ", i);
+    keys[i] = readln(34);
   }
 
-  array_t* ra = array_new_fromc_ssize_t(nums, len, t_realint);
+  printf("vals\n");
+  for (size_t i = 0; i < len; i++) {
+    printf("\n%zu: ", i);
+    vals[i] = readln(34);
+  }
 
-  array_inspect(ra);
+  array_t *keya = array_new_fromc_charptr( (const char* const * const) keys, len, t_realchar),
+          *vala = array_new_fromc_charptr( (const char* const * const) vals, len, t_realchar);
 
-  safefree(nums), array_destruct(ra);
+  free_ptr_array((void**) keys, len), free_ptr_array((void**) vals, len);
+
+  array_inspect(keya);
+  array_inspect(vala);
+
+  hash_t* h = hash_new_boa(keya, vala);
+
+  array_destruct(keya), array_destruct(vala);
+
+  hash_inspect(h);
+
+  hash_destruct(h);
 
 /*  safefree(nums);
 

@@ -33,6 +33,8 @@ hash_t* hash_new_boa (
 
   ssize_t len = ssize_min(keys->idx, vals->idx) + 1;
 
+  printf("minsize: %zu\n", len);
+
   hash_t* hash = hash_new_skele(); // 1
 
   for (ssize_t i = 0; i < len; i++) {
