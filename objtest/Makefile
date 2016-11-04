@@ -31,34 +31,25 @@ CMD_ARGS ?=
 
 FILES := $(FILENAME).c $(FILENAME).h
 
-OPTIONAL = $(if $(wildcard test_$(FILENAME).c), test, )
-
-all: normal debug mem $(OPTIONAL)
-
-spec: arm optifine
+all: normal mem test
 
 normal: $(FILES)
 	$(CC) $(FILENAME).c $(CMD_ARGS) $(OPTS) -o ./bin/$(OUT_FILENAME)
-	@echo
-
-debug: $(FILES)
-	$(CC) $(FILENAME).c $(CMD_ARGS) $(DEBUG_OPTS) $(OPTS) -o ./bin/debug_$(OUT_FILENAME)
-	@echo
-
-optifine: $(FILES)
-	$(CC) $(FILENAME).c $(CMD_ARGS) $(DEBUG_OPTS) $(OPTS) -o ./bin/optifine_$(OUT_FILENAME) -O3
 	@echo
 
 mem: $(FILES)
 	$(CC) $(FILENAME).c $(CMD_ARGS) $(MEM_OPTS) $(DEBUG_OPTS) $(OPTS) -o ./bin/memdebug_$(OUT_FILENAME)
 	@echo
 
-test: test_$(FILENAME).c
-	$(CC) test_$(FILENAME).c $(CMD_ARGS) $(OPTS) -o ./bin/test_$(OUT_FILENAME) -lcriterion
-	@echo
-
-arm: $(FILES)
-	arm-linux-gnueabi-gcc $(CMD_ARGS) -DARM -static -march=armv7-a $(FILENAME).c -lm -o ./bin/$(FILENAME)_armo -O3
+test:
+	$(CC) _test_array.c -lcriterion ../fnv-hash/libfnv.a -o bin/test_array
+	$(CC) _test_array.c -lcriterion ../fnv-hash/libfnv.a -o bin/test_array
+	$(CC) _test_fixwid.c -lcriterion ../fnv-hash/libfnv.a -o bin/test_fixwid
+	$(CC) _test_func.c -lcriterion ../fnv-hash/libfnv.a -o bin/test_func
+	$(CC) _test_hash.c -lcriterion ../fnv-hash/libfnv.a -o bin/test_hash
+	$(CC) _test_object.c -lcriterion ../fnv-hash/libfnv.a -o bin/test_object
+	$(CC) _test_pair.c -lcriterion ../fnv-hash/libfnv.a -o bin/test_pair
+	$(CC) _test_string.c -lcriterion ../fnv-hash/libfnv.a -o bin/test_string
 	@echo
 
 clean:

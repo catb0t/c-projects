@@ -14,26 +14,28 @@ nothing_new(), or the F_t object returned by object_new(t_F, ...) || object_new(
 
 each object type should define:
 ```
-type_new
 type_copy
 type_destruct
-type_see
 type_equals
+type_new
+type_see
 ```
 on collections:
 ```
-type_inspect
-type_isempty
+type_append
+type_concat
+type_clear
+type_delete
 type_find
 type_get_copy
 type_get_ref
-type_append
-type_clear
-type_resize
-type_delete
-type_cat
+type_isempty
+type_insert
+type_inspect
 type_join
+type_length
 type_repeat
+type_resize
 ```
 
 on scalars:

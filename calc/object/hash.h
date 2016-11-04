@@ -10,6 +10,9 @@ typedef Fnv32_t hashkey_t;
 
 hashkey_t hash_obj (const object_t* const obj);
 
+/*
+  make a new empty hash skeleton
+*/
 hash_t* hash_new_skele (void) {
   pfn();
 
@@ -17,8 +20,12 @@ hash_t* hash_new_skele (void) {
 
   hash->keys     = array_new(NULL, -1);
   hash->vals     = assoc_new(NULL, NULL);
-  hash->idxs     = (typeof(hash->idxs)) safemalloc( sizeof (size_t) * 1 );
-  hash->idxs_len = 0;
+  hash->idxs     = (typeof(hash->idxs)) safemalloc( sizeof (ssize_t) * 1 );
+  hash->idxs_len = 1;
+
+  for (size_t i = 0; i < array_length(hash->keys); i++) {
+    hash->idxs[i] = -1;
+  }
 
   report_ctor(hash);
 
@@ -31,9 +38,12 @@ hash_t* hash_new_boa (
 ) {
   pfn();
 
-  ssize_t len = ssize_min(keys->idx, vals->idx) + 1;
+  ssize_t len = un2signed(
+    size_t_min( array_length(keys), array_length(vals) )
+    + 1
+  );
 
-  printf("minsize: %zu\n", len);
+  printf("minsize: %zd\n", len);
 
   hash_t* hash = hash_new_skele(); // 1
 
@@ -43,7 +53,9 @@ hash_t* hash_new_boa (
       **v = array_get_ref(vals, i, NULL);
 
     // references are okay because thisp will copy them anyways
-    hash_add(hash, *k, *v);
+    if ( ! hash_add(hash, *k, *v) ) {
+      break;
+    }
   }
 
   // 1 alloc, 0 frees, last free is caller's problem
@@ -106,6 +118,10 @@ bool   hash_isempty (const hash_t* const h) {
   object_failnull(h);
 
   return 0 == h->idxs_len;
+}
+
+size_t hash_length (const hash_t* const h) {
+  return array_length(h->keys) + 1;
 }
 
 /*
@@ -388,10 +404,10 @@ bool hash_add (hash_t* h, const object_t* const key, const object_t* const val) 
   object_destruct(khobj); // ~1
 
   // resize the idxs array by the needed amount
-  h->idxs = (typeof(h->idxs)) saferealloc(h->idxs, sizeof (size_t) * (kh + 1));
+  h->idxs = (typeof(h->idxs)) saferealloc(h->idxs, sizeof (ssize_t) * (kh + 1));
 
-  // increment the pointer
-  h->idxs_len = kh > h->idxs_len ? kh + 1: h->idxs_len ;
+  // make the length represent the new length
+  h->idxs_len = kh > h->idxs_len ? kh + 1 : h->idxs_len ;
 
   // assign the index of the pair in values to idxs
   (h->idxs) [kh] = h->vals->idx;

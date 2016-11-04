@@ -11,7 +11,6 @@
 
 #include "array.h"
 #include "assoc.h"
-#include "bool.h"
 #include "fixwid.h"
 #include "func.h"
 #include "hash.h"

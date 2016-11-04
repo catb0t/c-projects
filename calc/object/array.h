@@ -14,6 +14,7 @@ array_t* array_new (const object_t* const * const objs, const ssize_t len) {
 
   array_t* array = (typeof(array)) safemalloc( sizeof (array_t) );
   array->data    = NULL;
+  array->idx     = -1;
 
   if ( (-1 != len) && (NULL != objs) ) {
     array->data = (typeof(array->data)) safemalloc( sizeof (object_t *) );
@@ -22,7 +23,6 @@ array_t* array_new (const object_t* const * const objs, const ssize_t len) {
       array_append(array, objs[i]);
     }
   }
-  array->idx = len;
 
   report_ctor(array);
 
@@ -39,16 +39,15 @@ array_t* array_new (const object_t* const * const objs, const ssize_t len) {
     \
     object_t** objs = (typeof(objs)) safemalloc( sizeof(object_t *) * len ); \
     \
-    for (size_t i = 0; i < len; i++) { objs[i] = object_new(conv_to, (const void* const) ptr[i] ); } \
+    for (size_t i = 0; i < len; i++) { objs[i] = object_new(conv_to, (const void* const) &( ptr[i] ) ); } \
     \
-    array_t* a = array_new(NULL, -1); \
-    \
-    for (size_t i = 0; i < len; i++) { array_append(a, objs[i]); } \
+    array_t* a = array_new( (const object_t* const * const) objs, un2signed(len)); \
     \
     object_dtorn(objs, len); \
     \
     return a; \
-  }
+  } \
+  int DONT_FIND_THIS_NAME ## funcname
 
 //array_t* a = array_new( (const object_t * const * const) objs, un2signed(len));object_dtorn(objs, len);
 /*
@@ -64,9 +63,7 @@ array_t* array_new_fromcptr (const void* const * const ptr, const size_t len, co
 
   array_t* a = array_new( (const object_t * const * const) objs, un2signed(len));
 
-  for (size_t i = 0; i < len; i++) {
-    object_destruct(objs[i]);
-  }
+  object_dtorn(objs, len);
 
   return a;
 }
@@ -83,7 +80,7 @@ array_t* array_copy (const array_t* const a) {
 
   object_failnull(a);
 
-  return array_new( (const object_t* const * const) a->data, a->idx);
+  return array_new( (const object_t* const * const) a->data, un2signed(array_length(a)) );
 }
 
 /*
@@ -96,9 +93,28 @@ void array_destruct (array_t* const array) {
 
   report_dtor(array);
 
-  object_dtorn(array->data, signed2un(array->idx + 1));
+  object_dtorn(array->data, array_length(array));
 
   safefree(array);
+}
+
+void array_destruct_args (const size_t argc, ...) {
+  pfn();
+
+  va_list vl;
+  va_start(vl, argc);
+
+  for (size_t i = 0; i < argc; i++) {
+    // hopefully thisp just takes the address
+    array_t** v = (typeof(v)) safemalloc( sizeof (array_t *) );
+    *v = va_arg(vl, array_t*);
+
+    // 0 allocs, 1 free, but not double free
+    array_destruct( *v );
+    safefree(v);
+  }
+
+  va_end(vl);
 }
 
 /*
@@ -112,35 +128,40 @@ bool array_isempty (const array_t* const a) {
 
   object_failnull(a);
 
-  return -1 == a->idx || (NULL == a->data);
+  return ( ! array_length(a) ) || (NULL == a->data);
+}
+
+size_t array_length (const array_t* const a) {
+  return signed2un(a->idx + 1);
 }
 
 /*
   resize an array to the new size. implemented with saferealloc(2), so if new_idx is
   smaller than a->idx, the objects past will disappear and their destructors will
-  not be called.
+  be called.
 */
-void array_resize (array_t* const a, const ssize_t new_idx) {
+void array_resize (array_t* const a, const size_t new_len) {
   pfn();
 
   object_failnull(a);
 
-  if ( -1 == new_idx ) {
+  if ( ! new_len ) {
     a->data = (typeof(a->data)) saferealloc(a->data, 0);
     a->idx  = -1;
     return;
   }
 
-  if (new_idx < a->idx) {
-    for (ssize_t i = new_idx + 1; i < a->idx; i++) {
-      object_destruct( *array_get_ref(a, i, NULL) );
+  if (new_len < array_length(a)) {
+    for (size_t i = new_len + 1; i < array_length(a); i++) {
+      object_destruct( *array_get_ref(a, un2signed(i), NULL) );
     }
   }
 
   a->data = (typeof(a->data)) saferealloc(
-    a->data, sizeof (object_t*) * signed2un(a->idx + 1));
+    a->data, sizeof (object_t*) * new_len
+  );
 
-  a->idx  = new_idx;
+  a->idx  = un2signed(new_len) - 1;
 }
 
 /*
@@ -170,7 +191,7 @@ void array_delete (array_t* const a, const ssize_t idx) {
   object_destruct( *array_get_ref(a, idx, NULL));
 
   // if idx and a->idx (that is, if it's the last element) are equal we can just resize
-  if ( (idx != a->idx) ) {
+  if ( idx != a->idx ) {
     printf("not equal\n" );
     for (ssize_t i = idx; i < (a->idx); i++) {
       // change pointer (?)
@@ -179,8 +200,7 @@ void array_delete (array_t* const a, const ssize_t idx) {
 
   }
 
-  array_resize(a, a->idx - 1);
-
+  array_resize(a, array_length(a) - 1);
 }
 
 void array_clear (array_t* const a) {
@@ -188,7 +208,7 @@ void array_clear (array_t* const a) {
 
   object_failnull(a);
 
-  array_resize(a, -1);
+  array_resize(a, 0);
 }
 
 /*
@@ -206,7 +226,7 @@ void array_insert (array_t* const a, const object_t* const o, const ssize_t idx)
 
   object_failnull(a);
 
-  array_resize(a, a->idx + 1);
+  array_resize(a, array_length(a) + 1);
 
   ssize_t i;
   for (i = a->idx; i > idx; i--) {
@@ -230,8 +250,7 @@ void array_append (array_t* const a, const object_t* const o) {
 
   object_failnull(a);
 
-  ++(a->idx);
-  array_resize(a, a->idx);
+  array_resize(a, array_length(a) + 1);
 
   (a->data) [a->idx] = object_copy(o);
 }
@@ -262,7 +281,7 @@ void array_vappend (array_t* const a, const size_t argc, ...) {
 /*
   concatenate two array_ts
 */
-void array_cat (array_t** const a, const array_t* const b) {
+void array_concat (array_t** const a, const array_t* const b) {
   pfn();
 
   object_failnull(a);
@@ -280,19 +299,20 @@ void array_cat (array_t** const a, const array_t* const b) {
     return;
   }
 
-  size_t alen = signed2un((*a)->idx), total_len = alen + signed2un(b->idx);
+  size_t alen = array_length(*a),
+         total_len = alen + array_length(b);
 
-  (*a)->data = (typeof((*a)->data)) saferealloc((*a)->data, sizeof (object_t **) * total_len);
+  array_resize(*a, total_len);
 
   for (size_t i = alen; i < total_len; i++) {
-    (*a)->data[i] = array_get_copy(b, un2signed(udifference(i, alen)), NULL);
+    (*a)->data[i] = array_get_copy(b, un2signed( udifference(i, alen) ), NULL);
   }
 }
 
 /*
   variadic version of array_cat
 */
-void array_vcat (array_t** const a, const size_t argc, ...) {
+void array_vconcat (array_t** const a, const size_t argc, ...) {
   pfn();
 
   object_failnull(a);
@@ -305,7 +325,7 @@ void array_vcat (array_t** const a, const size_t argc, ...) {
     array_t** v = (typeof(v)) safemalloc( sizeof (array_t *) );
     *v = va_arg(vl, array_t*);
 
-    array_cat(a, *v);
+    array_concat(a, *v);
     safefree(v);
   }
 
@@ -469,7 +489,7 @@ bool array_equals (const array_t* const a, const array_t* const b) {
     return true;
   }
 
-  if ( b->idx != a->idx ) {
+  if ( array_length(a) != array_length(b) ) {
     return false;
   }
 

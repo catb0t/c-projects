@@ -273,11 +273,15 @@ extern bool _obj_failnull(const void* const o, const char* const file, const uin
 #define object_error(er,in,fa) _object_error ((er), (in), (fa), __FILE__, __LINE__, __func__)
 #define MAX_HASH_SIZE 10000
 
-static inline __PURE_FUNC __CONST_FUNC ssize_t ssize_min (ssize_t a, ssize_t b) {
-  pfn();
+#define define_min_func(type) \
+  static inline __PURE_FUNC __CONST_FUNC type type ## _min (type a, type b) { \
+    pfn(); \
+    \
+    return a < b ? a : b; \
+  } \
+  int NOTHING_MIN ## type
 
-  return a < b ? a : b;
-}
+define_min_func(size_t);
 
 // provided by object.h
 object_t*  object_new (const objtype_t valtype, const void* const val);
@@ -297,7 +301,6 @@ object_t* something_new (void);
 char* F_see (const F_t* const f);
 char* T_see (const T_t* const t);
 
-
 // provided by array.h
 array_t* array_new_fromcptr (const void* const * const ptr, const size_t len, const objtype_t outtype);
 array_t*       array_new (const object_t* const * const objs, const ssize_t len);
@@ -305,23 +308,26 @@ array_t*      array_copy (const array_t* const a);
 char*          array_see (const array_t* const a);
 object_t* array_get_copy (const array_t* const a, const ssize_t idx, bool* ok);
 object_t** array_get_ref (const array_t* const a, const ssize_t idx, bool* ok);
+size_t      array_length (const array_t* const a);
 ssize_t       array_find (const array_t* const a, const object_t* const obj);
 bool        array_equals (const array_t* const a, const array_t* const b);
 bool       array_isempty (const array_t* const a);
 void        array_insert (array_t* const a, const object_t* const o, const ssize_t idx);
-void        array_resize (array_t* const a, const ssize_t new_len);
+void        array_resize (array_t* const a, const size_t new_len);
 void        array_delete (array_t* const a, const ssize_t idx);
 void        array_append (array_t* const a, const object_t* const o);
 void       array_vappend (array_t* const a, const size_t argc, ...);
-void           array_cat (array_t** const a, const array_t* const b);
-void          array_vcat (array_t** const a, const size_t argc, ...);
+void        array_concat (array_t** const a, const array_t* const b);
+void       array_vconcat (array_t** const a, const size_t argc, ...);
 void       array_inspect (const array_t* const a);
 void      array_destruct (array_t* const a);
+void array_destruct_args (const size_t argc, ...);
 void         array_clear (array_t* const a);
 
 // provided by string.h
 string_t*  string_new (const char* const str);
 string_t* string_copy (const string_t* const s);
+size_t  string_length (const string_t* const s);
 bool   string_isempty (const string_t* const s);
 void  string_destruct (string_t* const s);
 char*      string_see (const string_t* const s);
@@ -335,6 +341,7 @@ object_t* hash_get_copy (const hash_t* const h, const object_t* const key, bool*
 object_t** hash_get_ref (const hash_t* const h, const object_t* const key, bool* ok);
 array_t*   hash_getvals (const hash_t* const h);
 array_t*   hash_getkeys (const hash_t* const h);
+size_t      hash_length (const hash_t* const h);
 bool           hash_add (hash_t* const h, const object_t* const key, const object_t* val);
 bool    hash_change_key (hash_t* const h, const object_t* const oldkey, const object_t* const newkey);
 bool     hash_change_at (hash_t* const h, const object_t* const obj, object_t* newval);
@@ -366,12 +373,13 @@ assoc_t*      assoc_copy (const assoc_t* const a);
 char*          assoc_see (const assoc_t* const a);
 pair_t*   assoc_get_copy (const assoc_t* const a, const ssize_t idx, bool* ok);
 pair_t**   assoc_get_ref (const assoc_t* const a, const ssize_t idx, bool* ok);
+size_t      assoc_length (const assoc_t* const a);
 ssize_t       assoc_find (const assoc_t* const a, const object_t* const obj);
 bool        assoc_equals (const assoc_t* const a, const assoc_t* const b);
 bool       assoc_isempty (const assoc_t* const a);
 void        assoc_insert (assoc_t* const a, const object_t* const o, const ssize_t idx);
 void         assoc_unzip (const assoc_t* const a, array_t** keys, array_t** vals);
-void        assoc_resize (assoc_t* a, const size_t newsize);
+void        assoc_resize (assoc_t* a, const size_t new_idx);
 void        assoc_delete (assoc_t* const a, const ssize_t idx);
 void        assoc_append (assoc_t* const a, const pair_t* const o);
 void    assoc_append_boa (assoc_t* const a, const object_t* const car, const object_t* const cdr);

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/echo error: don't run me thanks:
 
 ESC="\e["
 COLOR_OFF=$ESC"0m"

@@ -17,7 +17,7 @@ assoc_t* assoc_new (const array_t* const a, const array_t* const b) {
 
   if ( (NULL != a) && (NULL != b) ) {
 
-    ssize_t idx = ssize_min(a->idx, b->idx);
+    ssize_t idx = un2signed( size_t_min(array_length(a), array_length(b)) );
     assoc->idx  = idx;
     assoc->data = (typeof(assoc->data)) safemalloc( sizeof (pair_t*) * (signed2un(idx) + 1) );
 
@@ -54,8 +54,8 @@ void assoc_destruct (assoc_t* const assoc) {
 
   report_dtor(assoc);
 
-  for (ssize_t i = 0; i < (assoc->idx + 1); i++) {
-    pair_destruct( *assoc_get_ref(assoc, i, NULL) );
+  for (size_t i = 0; i < assoc_length(assoc); i++) {
+    pair_destruct( *assoc_get_ref(assoc, un2signed(i), NULL) );
   }
 
   safefree(assoc->data), safefree(assoc);
@@ -78,6 +78,10 @@ void assoc_unzip (const assoc_t* a, array_t** car, array_t** cdr) {
     array_append(*cdr, *pair_cdr_ref( *p ) );
   }
 
+}
+
+size_t assoc_length (const assoc_t* const a) {
+  return signed2un(a->idx + 1);
 }
 
 /*
@@ -134,21 +138,40 @@ void assoc_append_boa (assoc_t* const a, const object_t* const car, const object
 void assoc_append (assoc_t* const a, const pair_t* const b) {
   pfn();
 
-  assoc_resize(a, signed2un(a->idx) + 1);
+  object_failnull(a);
+
+  assoc_resize(a, assoc_length(a) + 1);
   (a->data) [a->idx] = pair_copy(b);
 }
 
 /*
-  resize the assoc's data array to newsize.
-
-  if newsize is 0 then the array will be considered empty, and its data
-  will occupy no memory.
+  resize an assoc to the new size. implemented with saferealloc(2), so if new_idx is
+  smaller than a->idx, the pairs past will disappear and their destructors will
+  be called.
 */
-void assoc_resize (assoc_t* const a, const size_t newsize) {
+void assoc_resize (assoc_t* const a, const size_t new_len) {
   pfn();
 
-  a->data = (typeof(a->data)) saferealloc(a->data, sizeof (pair_t*) * (newsize));
-  a->idx  = un2signed(newsize) - 1;
+  object_failnull(a);
+
+  if ( ! new_len ) {
+    // points to a region of memory of size zero aligned to pair_t* (aka pointer)
+    a->data = (typeof(a->data)) saferealloc(a->data, 0);
+    a->idx  = -1;
+    return;
+  }
+
+  if (new_len < assoc_length(a)) {
+    for (size_t i = new_len + 1; i < assoc_length(a); i++) {
+      pair_destruct( *assoc_get_ref(a, un2signed(i), NULL) );
+    }
+  }
+
+  a->data = (typeof(a->data)) saferealloc(
+    a->data, sizeof (pair_t*) * new_len
+  );
+
+  a->idx = un2signed(new_len) - 1;
 }
 
 /*
@@ -176,7 +199,7 @@ void assoc_delete (assoc_t* const a, const ssize_t idx) {
 
   }
 
-  assoc_resize(a, signed2un(a->idx - 1));
+  assoc_resize(a, assoc_length(a) - 1);
 }
 
 /*
@@ -199,9 +222,9 @@ char* assoc_see (const assoc_t* const a) {
 
   size_t total_len = safestrnlen(outbuf);
 
-  for (ssize_t i = 0; i < (a->idx + 1); i++) {
+  for (size_t i = 0; i < assoc_length(a); i++) {
     // 'tis but a reference
-    pair_t** thisp = assoc_get_ref(a, i, NULL);
+    pair_t** thisp = assoc_get_ref(a, un2signed(i), NULL);
     char*   strthis = pair_see(*thisp);
     size_t  tlen    = safestrnlen(strthis) + 2;
 
@@ -233,9 +256,9 @@ void assoc_inspect (const assoc_t* const a) {
 
   printf("assoc uid:%zu idx:%zd sz:%zu {\n", a->uid, a->idx, sizeof a);
 
-  for (ssize_t i = 0; i < a->idx; i++) {
-    char* s = pair_see( *assoc_get_ref(a, i, NULL) );
-    printf("\t%zd:%s\n", i, s);
+  for (size_t i = 0; i < assoc_length(a); i++) {
+    char* s = pair_see( *assoc_get_ref(a, un2signed(i), NULL) );
+    printf("\t%zu:%s\n", i, s);
     safefree(s);
   }
 
