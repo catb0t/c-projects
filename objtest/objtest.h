@@ -2,9 +2,11 @@
 
 void test (void);
 
+define_array_new_fromctype(size_t);
+
 void test (void) {
 
-  array_t* a = array_new(NULL, -1);
+  array_t *ra, *a = array_new(NULL, -1);
 
   char* s = array_see(a);
   dbg_prn("empty array looks like: %s\n", s);
@@ -38,4 +40,14 @@ void test (void) {
 
   safefree(s), array_destruct(a);
 
+  static const size_t nums[] = {
+    1, 3, 5, 7, 9, 11
+  };
+
+  ra = array_new_from_size_t_lit(nums, 6, t_realuint);
+
+  s = array_see(ra);
+  dbg_prn("array from literal is: %s\n", s);
+
+  safefree(s), array_destruct(ra);
 }

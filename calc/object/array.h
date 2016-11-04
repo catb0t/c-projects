@@ -32,20 +32,20 @@ array_t* array_new (const object_t* const * const objs, const ssize_t len) {
 /*
   makes a function which makes a new array from a heap-alloced C array
 */
-#define define_array_new_fromctype(type, funcname) \
-  array_t* funcname (const type * const ptr, const size_t len, const objtype_t conv_to); \
+#define define_array_new_fromctype(type) \
+  array_t* array_new_from_ ## type ## _lit (const type * const ptr, const size_t len, const objtype_t conv_to); \
   \
-  array_t* funcname (const type * const ptr, const size_t len, const objtype_t conv_to) { \
+  array_t* array_new_from_ ## type ## _lit (const type * const ptr, const size_t len, const objtype_t conv_to) { \
     \
-    object_t** objs = (typeof(objs)) safemalloc( sizeof(object_t *) * len ); \
+    object_t** UNSHADOW_OBJS = (typeof(UNSHADOW_OBJS)) safemalloc( sizeof(object_t *) * len ); \
     \
-    for (size_t i = 0; i < len; i++) { objs[i] = object_new(conv_to, (const void* const) &( ptr[i] ) ); } \
+    for (size_t i = 0; i < len; i++) { UNSHADOW_OBJS[i] = object_new(conv_to, (const void* const) &( ptr[i] ) ); } \
     \
-    array_t* a = array_new( (const object_t* const * const) objs, un2signed(len)); \
+    array_t* UNSHADOW_ARRAY = array_new( (const object_t* const * const) UNSHADOW_OBJS, un2signed(len)); \
     \
-    object_dtorn(objs, len); \
+    object_dtorn(UNSHADOW_OBJS, len); \
     \
-    return a; \
+    return UNSHADOW_ARRAY; \
   } \
   int DONT_FIND_THIS_NAME ## funcname
 
