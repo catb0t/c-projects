@@ -2,6 +2,11 @@
 
 ---
 
+To make one of the folders, `cd` there and type `make`. Then, look in `bin` for something to run.
+
+`object.h`'s unit tests are in `./objtest` and the binaries are built in `bin`.
+
+<!--
 ## `build.bash` usage
 
 ```
@@ -34,7 +39,7 @@ To:
 * etc...
 
 Read `build.bash` and the Makefile contained within for more information.
-
+-->
 ---
 
 ## Dependencies

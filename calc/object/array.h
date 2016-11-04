@@ -30,7 +30,7 @@ array_t* array_new (const object_t* const * const objs, const ssize_t len) {
 }
 
 /*
-  makes a function which makes a new array from a heap-alloced C array
+  makes a function which makes a new array from a heap-alloced C array of scalars (non-pointers)
 */
 #define define_array_new_fromctype(type) \
   array_t* array_new_from_ ## type ## _lit (const type * const ptr, const size_t len, const objtype_t conv_to); \
@@ -175,24 +175,33 @@ void array_resize (array_t* const a, const size_t new_len) {
       ...copying them
     resize the array by -1.
 */
-void array_delete (array_t* const a, const ssize_t idx) {
+bool array_delete (array_t* const a, const ssize_t idx) {
   pfn();
 
   object_failnull(a);
 
   if ( ( idx > a->idx ) || ( array_isempty(a) ) || ( -1 == idx ) ) {
     char* er = (typeof(er)) safemalloc(100);
-    snprintf(er, 99, "%s: delete index %zd but the highest is %zd", __func__, idx, a->idx);
+    snprintf(
+      er,
+      99,
+      "delete index %zd but the highest is %zd %s",
+      idx,
+      a->idx,
+      array_isempty(a)
+        ? "(delete from empty array)"
+        : ""
+    );
     object_error(INDEXERROR, er, false);
     safefree(er);
-    return;
+    return false;
   }
 
   object_destruct( *array_get_ref(a, idx, NULL));
 
   // if idx and a->idx (that is, if it's the last element) are equal we can just resize
   if ( idx != a->idx ) {
-    printf("not equal\n" );
+    //printf("not equal\n" );
     for (ssize_t i = idx; i < (a->idx); i++) {
       // change pointer (?)
       (a->data) [i] = (a->data) [i + 1];
@@ -201,6 +210,8 @@ void array_delete (array_t* const a, const ssize_t idx) {
   }
 
   array_resize(a, array_length(a) - 1);
+
+  return true;
 }
 
 void array_clear (array_t* const a) {
@@ -357,9 +368,9 @@ char* array_see (const array_t* const a) {
 
   size_t total_len = safestrnlen(outbuf);
 
-  for (ssize_t i = 0; i < (a->idx + 1); i++) {
+  for (size_t i = 0; i < array_length(a); i++) {
     // 'tis but a reference
-    object_t** thisp = array_get_ref(a, i, NULL);
+    object_t** thisp = array_get_ref(a, un2signed(i), NULL);
     char*   strthis = object_repr(*thisp);
     size_t  tlen    = safestrnlen(strthis) + 2;
 
@@ -493,10 +504,10 @@ bool array_equals (const array_t* const a, const array_t* const b) {
     return false;
   }
 
-  for (ssize_t i = 0; i < a->idx; i++) {
+  for (size_t i = 0; i < array_length(a); i++) {
     // 'tis but a reference
-    object_t **oa = array_get_ref(a, i, NULL),
-             **ob = array_get_ref(b, i, NULL);
+    object_t **oa = array_get_ref(a, un2signed(i), NULL),
+             **ob = array_get_ref(b, un2signed(i), NULL);
     if ( ! object_equals(*oa, *ob) ) {
       return false;
     }
