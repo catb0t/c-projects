@@ -27,12 +27,12 @@ typedef enum {
 } objtype_t;
 
 typedef enum {
-  NOT_A_TYPE,
-  KEYERROR,
-  INDEXERROR,
-  PTRMATH_BUG,
-  NULL_OBJECT,
-  NUM_ERRTYPES
+  ER_NOT_A_TYPE,
+  ER_KEYERROR,
+  ER_INDEXERROR,
+  ER_PTRMATH_BUG,
+  ER_NULL_OBJECT,
+  ER_NUM_ERRTYPES
 } objerror_t;
 
 // object object
@@ -270,7 +270,7 @@ extern void _object_error (objerror_t error, const char* const info, const bool 
 extern bool _obj_failnull(const void* const o, const char* const file, const uint64_t line, const char* const func);
 
 #define object_failnull(o) _obj_failnull((o), __FILE__, __LINE__, __func__)
-#define object_error(er,in,fa) _object_error ((er), (in), (fa), __FILE__, __LINE__, __func__)
+#define object_error(error, info, is_fatal) _object_error ((error), (info), (is_fatal), __FILE__, __LINE__, __func__)
 #define MAX_HASH_SIZE 10000
 
 #define define_min_func(type) \
@@ -313,9 +313,9 @@ ssize_t       array_find (const array_t* const a, const object_t* const obj);
 bool        array_equals (const array_t* const a, const array_t* const b);
 bool       array_isempty (const array_t* const a);
 bool        array_delete (array_t* const a, const ssize_t idx);
-void        array_insert (array_t* const a, const object_t* const o, const ssize_t idx);
-void        array_resize (array_t* const a, const size_t new_len);
+bool        array_insert (array_t* const a, const object_t* const o, const ssize_t idx);
 void        array_append (array_t* const a, const object_t* const o);
+void        array_resize (array_t* const a, const size_t new_len);
 void       array_vappend (array_t* const a, const size_t argc, ...);
 void        array_concat (array_t** const a, const array_t* const b);
 void       array_vconcat (array_t** const a, const size_t argc, ...);
@@ -349,7 +349,7 @@ bool        hash_equals (const hash_t* const a, const hash_t* const b);
 bool       hash_isempty (const hash_t* const h);
 bool     hash_keyexists (const hash_t* const h, const object_t* const key);
 bool        hash_exists (const hash_t* const h, const object_t* const key);
-void        hash_delete (hash_t* const h, const object_t* const key);
+bool        hash_delete (hash_t* const h, const object_t* const key);
 void      hash_destruct (hash_t* const h);
 void     hash_recompute (hash_t** const h);
 void       hash_inspect (const hash_t* const h);
@@ -377,11 +377,11 @@ size_t      assoc_length (const assoc_t* const a);
 ssize_t       assoc_find (const assoc_t* const a, const object_t* const obj);
 bool        assoc_equals (const assoc_t* const a, const assoc_t* const b);
 bool       assoc_isempty (const assoc_t* const a);
+bool        assoc_delete (assoc_t* const a, const ssize_t idx);
+void        assoc_append (assoc_t* const a, const pair_t* const o);
 void        assoc_insert (assoc_t* const a, const object_t* const o, const ssize_t idx);
 void         assoc_unzip (const assoc_t* const a, array_t** keys, array_t** vals);
 void        assoc_resize (assoc_t* a, const size_t new_idx);
-void        assoc_delete (assoc_t* const a, const ssize_t idx);
-void        assoc_append (assoc_t* const a, const pair_t* const o);
 void    assoc_append_boa (assoc_t* const a, const object_t* const car, const object_t* const cdr);
 void       assoc_vappend (assoc_t* const a, const size_t argc, ...);
 void           assoc_cat (assoc_t** const a, const assoc_t* const b);

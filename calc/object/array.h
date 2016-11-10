@@ -37,17 +37,17 @@ array_t* array_new (const object_t* const * const objs, const ssize_t len) {
   \
   array_t* array_new_from_ ## type ## _lit (const type * const ptr, const size_t len, const objtype_t conv_to) { \
     \
-    object_t** UNSHADOW_OBJS = (typeof(UNSHADOW_OBJS)) safemalloc( sizeof(object_t *) * len ); \
+    object_t** __UNSHADOW_OBJS = (typeof(__UNSHADOW_OBJS)) safemalloc( sizeof(object_t *) * len ); \
     \
-    for (size_t i = 0; i < len; i++) { UNSHADOW_OBJS[i] = object_new(conv_to, (const void* const) &( ptr[i] ) ); } \
+    for (size_t i = 0; i < len; i++) { __UNSHADOW_OBJS[i] = object_new(conv_to, (const void* const) &( ptr[i] ) ); } \
     \
-    array_t* UNSHADOW_ARRAY = array_new( (const object_t* const * const) UNSHADOW_OBJS, un2signed(len)); \
+    array_t* __UNSHADOW_ARRAY = array_new( (const object_t* const * const) __UNSHADOW_OBJS, un2signed(len)); \
     \
-    object_dtorn(UNSHADOW_OBJS, len); \
+    object_dtorn(__UNSHADOW_OBJS, len); \
     \
-    return UNSHADOW_ARRAY; \
+    return __UNSHADOW_ARRAY; \
   } \
-  int DONT_FIND_THIS_NAME ## funcname
+  int ____DONT_FIND_THIS_NAME ## funcname
 
 //array_t* a = array_new( (const object_t * const * const) objs, un2signed(len));object_dtorn(objs, len);
 /*
@@ -93,7 +93,9 @@ void array_destruct (array_t* const array) {
 
   report_dtor(array);
 
-  object_dtorn(array->data, array_length(array));
+  if (NULL != array->data) {
+    object_dtorn(array->data, array_length(array));
+  }
 
   safefree(array);
 }
@@ -146,7 +148,8 @@ void array_resize (array_t* const a, const size_t new_len) {
   object_failnull(a);
 
   if ( ! new_len ) {
-    a->data = (typeof(a->data)) saferealloc(a->data, 0);
+    object_dtorn(a->data, array_length(a));
+    a->data = NULL;
     a->idx  = -1;
     return;
   }
@@ -192,7 +195,7 @@ bool array_delete (array_t* const a, const ssize_t idx) {
         ? "(delete from empty array)"
         : ""
     );
-    object_error(INDEXERROR, er, false);
+    object_error(ER_INDEXERROR, er, false);
     safefree(er);
     return false;
   }
@@ -232,20 +235,26 @@ void array_clear (array_t* const a) {
     shift elements left by one
     put the new element at its index
 */
-void array_insert (array_t* const a, const object_t* const o, const ssize_t idx) {
+bool array_insert (array_t* const a, const object_t* const o, const ssize_t idx) {
   pfn();
 
   object_failnull(a);
 
+  if ( (-1 == idx) || (NULL == a->data) || (signed2un(idx) > array_length(a) ) ) {
+    char er[200];
+    snprintf(er, 199, "insert to index %zd of 0, %zd", idx, array_length(a));
+    object_error(ER_INDEXERROR, er, false);
+    return false;
+  }
   array_resize(a, array_length(a) + 1);
 
-  ssize_t i;
-  for (i = a->idx; i > idx; i--) {
+  for (ssize_t i = a->idx; i > idx; i--) {
     // change pointer (?)
     (a->data) [i] = (a->data) [i - 1];
   }
 
   (a->data) [idx] = object_copy(o);
+  return true;
 }
 
 /*

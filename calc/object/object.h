@@ -31,7 +31,7 @@ inline bool _obj_failnull (const void* const obj, const char* const file, uint64
   if ( NULL == obj ) {
     char buf[200];
     snprintf(buf, 200, "%s:%" PRIu64 ": %s", file, line, func);
-    object_error(NULL_OBJECT, buf, true);
+    object_error(ER_NULL_OBJECT, buf, true);
     return false;
   }
 
@@ -84,7 +84,7 @@ object_t* object_new (const objtype_t valtype, const void* const val) {
 
   switch (obj->type) {
     case NUM_OBJTYPES: {
-      object_error(NOT_A_TYPE, __func__, true);
+      object_error(ER_NOT_A_TYPE, __func__, true);
       break;
     }
     case t_F: {
@@ -257,7 +257,7 @@ void object_destruct (object_t* const obj) {
     }
 
     case NUM_OBJTYPES: {
-      object_error(NOT_A_TYPE, __func__, true);
+      object_error(ER_NOT_A_TYPE, __func__, true);
       break;
     }
   }
@@ -266,15 +266,14 @@ void object_destruct (object_t* const obj) {
 }
 
 void object_dtorn (object_t** const objs, const size_t len) {
-  if (NULL == objs) {
-    return;
-  }
 
   for (size_t i = 0; i < len; i++) {
     object_destruct(objs[i]);
   }
 
-  safefree(objs);
+  if ( NULL != objs ) {
+    safefree(objs);
+  }
 }
 
 /*
@@ -321,16 +320,16 @@ void _object_error (objerror_t errt, const char* const info, const bool fatal, c
   pfn();
 
   static const char* const errmsgs[] = {
-    [NOT_A_TYPE]  = "NUM_OBJTYPES isn't a real type, dummy. Don't do that.\n"
+    [ER_NOT_A_TYPE]  = "NUM_OBJTYPES isn't a real type, dummy. Don't do that.\n"
                     "Have you considered trying to match wits with a rutabaga?",
-    [KEYERROR]    = "no such key",
-    [INDEXERROR]  = "index out of bounds",
-    [PTRMATH_BUG] = "pointer math error (invalid read or write) -- probably a bug",
-    [NULL_OBJECT] = "null pointer encountered where a structure or union was expected"
+    [ER_KEYERROR]    = "no such key",
+    [ER_INDEXERROR]  = "index out of bounds",
+    [ER_PTRMATH_BUG] = "pointer math error (invalid read or write) -- probably a bug",
+    [ER_NULL_OBJECT] = "null pointer encountered where a structure or union was expected"
   };
 
   _Static_assert(
-    (sizeof (errmsgs) / sizeof (char*) ) == NUM_ERRTYPES,
+    (sizeof (errmsgs) / sizeof (char*) ) == ER_NUM_ERRTYPES,
     "too many or too few error strings in object_error"
   );
 
@@ -359,7 +358,7 @@ char* object_repr (const object_t* const obj) {
   switch (obj->type) {
     case NUM_OBJTYPES: {
       // you can't repr that, you can't fix stupid
-      object_error(NOT_A_TYPE, __func__, true);
+      object_error(ER_NOT_A_TYPE, __func__, true);
       break;
     }
     case t_F: {
@@ -477,7 +476,7 @@ bool object_equals (const object_t* const a, const object_t* const b) {
 
   switch (a->type) {
     case NUM_OBJTYPES: {
-      object_error(NOT_A_TYPE, __func__, true);
+      object_error(ER_NOT_A_TYPE, __func__, true);
       return false;
     }
 

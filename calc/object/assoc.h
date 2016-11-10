@@ -101,7 +101,7 @@ pair_t** assoc_get_ref (const assoc_t* const a, const ssize_t idx, bool* ok) {
     }
 
     if ( (-1 == idx) || (idx > a->idx) ) {
-      object_error(INDEXERROR, __func__, false);
+      object_error(ER_INDEXERROR, __func__, false);
     }
 
     return NULL;
@@ -130,6 +130,7 @@ void assoc_append_boa (assoc_t* const a, const object_t* const car, const object
   assoc_append(a, p);
 
   pair_destruct(p);
+
 }
 
 /*
@@ -177,14 +178,14 @@ void assoc_resize (assoc_t* const a, const size_t new_len) {
 /*
   delete a pair from an assoc by index
 */
-void assoc_delete (assoc_t* const a, const ssize_t idx) {
+bool assoc_delete (assoc_t* const a, const ssize_t idx) {
   pfn();
 
   if ( NULL == a ) {
-    return;
+    return false;
   } else if ( (idx > a->idx) || (-1 == idx) ) {
-    object_error(INDEXERROR, __func__, false);
-    return;
+    object_error(ER_INDEXERROR, __func__, false);
+    return false;
   }
 
   pair_destruct( *assoc_get_ref(a, idx, NULL));
@@ -200,6 +201,8 @@ void assoc_delete (assoc_t* const a, const ssize_t idx) {
   }
 
   assoc_resize(a, assoc_length(a) - 1);
+
+  return true;
 }
 
 /*

@@ -44,7 +44,7 @@ void test (void) {
   s = array_see(a);
   dbg_prn("1array: %s\n", s);
 
-  array_destruct(a), object_destruct(obj);
+  safefree(s), array_destruct(a), object_destruct(obj);
 
   a = array_new(NULL, -1);
 
@@ -63,8 +63,6 @@ void test (void) {
 
   safefree(s), array_destruct(a);
 
-// NONEMPTY
-
   size_t objslen = 2;
   object_t** objs = safemalloc( sizeof (object_t*) * objslen );
   ssize_t i = -6, j = 9;
@@ -72,7 +70,7 @@ void test (void) {
   objs[1] = object_new(t_realint, &j);
 
   a = array_new( (const object_t* const * const) objs, un2signed(objslen));
-  object_dtorn(objs, 1);
+  object_dtorn(objs, objslen);
 
   s = array_see(a);
   dbg_prn("fromboactr is %s\n", s);
@@ -93,7 +91,6 @@ void test (void) {
 
   s = array_see(ra);
   dbg_prn("array from literal is: %s\n", s);
-
   safefree(s), array_destruct(ra);
 
   a = array_new_fromcptr(
@@ -107,6 +104,7 @@ void test (void) {
   s = array_see(a);
   s2 = array_see(b);
   dbg_prn("fromptrptr is: %s\nand: %s\n", s, s2);
+
 
   safefree(s), safefree(s2), array_destruct(a), array_destruct(b);
 
@@ -139,6 +137,6 @@ void test (void) {
 
   array_clear(a);
   s = array_see(a);
-  dbg_prn("cleared: %s\n", s);
+
   safefree(s), array_destruct(a);
 }

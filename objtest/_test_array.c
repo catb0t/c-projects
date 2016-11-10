@@ -55,7 +55,7 @@ Test(empty, appendworks) {
   cr_assert(! array_isempty(a));
   cr_assert(array_length(a) == 1);
 
-  array_destruct(a), object_destruct(obj);
+  safefree(s), array_destruct(a), object_destruct(obj);
 }
 
 Test(empty, deletefails) {
@@ -194,5 +194,19 @@ Test(nonempty, clearworks) {
 }
 
 Test(nonempty, insertworks) {
+  a = array_new_from_ssize_t_lit(anums, (sizeof anums) / sizeof (ssize_t), t_realint);
 
+  size_t g = 99999;
+  object_t* go = object_new(t_realuint, &g);
+  ok = array_insert(a, go, 0);
+  s = array_see(a);
+  cr_assert_str_eq(s, "{ 99999 1 -3 5 -7 9 -11 }");
+  cr_assert(ok);
+
+  ok = array_insert(a, go, 99);
+  s = array_see(a);
+  cr_assert_str_eq(s, "{ 99999 1 -3 5 -7 9 -11 }");
+  cr_assert(! ok);
+
+  safefree(s), array_destruct(a);
 }

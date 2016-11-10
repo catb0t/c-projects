@@ -178,7 +178,7 @@ object_t* hash_get_copy (const hash_t* const h, const object_t* const key, bool*
     if (NULL != ok) {
       *ok = false;
     }
-    object_error(KEYERROR, __func__, false);
+    object_error(ER_KEYERROR, __func__, false);
     return object_new(t_F, NULL);
   }
 
@@ -192,7 +192,7 @@ object_t* hash_get_copy (const hash_t* const h, const object_t* const key, bool*
   valpair = assoc_get_ref(h->vals, (h->idxs) [kh], ok);
 
   if ( (NULL != ok) && (false == *ok) ) {
-    object_error(PTRMATH_BUG, __func__, true);
+    object_error(ER_PTRMATH_BUG, __func__, true);
     return object_new(t_F, NULL);
   }
 
@@ -227,7 +227,7 @@ object_t** hash_get_ref (const hash_t* const h, const object_t* const key, bool*
     if (NULL != ok) {
       *ok = false;
     }
-    object_error(KEYERROR, "", false);
+    object_error(ER_KEYERROR, "", false);
     return NULL;
   }
 
@@ -239,7 +239,7 @@ object_t** hash_get_ref (const hash_t* const h, const object_t* const key, bool*
   // get the object by copy (accepts NULL)
   valpair = assoc_get_ref(h->vals, (h->idxs) [kh], ok);
   if ( (NULL != ok) && (false == *ok) ) {
-    object_error(PTRMATH_BUG, __func__, true);
+    object_error(ER_PTRMATH_BUG, __func__, true);
     return NULL;
   }
 
@@ -456,7 +456,7 @@ bool hash_exists (const hash_t* const h, const object_t* const key) {
     resize idxs to be as small as possible
 
 */
-void hash_delete (hash_t* const h, const object_t* const key) {
+bool hash_delete (hash_t* const h, const object_t* const key) {
   pfn();
 
   object_failnull(h);
@@ -467,8 +467,8 @@ void hash_delete (hash_t* const h, const object_t* const key) {
   ssize_t keyidx = array_find(h->keys, key);
 
   if ( ! hash_exists(h, key) || ( -1 == keyidx ) ) {
-    object_error(KEYERROR, __func__, false);
-    return;
+    object_error(ER_KEYERROR, __func__, false);
+    return false;
   }
   // delete the key
   array_delete(h->keys, keyidx);
@@ -485,6 +485,7 @@ void hash_delete (hash_t* const h, const object_t* const key) {
   // resize to be as small as possible
   h->idxs = (typeof(h->idxs)) saferealloc(h->idxs, sizeof(size_t *) * lastval);
 
+  return true;
 }
 
 /*
