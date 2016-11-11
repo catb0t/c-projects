@@ -185,14 +185,17 @@ struct st_assoc_t {
 
   hash->keys = array{ 1, 2, 3 }
   hash->vals = assoc{
-    pair{ 'a' 5 }
-    pair{ 'b' 7 }
-    pair{ 'c' 9 }
+    pair{ 'a' . 5 }
+    pair{ 'b' . 7 }
+    pair{ 'c' . 9 }
   }
-  hash->idxs = array{ -1 -1 -1 -1 -1  0 -1  1 -1  2 }
-                      0  1  2  3  4  5  6  7  8  9
+  hash->idxs = assoc{
+    pair{ 5 . 0 }
+    pair{ 7 . 1 }
+    pair{ 9 . 2 }
+  }
 
-  to get an value by key, we:
+  to get a value by key, we:
     hash the key
     return ( vals [ idxs [ hash_obj(key) ] ] ) [0]
 
@@ -200,7 +203,6 @@ struct st_assoc_t {
     hash the key
     array_append( keys, key )
     array_append( vals, pair{ value, hash_obj(key) } )
-    resize idxs to vals->idx + 1
     idxs [ hash_obj(key) ] = vals->idx
 
   to delete a value by key, we:
@@ -208,21 +210,17 @@ struct st_assoc_t {
     array_delete( keys, array_find( keys, key ) )
     array_delete( vals, idxs [ hash_obj(key) ] )
     idxs[ hash_obj(key) ] = -1
-    resize idxs to be as small as possible
 
   to find a key or value by value, we:
     binary search the list of pairs of values
     use the hash value from the search to get the value in idxs
     hash each value in keys until we find the one matching
 
-
 */
 struct st_hash_t {
   array_t* keys;
   assoc_t* vals;
-
-  ssize_t* idxs;
-  size_t   idxs_len;
+  assoc_t* idxs;
 
   OBJ_UID_SLOT;
 };
@@ -271,7 +269,6 @@ extern bool _obj_failnull(const void* const o, const char* const file, const uin
 
 #define object_failnull(o) _obj_failnull((o), __FILE__, __LINE__, __func__)
 #define object_error(error, info, is_fatal) _object_error ((error), (info), (is_fatal), __FILE__, __LINE__, __func__)
-#define MAX_HASH_SIZE 10000
 
 #define define_min_func(type) \
   static inline __PURE_FUNC __CONST_FUNC type type ## _min (type a, type b) { \
@@ -371,13 +368,14 @@ void          pair_cons (pair_t* const p, const object_t* cdr);
 assoc_t*       assoc_new (const array_t* const a, const array_t* const b);
 assoc_t*      assoc_copy (const assoc_t* const a);
 char*          assoc_see (const assoc_t* const a);
-pair_t*   assoc_get_copy (const assoc_t* const a, const ssize_t idx, bool* ok);
-pair_t**   assoc_get_ref (const assoc_t* const a, const ssize_t idx, bool* ok);
+pair_t*   assoc_get_copy (const assoc_t* const a, const size_t idx, bool* ok);
+pair_t**   assoc_get_ref (const assoc_t* const a, const size_t idx, bool* ok);
 size_t      assoc_length (const assoc_t* const a);
-ssize_t       assoc_find (const assoc_t* const a, const object_t* const obj);
+ssize_t     assoc_schreg (const assoc_t* const a, const object_t* const obj, object_t** (* reg_get_func) (pair_t* const p));
+ssize_t assoc_schreg_1st (const assoc_t*  const a, const object_t* const obj, object_t** (* reg_get_func) (pair_t* const p));
 bool        assoc_equals (const assoc_t* const a, const assoc_t* const b);
 bool       assoc_isempty (const assoc_t* const a);
-bool        assoc_delete (assoc_t* const a, const ssize_t idx);
+bool        assoc_delete (assoc_t* const a, const size_t idx);
 void        assoc_append (assoc_t* const a, const pair_t* const o);
 void        assoc_insert (assoc_t* const a, const object_t* const o, const ssize_t idx);
 void         assoc_unzip (const assoc_t* const a, array_t** keys, array_t** vals);

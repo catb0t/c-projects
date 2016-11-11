@@ -20,12 +20,7 @@ hash_t* hash_new_skele (void) {
 
   hash->keys     = array_new(NULL, -1);
   hash->vals     = assoc_new(NULL, NULL);
-  hash->idxs     = (typeof(hash->idxs)) safemalloc( sizeof (ssize_t) * 1 );
-  hash->idxs_len = 1;
-
-  for (size_t i = 0; i < array_length(hash->keys); i++) {
-    hash->idxs[i] = -1;
-  }
+  hash->idxs     = assoc_new(NULL, NULL);
 
   report_ctor(hash);
 
@@ -62,31 +57,6 @@ hash_t* hash_new_boa (
   return hash;
 }
 
-static inline __CONST_FUNC __PURE_FUNC ssize_t findlast (
-  const ssize_t* const array,
-  const size_t         len,
-  const ssize_t        n,
-  const bool           invert_cmp
-) {
-  pfn();
-
-  for (size_t i = len; i != 0; i--) {
-
-    if ( invert_cmp ) {
-
-      if ( array[i] != n ) {
-        return un2signed(i);
-      }
-    } else {
-      if ( array[i] == n ) {
-        return un2signed(i);
-      }
-    }
-  }
-
-  return -1;
-}
-
 void  hash_destruct (hash_t* const hash) {
   pfn();
 
@@ -94,7 +64,7 @@ void  hash_destruct (hash_t* const hash) {
 
   array_destruct(hash->keys);
   assoc_destruct(hash->vals);
-  safefree(hash->idxs);
+  assoc_destruct(hash->idxs);
   safefree(hash);
 }
 
@@ -117,45 +87,45 @@ bool   hash_isempty (const hash_t* const h) {
 
   object_failnull(h);
 
-  return 0 == h->idxs_len;
+  return 0 == hash_length(h);
 }
 
 size_t hash_length (const hash_t* const h) {
-  return array_length(h->keys) + 1;
+  pfn();
+
+  object_failnull(h);
+
+  return assoc_length(h->idxs);
 }
 
 /*
   hash an object's string representation using Fowler Noll Vo 32-bits
-*/
-static inline __CONST_FUNC hashkey_t hash_obj2fnvkey (const object_t* const obj) {
-  pfn();
-
-  object_failnull(obj);
-
-
-  char* buf      = object_repr(obj);
-  hashkey_t hval = fnv_32a_str(buf, FNV1_32A_INIT);
-  safefree(buf);
-  //dbg_prn("hash of %s #%zu is %d", objtype_repr(obj->type), obj->uid, hval);
-
-  return hval;
-}
-
-/*
-  mod the hash returned by obj2fnvkey by MAX_HASH_SIZE.
 */
 hashkey_t hash_obj (const object_t* const obj) {
   pfn();
 
   object_failnull(obj);
 
-  hashkey_t hval = hash_obj2fnvkey(obj) % MAX_HASH_SIZE;
+  char* buf      = object_repr(obj);
+  hashkey_t hval = fnv_32a_str(buf, FNV1_32A_INIT);
+  safefree(buf);
 
   char* s = objtype_repr(obj->type);
   dbg_prn("hash of %s #%zu is %d", s, obj->uid, hval);
   safefree(s);
 
   return hval;
+}
+
+static inline object_t* hash_val_asobject (const object_t* const obj) {
+  pfn();
+
+  object_failnull(obj);
+
+  hashkey_t kh = hash_obj(obj);
+  object_t* khobj = object_new(t_realuint, &kh);
+
+  return khobj;
 }
 
 /*
@@ -182,14 +152,22 @@ object_t* hash_get_copy (const hash_t* const h, const object_t* const key, bool*
     return object_new(t_F, NULL);
   }
 
-  hashkey_t kh;
-  object_t *finalval;
+  object_t *finalval, *khobj;
   pair_t** valpair;
 
   // hash the key
-  kh      = hash_obj(key);
+  khobj = hash_val_asobject(key);
   // get the object by copy (accepts NULL)
-  valpair = assoc_get_ref(h->vals, (h->idxs) [kh], ok);
+  ssize_t proxy_idx = assoc_schreg_1st(h->idxs, khobj, &pair_car_ref);
+
+  if ( -1 == proxy_idx ) {
+    object_destruct(khobj);
+    return object_new(t_F, NULL);
+  }
+
+  valpair = assoc_get_ref(h->vals, signed2un(proxy_idx), ok);
+
+  object_destruct(khobj);
 
   if ( (NULL != ok) && (false == *ok) ) {
     object_error(ER_PTRMATH_BUG, __func__, true);
@@ -231,13 +209,23 @@ object_t** hash_get_ref (const hash_t* const h, const object_t* const key, bool*
     return NULL;
   }
 
-  hashkey_t kh;
+  object_t* khobj;
   pair_t **valpair;
 
   // hash the key
-  kh      = hash_obj(key);
+  khobj = hash_val_asobject(key);
   // get the object by copy (accepts NULL)
-  valpair = assoc_get_ref(h->vals, (h->idxs) [kh], ok);
+  ssize_t proxy_idx = assoc_schreg_1st(h->idxs, khobj, &pair_car_ref);
+
+  if ( -1 == proxy_idx ) {
+    object_destruct(khobj);
+    return NULL;
+  }
+
+  valpair = assoc_get_ref(h->vals, signed2un(proxy_idx), ok);
+
+  object_destruct(khobj);
+
   if ( (NULL != ok) && (false == *ok) ) {
     object_error(ER_PTRMATH_BUG, __func__, true);
     return NULL;
@@ -264,17 +252,16 @@ bool hash_change_at (hash_t* const h, const object_t* const obj, object_t* newva
 
   object_t** ref = hash_get_ref(h, obj, &ok);
 
-  if ( false == ok ) {
+  if ( ! ok ) {
     return false;
   }
 
-  if ( object_equals(*ref, newval) ) {
-    return true;
+  if ( ! object_equals(*ref, newval) ) {
+    object_destruct(*ref);
+    *ref = object_copy(newval);
   }
 
-  *ref = newval;
-
-  return ok;
+  return true;
 }
 
 /*
@@ -295,26 +282,23 @@ bool hash_change_key (hash_t* const h, const object_t* const oldkey, const objec
 
   bool ok = true;
 
-  object_t
-    *val = hash_get_copy(h, oldkey, &ok);
+  object_t* val = hash_get_copy(h, oldkey, &ok); // 1
 
-  if ( false == ok ) {
+  if ( ! ok ) {
     object_destruct(val);
     return false;
   }
 
   ok = hash_add(h, newkey, val);
 
-  if ( false == ok ) {
-    object_destruct(val);
-    return false;
-  }
-
-  hash_delete(h, oldkey);
-
   object_destruct(val);
 
-  return ok;
+  if ( ok ) {
+    hash_delete(h, oldkey);
+    return true;
+  }
+
+  return false;
 }
 
 /*
@@ -391,26 +375,18 @@ bool hash_add (hash_t* h, const object_t* const key, const object_t* const val) 
   // add the key to the list
   array_append(h->keys, key);
 
-  // hash the key
-  const hashkey_t kh = hash_obj(key);
-  const size_t   ikh = (size_t) kh;
-
   // objectify the key hash
-  object_t* khobj = object_new(t_realuint, &ikh); // 1
+  object_t *khobj = hash_val_asobject(key), // 1
+           *newidx;
 
   // add the value and keyhash obj to values
   assoc_append_boa(h->vals, val, khobj);
 
-  object_destruct(khobj); // ~1
+  newidx = object_new(t_realint, &( h->vals->idx )); // 2
 
-  // resize the idxs array by the needed amount
-  h->idxs = (typeof(h->idxs)) saferealloc(h->idxs, sizeof (ssize_t) * (kh + 1));
+  assoc_append_boa(h->idxs, khobj, newidx);
 
-  // make the length represent the new length
-  h->idxs_len = kh > h->idxs_len ? kh + 1 : h->idxs_len ;
-
-  // assign the index of the pair in values to idxs
-  (h->idxs) [kh] = h->vals->idx;
+  object_dtor_args(2, newidx, khobj); // ~1, ~2
 
   // looks like everything went ok
   // 1 alloc, 1 free
@@ -436,13 +412,13 @@ bool hash_exists (const hash_t* const h, const object_t* const key) {
 
   object_failnull(h);
 
-  hashkey_t kh = hash_obj(key);
+  object_t* khobj = hash_val_asobject(key);
 
-  if (kh > h->idxs_len) {
-    return false;
-  }
+  bool found = -1 != assoc_schreg_1st(h->idxs, khobj, &pair_car_ref);
 
-  return -1 != h->idxs[kh];
+  object_destruct(khobj);
+
+  return found;
 }
 
 /*
@@ -462,28 +438,30 @@ bool hash_delete (hash_t* const h, const object_t* const key) {
   object_failnull(h);
 
   // hash the key
-  hashkey_t kh = hash_obj(key);
+  object_t* khobj = hash_val_asobject(key);
 
-  ssize_t keyidx = array_find(h->keys, key);
+  ssize_t keyidx = array_find(h->keys, key),
+          proxy_idx = assoc_schreg_1st(h->idxs, khobj, &pair_car_ref);
 
-  if ( ! hash_exists(h, key) || ( -1 == keyidx ) ) {
+  if ( ! hash_exists(h, key) || ( -1 == keyidx ) || ( -1 == proxy_idx ) ) {
     object_error(ER_KEYERROR, __func__, false);
     return false;
   }
+
   // delete the key
   array_delete(h->keys, keyidx);
 
   // delete the value
-  assoc_delete(h->vals, h->idxs[kh]);
+  assoc_delete(h->vals,
+    (size_t) *object_getval(
+      *pair_cdr_ref(
+        *assoc_get_ref(h->idxs, signed2un(proxy_idx), NULL)
+      )
+    )
+  );
 
   // invalidate its position in the index list
-  (h->idxs) [kh] = -1;
-
-  // find the last occurence of something that isn't -1
-  size_t lastval = signed2un( findlast(h->idxs, h->idxs_len, -1, true) );
-
-  // resize to be as small as possible
-  h->idxs = (typeof(h->idxs)) saferealloc(h->idxs, sizeof(size_t *) * lastval);
+  assoc_delete(h->idxs, signed2un(proxy_idx));
 
   return true;
 }
@@ -522,7 +500,7 @@ char* hash_see (const hash_t* const h) {
 void hash_inspect (const hash_t* const h) {
   pfn();
 
-  printf("hash uid:%zu idxs_len:%zu {\n", h->uid, h->idxs_len);
+  printf("hash uid:%zu idxs_len:%zu {\n", h->uid, assoc_length(h->idxs));
 
   printf("\tkeys: %zd\n\t", h->keys->idx + 1);
   char* s = array_see(h->keys);
@@ -532,7 +510,7 @@ void hash_inspect (const hash_t* const h) {
   s = assoc_see(h->vals);
   dealloc_printf( s );
 
-  printf("\n\tidxs: %zu\n", h->idxs_len);
+  printf("\n\tidxs: %zu\n", assoc_length(h->idxs));
 
   puts("\n}");
 
@@ -547,9 +525,8 @@ bool hash_equals (const hash_t* const a, const hash_t* const b) {
     return true;
   }
 
-  if ( a->idxs_len != b->idxs_len ) {
-    return false;
-  }
-
-  return array_equals(a->keys, b->keys) && assoc_equals(a->vals, b->vals);
+  return
+    array_equals(a->keys, b->keys)
+    && assoc_equals(a->vals, b->vals)
+    && assoc_equals(a->idxs, b->idxs);
 }

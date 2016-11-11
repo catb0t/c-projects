@@ -42,7 +42,7 @@ Test(empty, isempty) {
   array_destruct(a);
 }
 
-Test(empty, appendworks) {
+Test(empty, append) {
   a = array_new(NULL, -1);
 
   object_t* obj = object_new(t_realchar, (const void* const ) "const void* const val");
@@ -67,7 +67,7 @@ Test(empty, deletefails) {
   array_destruct(a);
 }
 
-Test(empty, clearworks) {
+Test(empty, clear) {
   a = array_new(NULL, -1);
 
   s = array_see(a);
@@ -127,7 +127,7 @@ Test(nonempty, fromcliteralssize) {
   safefree(s), array_destruct(ra);
 }
 
-Test(nonempty, copyworks) {
+Test(nonempty, copy) {
 
   a = array_new_fromcptr(
     (const void* const * const) (const char* const * const) literal,
@@ -183,7 +183,7 @@ Test(nonempty, delete) {
   safefree(s), array_destruct(a);
 }
 
-Test(nonempty, clearworks) {
+Test(nonempty, clear) {
   a = array_new_from_ssize_t_lit(anums, (sizeof anums) / sizeof (ssize_t), t_realint);
 
   array_clear(a);
@@ -193,7 +193,7 @@ Test(nonempty, clearworks) {
   safefree(s), array_destruct(a);
 }
 
-Test(nonempty, insertworks) {
+Test(nonempty, insert) {
   a = array_new_from_ssize_t_lit(anums, (sizeof anums) / sizeof (ssize_t), t_realint);
 
   size_t g = 99999;
@@ -210,3 +210,4 @@ Test(nonempty, insertworks) {
 
   safefree(s), array_destruct(a);
 }
+

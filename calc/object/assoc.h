@@ -55,7 +55,7 @@ void assoc_destruct (assoc_t* const assoc) {
   report_dtor(assoc);
 
   for (size_t i = 0; i < assoc_length(assoc); i++) {
-    pair_destruct( *assoc_get_ref(assoc, un2signed(i), NULL) );
+    pair_destruct( *assoc_get_ref(assoc, i, NULL) );
   }
 
   safefree(assoc->data), safefree(assoc);
@@ -72,7 +72,7 @@ void assoc_unzip (const assoc_t* a, array_t** car, array_t** cdr) {
   *car = array_new(NULL, -1),
   *cdr = array_new(NULL, -1);
 
-  for (ssize_t i = 0; i < a->idx; i++) {
+  for (size_t i = 0; i < signed2un(a->idx); i++) {
     pair_t** p = assoc_get_ref(a, i, NULL);
     array_append(*car, *pair_car_ref( *p ) ),
     array_append(*cdr, *pair_cdr_ref( *p ) );
@@ -89,21 +89,18 @@ size_t assoc_length (const assoc_t* const a) {
 
   returns null and sets ok to false on error.
 */
-pair_t** assoc_get_ref (const assoc_t* const a, const ssize_t idx, bool* ok) {
+pair_t** assoc_get_ref (const assoc_t* const a, const size_t idx, bool* ok) {
   pfn();
 
   object_failnull(a);
 
-  if ( (-1 == idx) || (idx > a->idx) ) {
+  if (un2signed(idx) > a->idx) {
 
     if (NULL != ok) {
       *ok = false;
     }
 
-    if ( (-1 == idx) || (idx > a->idx) ) {
-      object_error(ER_INDEXERROR, __func__, false);
-    }
-
+    object_error(ER_INDEXERROR, __func__, false);
     return NULL;
   }
 
@@ -113,7 +110,7 @@ pair_t** assoc_get_ref (const assoc_t* const a, const ssize_t idx, bool* ok) {
 /*
   copy a pair from an assoc, returning a new one with the same data
 */
-pair_t* assoc_get_copy (const assoc_t* const a, const ssize_t idx, bool* ok) {
+pair_t* assoc_get_copy (const assoc_t* const a, const size_t idx, bool* ok) {
   pfn();
 
   return pair_copy( *assoc_get_ref(a, idx, ok) );
@@ -164,7 +161,7 @@ void assoc_resize (assoc_t* const a, const size_t new_len) {
 
   if (new_len < assoc_length(a)) {
     for (size_t i = new_len + 1; i < assoc_length(a); i++) {
-      pair_destruct( *assoc_get_ref(a, un2signed(i), NULL) );
+      pair_destruct( *assoc_get_ref(a, i, NULL) );
     }
   }
 
@@ -178,12 +175,12 @@ void assoc_resize (assoc_t* const a, const size_t new_len) {
 /*
   delete a pair from an assoc by index
 */
-bool assoc_delete (assoc_t* const a, const ssize_t idx) {
+bool assoc_delete (assoc_t* const a, const size_t idx) {
   pfn();
 
   if ( NULL == a ) {
     return false;
-  } else if ( (idx > a->idx) || (-1 == idx) ) {
+  } else if ( idx > signed2un(a->idx) ) {
     object_error(ER_INDEXERROR, __func__, false);
     return false;
   }
@@ -191,9 +188,9 @@ bool assoc_delete (assoc_t* const a, const ssize_t idx) {
   pair_destruct( *assoc_get_ref(a, idx, NULL));
 
   // if idx and a->idx are equal (that is, if it's the last element) we can just resize
-  if ( (idx != a->idx) ) {
+  if ( idx != signed2un(a->idx) ) {
     printf("not equal\n" );
-    for (ssize_t i = idx; i < (a->idx); i++) {
+    for (size_t i = idx; i < signed2un(a->idx); i++) {
       // change pointer (?)
       (a->data) [i] = (a->data) [i + 1];
     }
@@ -227,7 +224,7 @@ char* assoc_see (const assoc_t* const a) {
 
   for (size_t i = 0; i < assoc_length(a); i++) {
     // 'tis but a reference
-    pair_t** thisp = assoc_get_ref(a, un2signed(i), NULL);
+    pair_t** thisp  = assoc_get_ref(a, i, NULL);
     char*   strthis = pair_see(*thisp);
     size_t  tlen    = safestrnlen(strthis) + 2;
 
@@ -260,7 +257,7 @@ void assoc_inspect (const assoc_t* const a) {
   printf("assoc uid:%zu idx:%zd sz:%zu {\n", a->uid, a->idx, sizeof a);
 
   for (size_t i = 0; i < assoc_length(a); i++) {
-    char* s = pair_see( *assoc_get_ref(a, un2signed(i), NULL) );
+    char* s = pair_see( *assoc_get_ref(a, i, NULL) );
     printf("\t%zu:%s\n", i, s);
     safefree(s);
   }
@@ -282,7 +279,7 @@ bool assoc_equals (const assoc_t* const a, const assoc_t* const b) {
     return false;
   }
 
-  for (ssize_t i = 0; i < a->idx; i++) {
+  for (size_t i = 0; i < signed2un(a->idx); i++) {
 
     bool same = pair_equals(
       *assoc_get_ref(a, i, NULL),
@@ -303,4 +300,25 @@ bool assoc_isempty (const assoc_t* const a) {
   object_failnull(a);
 
   return -1 == a->idx || NULL == a->data;
+}
+
+ssize_t assoc_schreg_1st (
+  const assoc_t*  const a,
+  const object_t* const obj,
+  object_t** (* reg_get_func) (pair_t* const p)
+) {
+
+  pfn();
+
+  object_failnull(obj);
+
+  size_t len = assoc_length(a);
+
+  for (size_t i = 0; i < len; i++) {
+    if ( object_equals( obj, *reg_get_func( *assoc_get_ref(a, i, NULL) ) ) ) {
+      return un2signed(i);
+    }
+  }
+
+  return -1;
 }
