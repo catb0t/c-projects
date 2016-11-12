@@ -63,6 +63,20 @@ void test (void) {
 
   safefree(s), array_destruct(a);
 
+  a = array_new(NULL, -1), b = array_copy(a);
+
+  array_concat(&a, b);
+
+  s = array_see(a);
+
+  safefree(s), array_destruct_args(2, a, b);
+
+  a = array_new(NULL, -1), b = array_copy(a);
+
+  ok = array_equals(a, b);
+
+  array_destruct_args(2, a, b);
+
   size_t objslen = 2;
   object_t** objs = safemalloc( sizeof (object_t*) * objslen );
   ssize_t i = -6, j = 9;
@@ -139,4 +153,27 @@ void test (void) {
   s = array_see(a);
 
   safefree(s), array_destruct(a);
+
+  a = array_new_from_ssize_t_lit(anums, (sizeof anums) / sizeof (ssize_t), t_realint),
+  b = array_new_from_ssize_t_lit(bnums, (sizeof bnums) / sizeof (ssize_t), t_realint);
+
+  array_concat(&a, b);
+
+  s = array_see(a);
+  dbg_prn("concat2: %s", s);
+
+  safefree(s), array_destruct_args(2, a, b);
+
+  a = array_new_from_ssize_t_lit(anums, (sizeof anums) / sizeof (ssize_t), t_realint),
+  b = array_copy(a);
+
+  ok = array_equals(a, b);
+
+  array_destruct(b);
+
+  b = array_new_from_ssize_t_lit(bnums, (sizeof bnums) / sizeof (ssize_t), t_realint);
+
+  ok = array_equals(a, b);
+
+  array_destruct_args(2, a, b);
 }

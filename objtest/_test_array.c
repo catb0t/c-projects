@@ -82,6 +82,27 @@ Test(empty, clear) {
   safefree(s), array_destruct(a);
 }
 
+Test(empty, concat) {
+  a = array_new(NULL, -1), b = array_copy(a);
+
+  array_concat(&a, b);
+
+  s = array_see(a);
+  cr_assert_str_eq(s, "{ }");
+
+  safefree(s), array_destruct_args(2, a, b);
+}
+
+Test(empty, equals) {
+  a = array_new(NULL, -1), b = array_copy(a);
+
+  ok = array_equals(a, b);
+
+  cr_assert( ok );
+
+  array_destruct_args(2, a, b);
+}
+
 // NONEMPTY
 
 Test(nonempty, fromboa) {
@@ -211,3 +232,34 @@ Test(nonempty, insert) {
   safefree(s), array_destruct(a);
 }
 
+Test(nonempty, concat2) {
+  a = array_new_from_ssize_t_lit(anums, (sizeof anums) / sizeof (ssize_t), t_realint),
+  b = array_new_from_ssize_t_lit(bnums, (sizeof bnums) / sizeof (ssize_t), t_realint);
+
+  array_concat(&a, b);
+
+  s = array_see(a);
+  dbg_prn("concat is: %s", s);
+  cr_assert_str_eq(s, "{ 1 -3 5 -7 9 -11 -2 4 -6 8 -10 12 }");
+
+  safefree(s), array_destruct_args(2, a, b);
+}
+
+Test(nonempty, equals) {
+  a = array_new_from_ssize_t_lit(anums, (sizeof anums) / sizeof (ssize_t), t_realint),
+  b = array_copy(a);
+
+  ok = array_equals(a, b);
+
+  cr_assert( ok );
+
+  array_destruct(b);
+
+  b = array_new_from_ssize_t_lit(bnums, (sizeof bnums) / sizeof (ssize_t), t_realint);
+
+  ok = array_equals(a, b);
+
+  cr_assert( ! ok );
+
+  array_destruct_args(2, a, b);
+}
