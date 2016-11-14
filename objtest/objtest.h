@@ -1,26 +1,6 @@
-#include "../calc/object/object.h"
+#include "testcommon.h"
 
 void test (void);
-
-define_array_new_fromctype(ssize_t);
-
-static const ssize_t anums[] = {
-  1, -3, 5, -7, 9, -11
-};
-
-static const ssize_t bnums[] = {
-  -2, 4, -6, 8, -10, 12
-};
-
-static const char* const literal[] = {
-  "abc", "def", "ghi", "jkl", "mno", "pqr", "stu", "vwx", "yz"
-};
-
-array_t *ra, *rb, *b, *a;
-
-char *s, *s2;
-
-bool ok;
 
 void test (void) {
 
@@ -78,7 +58,7 @@ void test (void) {
   array_destruct_args(2, a, b);
 
   size_t objslen = 2;
-  object_t** objs = safemalloc( sizeof (object_t*) * objslen );
+  object_t** objs = (typeof(objs)) safemalloc( sizeof (object_t*) * objslen );
   ssize_t i = -6, j = 9;
   objs[0] = object_new(t_realint, &i);
   objs[1] = object_new(t_realint, &j);
@@ -176,4 +156,39 @@ void test (void) {
   ok = array_equals(a, b);
 
   array_destruct_args(2, a, b);
+
+  c = assoc_new(NULL, NULL);
+
+  s = assoc_see(c);
+  dbg_prn("empty: %s", s);
+
+  safefree(s), assoc_destruct(c);
+
+  c = assoc_new(NULL, NULL);
+
+  assoc_unzip(c, &a, &b);
+
+  s = array_see(a), s2 = array_see(b);
+
+  safefree(s), safefree(s2), array_destruct_args(2, a, b),
+  assoc_destruct(c);
+
+  a = array_new_from_ssize_t_lit(anums, (sizeof anums / sizeof (ssize_t)), t_realint),
+  b = array_new_from_ssize_t_lit(bnums, (sizeof bnums / sizeof (ssize_t)), t_realint);
+
+  c = assoc_new(a, b);
+
+  s = array_see(a), s2 = array_see(b);
+
+  dbg_prn("a: %s\nb: %s\n", s, s2);
+
+  safefree(s), safefree(s2);
+
+  s = assoc_see(c);
+
+  dbg_prn("boa ab: %s", s);
+
+  safefree(s), array_destruct_args(2, a, b),
+  assoc_destruct(c);
+
 }

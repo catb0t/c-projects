@@ -88,9 +88,9 @@
 #endif
 
 #ifdef DEBUG
-  #define dbg_prn(...) printf(__VA_ARGS__)
+  #define dbg_prn(fmt, ...) printf("|\033[35;1mDEBUG\033[0m|" fmt, __VA_ARGS__)
 
-  #define _printfunc(file, line, func) printf("\n\033[30;1m%s#%d:\033[36;1m%s\033[0m\n", \
+  #define _printfunc(file, line, func) printf("\n|\033[36;1mCALLF\033[0m|\033[30;1m%s#%d:\033[36;1m%s\033[0m\n", \
     file, line, func)
   #define pfn() _printfunc(__FILE__, __LINE__, __func__)
 #else
@@ -226,7 +226,7 @@ void* _safemalloc (const size_t len, const uint64_t lineno, const char* const fn
 void* _saferealloc (void* ptr, const size_t len, uint64_t lineno, const char* const fname) {
   pfn();
 
-  dbg_prn("reallocing %zu byte%s\n", len, len != 1 ? "s" : "");
+  //dbg_prn("reallocing %zu byte%s\n", len, len != 1 ? "s" : "");
   (void) fname, (void) lineno;
   void* mem = realloc(ptr, len);
   if (ENOMEM == errno) {

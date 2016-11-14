@@ -319,9 +319,12 @@ char* objtype_repr (const objtype_t t) {
 void _object_error (objerror_t errt, const char* const info, const bool fatal, const char* const file, const uint64_t line, const char* const func) {
   pfn();
 
+// target may not have file descriptors at all
+#ifndef DONT_HAVE_PRINTSTREAMS
+
   static const char* const errmsgs[] = {
     [ER_NOT_A_TYPE]  = "NUM_OBJTYPES isn't a real type, dummy. Don't do that.\n"
-                    "Have you considered trying to match wits with a rutabaga?",
+                       "Have you considered trying to match wits with a rutabaga?",
     [ER_KEYERROR]    = "no such key",
     [ER_INDEXERROR]  = "index out of bounds",
     [ER_PTRMATH_BUG] = "pointer math error (invalid read or write) -- probably a bug",
@@ -333,6 +336,16 @@ void _object_error (objerror_t errt, const char* const info, const bool fatal, c
     "too many or too few error strings in object_error"
   );
 
+  // for embedded systems (non-C89) where stderr / stdout do not exist
+  if (NULL == stderr) {
+    // i give up printing
+    if (NULL == stdout) {
+      return;
+    }
+    // i think this is correct
+    freopen("/dev/stdout", "w", stderr);
+  }
+
   fprintf(stderr, "\033[31m \b%s:%" PRIu64 ": %s: %s: %s\033[0m\n", file, line, func, info, errmsgs[errt]);
 
   if ( fatal ) {
@@ -343,6 +356,9 @@ void _object_error (objerror_t errt, const char* const info, const bool fatal, c
     );
     abort();
   }
+
+#endif
+
 }
 
 /*
@@ -433,6 +449,7 @@ bool object_equals (const object_t* const a, const object_t* const b) {
 
   // but always compares false with other things
   } else if (
+        // 0 == t_F
        ( !a->type && b->type )
     || ( !b->type && a->type )
   ) {
@@ -484,11 +501,11 @@ bool object_equals (const object_t* const a, const object_t* const b) {
     case t_T:       same = true; break;
 
     case t_fixwid:  same =     fixwid_eq(a->fwi, b->fwi); break;
-    case t_number:  same =     number_eq(a->num, b->num);   break;
-    case t_array:   same =  array_equals(a->ary, b->ary);   break;
-    case t_assoc:   same =  assoc_equals(a->asc, b->asc);   break;
-    case t_hash:    same =   hash_equals(a->hsh, b->hsh);   break;
-    case t_pair:    same =   pair_equals(a->cel, b->cel);   break;
+    case t_number:  same =     number_eq(a->num, b->num); break;
+    case t_array:   same =  array_equals(a->ary, b->ary); break;
+    case t_assoc:   same =  assoc_equals(a->asc, b->asc); break;
+    case t_hash:    same =   hash_equals(a->hsh, b->hsh); break;
+    case t_pair:    same =   pair_equals(a->cel, b->cel); break;
 
     case t_func: {
       char *fa = object_repr(a),

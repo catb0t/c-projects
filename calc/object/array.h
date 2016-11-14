@@ -242,7 +242,7 @@ bool array_insert (array_t* const a, const object_t* const o, const ssize_t idx)
 
   if ( (-1 == idx) || (NULL == a->data) || (signed2un(idx) > array_length(a) ) ) {
     char er[200];
-    snprintf(er, 199, "insert to index %zd of 0, %zd", idx, array_length(a));
+    snprintf(er, 199, "insert to index %zd of 0, %zu", idx, array_length(a));
     object_error(ER_INDEXERROR, er, false);
     return false;
   }

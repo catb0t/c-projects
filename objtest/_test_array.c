@@ -1,27 +1,8 @@
 #include <criterion/criterion.h>
 
 //#define NODEBUG
-#include "../calc/object/object.h"
 
-define_array_new_fromctype(ssize_t);
-
-array_t *a, *b, *ra, *rb;
-
-char *s, *s2;
-
-bool ok;
-
-static const ssize_t anums[] = {
-  1, -3, 5, -7, 9, -11
-};
-
-static const ssize_t bnums[] = {
-  -2, 4, -6, 8, -10, 12
-};
-
-static const char* const literal[] = {
-  "abc", "def", "ghi", "jkl", "mno", "pqr", "stu", "vwx", "yz"
-};
+#include "testcommon.h"
 
 Test(empty, emptyfromNULL) {
   a = array_new(NULL, -1);
@@ -108,7 +89,7 @@ Test(empty, equals) {
 Test(nonempty, fromboa) {
 
   size_t objslen = 2;
-  object_t** objs = safemalloc( sizeof (object_t*) * objslen );
+  object_t** objs = (typeof(objs)) safemalloc( sizeof (object_t*) * objslen );
   ssize_t i = -6, j = 9;
   objs[0] = object_new(t_realint, &i);
   objs[1] = object_new(t_realint, &j);

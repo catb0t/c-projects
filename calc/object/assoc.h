@@ -18,19 +18,16 @@ assoc_t* assoc_new (const array_t* const a, const array_t* const b) {
   if ( (NULL != a) && (NULL != b) ) {
 
     ssize_t idx = un2signed( size_t_min(array_length(a), array_length(b)) );
-    assoc->idx  = idx;
-    assoc->data = (typeof(assoc->data)) safemalloc( sizeof (pair_t*) * (signed2un(idx) + 1) );
+
+    assoc->data = (typeof(assoc->data)) safemalloc( sizeof (pair_t*) * signed2un(idx + 1) );
 
     for (ssize_t i = 0; i < idx; i++) {
       object_t
         **car = array_get_ref(a, i, NULL),
         **cdr = array_get_ref(b, i, NULL);
 
-      pair_t* p = pair_new(*car, *cdr);
-      assoc_append(assoc, p);
-      pair_destruct(p);
+      assoc_append_boa(assoc, *car, *cdr);
     }
-
   }
 
   report_ctor(assoc);
@@ -44,6 +41,8 @@ assoc_t* assoc_new (const array_t* const a, const array_t* const b) {
 assoc_t* assoc_copy (const assoc_t* const asc) {
   pfn();
 
+  object_failnull(asc);
+
   array_t *a, *b;
   assoc_unzip(asc, &a, &b);
   return assoc_new(a, b);
@@ -52,13 +51,19 @@ assoc_t* assoc_copy (const assoc_t* const asc) {
 void assoc_destruct (assoc_t* const assoc) {
   pfn();
 
+  object_failnull(assoc);
+
   report_dtor(assoc);
 
-  for (size_t i = 0; i < assoc_length(assoc); i++) {
-    pair_destruct( *assoc_get_ref(assoc, i, NULL) );
+  if (NULL != assoc->data) {
+    for (size_t i = 0; i < assoc_length(assoc); i++) {
+      pair_destruct( *assoc_get_ref(assoc, i, NULL) );
+    }
+
+    safefree(assoc->data);
   }
 
-  safefree(assoc->data), safefree(assoc);
+  safefree(assoc);
 }
 
 /*
@@ -178,10 +183,17 @@ void assoc_resize (assoc_t* const a, const size_t new_len) {
 bool assoc_delete (assoc_t* const a, const size_t idx) {
   pfn();
 
-  if ( NULL == a ) {
-    return false;
-  } else if ( idx > signed2un(a->idx) ) {
-    object_error(ER_INDEXERROR, __func__, false);
+  object_failnull(a);
+
+  if ( idx > signed2un(a->idx) ) {
+    char buf[200];
+    snprintf(
+      buf,
+      199,
+      "attempt to delete index %zu but the highest is %zd%s",
+      idx, a->idx, assoc_length(a) ? "" : "(delete from empty assoc)"
+    );
+    object_error(ER_INDEXERROR, buf, false);
     return false;
   }
 
@@ -189,7 +201,6 @@ bool assoc_delete (assoc_t* const a, const size_t idx) {
 
   // if idx and a->idx are equal (that is, if it's the last element) we can just resize
   if ( idx != signed2un(a->idx) ) {
-    printf("not equal\n" );
     for (size_t i = idx; i < signed2un(a->idx); i++) {
       // change pointer (?)
       (a->data) [i] = (a->data) [i + 1];
@@ -268,14 +279,11 @@ void assoc_inspect (const assoc_t* const a) {
 bool assoc_equals (const assoc_t* const a, const assoc_t* const b) {
   pfn();
 
-  if ( (NULL == a) || (NULL == b) ) {
-    if ((!a) && (!b)) {
-      return true;
-    }
-    return false;
-  }
+  object_failnull(a), object_failnull(b);
 
-  if (a->idx != b->idx) {
+
+
+  if (assoc_length(a) != assoc_length(b)) {
     return false;
   }
 
