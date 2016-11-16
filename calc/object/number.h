@@ -27,6 +27,8 @@ void number_destruct (number_t* const number) {
   safefree(number);
 }
 
+define_objtype_dtor_args(number);
+
 char* number_see (const number_t* const num) {
   pfn();
 

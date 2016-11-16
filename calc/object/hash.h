@@ -68,6 +68,8 @@ void  hash_destruct (hash_t* const hash) {
   safefree(hash);
 }
 
+define_objtype_dtor_args(hash);
+
 hash_t*   hash_copy (const hash_t* const h) {
   pfn();
 

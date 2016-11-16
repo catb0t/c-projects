@@ -265,7 +265,7 @@ _Static_assert(
 );
 
 extern void _object_error (objerror_t error, const char* const info, const bool fatal, const char* const file, const uint64_t line, const char* const func);
-extern bool _obj_failnull(const void* const o, const char* const file, const uint64_t line, const char* const func);
+extern bool _obj_failnull (const void* const o, const char* const file, const uint64_t line, const char* const func);
 
 #define object_failnull(o) _obj_failnull((o), __FILE__, __LINE__, __func__)
 #define object_error(error, info, is_fatal) _object_error ((error), (info), (is_fatal), __FILE__, __LINE__, __func__)
@@ -279,6 +279,20 @@ extern bool _obj_failnull(const void* const o, const char* const file, const uin
   int NOTHING_MIN ## type
 
 define_min_func(size_t);
+
+#define define_objtype_dtor_args(type) \
+  void type ## _destruct_args (const size_t argc, ...) { \
+    pfn(); \
+    va_list vl; va_start(vl, argc); \
+    for (size_t i = 0; i < argc; i++) { \
+      type ## _t ** v = (typeof(v)) safemalloc( sizeof ( type ## _t *) ); \
+      *v = va_arg(vl, type ## _t*); \
+      type ## _destruct( *v ); \
+      safefree(v); \
+    } \
+    va_end(vl); \
+  } \
+  int _IDONOTEXIST_3 ## type
 
 // provided by object.h
 object_t*  object_new (const objtype_t valtype, const void* const val);
@@ -328,6 +342,7 @@ size_t  string_length (const string_t* const s);
 bool   string_isempty (const string_t* const s);
 void  string_destruct (string_t* const s);
 char*      string_see (const string_t* const s);
+void string_destruct_args (const size_t argc, ...);
 
 // provided by hash.h
 hash_t*  hash_new_skele (void);
@@ -348,6 +363,7 @@ bool     hash_keyexists (const hash_t* const h, const object_t* const key);
 bool        hash_exists (const hash_t* const h, const object_t* const key);
 bool        hash_delete (hash_t* const h, const object_t* const key);
 void      hash_destruct (hash_t* const h);
+void hash_destruct_args (const size_t argc, ...);
 void     hash_recompute (hash_t** const h);
 void       hash_inspect (const hash_t* const h);
 void         hash_unzip (const hash_t* const h, array_t** keys, array_t** vals);
@@ -362,6 +378,7 @@ object_t** pair_car_ref (pair_t* const p);
 object_t** pair_cdr_ref (pair_t* const p);
 bool        pair_equals (const pair_t* const a, const pair_t* const b);
 void      pair_destruct (pair_t* const p);
+void pair_destruct_args (const size_t argc, ...);
 void          pair_cons (pair_t* const p, const object_t* cdr);
 
 // provided by assoc.h
@@ -386,6 +403,7 @@ void           assoc_cat (assoc_t** const a, const assoc_t* const b);
 void          assoc_vcat (assoc_t** const a, const size_t argc, ...);
 void       assoc_inspect (const assoc_t* const a);
 void      assoc_destruct (assoc_t* const a);
+void assoc_destruct_args (const size_t argc, ...);
 void         assoc_clear (assoc_t* const a);
 
 // provided by number.h
@@ -396,12 +414,14 @@ bool        number_eq (const number_t* const a, const number_t* const b);
 bool        number_gt (const number_t* const a, const number_t* const b);
 bool        number_lt (const number_t* const a, const number_t* const b);
 void  number_destruct (number_t* const n);
+void number_destruct_args (const size_t argc, ...);
 
 // provided by fixdwid.h
 fixwid_t*  fixwid_new (const ssize_t v, const size_t u, const bool sign);
 fixwid_t* fixwid_copy (const fixwid_t* const n);
 char*      fixwid_see (const fixwid_t* const n);
 void  fixwid_destruct (fixwid_t* const n);
+void fixwid_destruct_args (const size_t argc, ...);
 bool        fixwid_eq (const fixwid_t* const a, const fixwid_t* const b);
 bool        fixwid_gt (const fixwid_t* const a, const fixwid_t* const b);
 bool        fixwid_lt (const fixwid_t* const a, const fixwid_t* const b);
@@ -413,3 +433,4 @@ char*         func_see (const func_t* const f);
 void     func_destruct (func_t* const f);
 void      func_inspect (const func_t* const f);
 bool       func_equals (const func_t* const f);
+void func_destruct_args (const size_t argc, ...);

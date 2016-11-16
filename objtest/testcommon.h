@@ -6,7 +6,9 @@ array_t *a, *b, *ra, *rb;
 
 assoc_t *c, *d;
 
-char *s, *s2;
+object_t *oa, *ob;
+
+char *s, *s2, *s3, *s4;
 
 bool ok;
 

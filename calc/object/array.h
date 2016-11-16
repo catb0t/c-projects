@@ -100,24 +100,7 @@ void array_destruct (array_t* const array) {
   safefree(array);
 }
 
-void array_destruct_args (const size_t argc, ...) {
-  pfn();
-
-  va_list vl;
-  va_start(vl, argc);
-
-  for (size_t i = 0; i < argc; i++) {
-    // hopefully thisp just takes the address
-    array_t** v = (typeof(v)) safemalloc( sizeof (array_t *) );
-    *v = va_arg(vl, array_t*);
-
-    // 0 allocs, 1 free, but not double free
-    array_destruct( *v );
-    safefree(v);
-  }
-
-  va_end(vl);
-}
+define_objtype_dtor_args(array);
 
 /*
   tests whether an array contains no elements (its index is -1),

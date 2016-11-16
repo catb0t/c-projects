@@ -29,6 +29,8 @@ void  fixwid_destruct (fixwid_t* const fixwid) {
   safefree(fixwid);
 }
 
+define_objtype_dtor_args(fixwid);
+
 fixwid_t* fixwid_copy (const fixwid_t* const n) {
   pfn();
 

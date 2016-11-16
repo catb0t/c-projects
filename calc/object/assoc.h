@@ -66,6 +66,8 @@ void assoc_destruct (assoc_t* const assoc) {
   safefree(assoc);
 }
 
+define_objtype_dtor_args(assoc);
+
 /*
   assoc_unzip: write the cars and cdrs of each pair to the respective pointers
 
@@ -77,7 +79,7 @@ void assoc_unzip (const assoc_t* a, array_t** car, array_t** cdr) {
   *car = array_new(NULL, -1),
   *cdr = array_new(NULL, -1);
 
-  for (size_t i = 0; i < signed2un(a->idx); i++) {
+  for (size_t i = 0; i < assoc_length(a); i++) {
     pair_t** p = assoc_get_ref(a, i, NULL);
     array_append(*car, *pair_car_ref( *p ) ),
     array_append(*cdr, *pair_cdr_ref( *p ) );

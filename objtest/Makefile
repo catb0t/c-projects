@@ -6,7 +6,7 @@ DEBUG_OPTS := -Wall -Wextra -Wfloat-equal -Winline -Wundef -Werror -fverbose-asm
 
 MEM_OPTS := -fstack-protector -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer
 
-OPTS := -lm ../fnv-hash/libfnv.a
+OPTS := -lm ../fnv-hash/libfnv.a -g
 ifeq ($(CCPLUS), 1)
 	OPTS += -std=c++14
 	CC := c++
@@ -34,10 +34,12 @@ FILES := $(FILENAME).c $(FILENAME).h
 all: normal mem test
 
 normal: $(FILES)
-	$(CC) $(FILENAME).c $(CMD_ARGS) $(OPTS) -o ./bin/$(OUT_FILENAME)
+	./makememtest.sh
+	$(CC) $(FILENAME).c $(CMD_ARGS) $(DEBUG_OPTS) $(OPTS) -o ./bin/$(OUT_FILENAME)
 	@echo
 
 mem: $(FILES)
+	./makememtest.sh
 	$(CC) $(FILENAME).c $(CMD_ARGS) $(MEM_OPTS) $(DEBUG_OPTS) $(OPTS) -o ./bin/memdebug_$(OUT_FILENAME)
 	@echo
 

@@ -161,11 +161,13 @@ ssize_t str_issubstring (const char* const a, const char* const b);
 
 void free_ptr_array (void** array, const size_t len);
 void      _safefree (void*        ptr, const uint64_t lineno, const char* const fname);
+void _safefree_args (const uint64_t lineno, const char* const fname, const size_t argc, ...);
 void*   _safemalloc (const size_t len, const uint64_t lineno, const char* const fname);
 void*  _saferealloc (void* ptr, const size_t len, uint64_t lineno, const char* const fname);
 void*   _safecalloc (const size_t nmemb, const size_t len, uint64_t lineno, const char* const fname);
 
 #define safefree(x)         _safefree((x), __LINE__, __func__)
+#define safefree_args(n, ...) _safefree_args(__LINE__, __func__, n, __VA_ARGS__)
 #define safemalloc(x)     _safemalloc((x), __LINE__, __func__)
 #define saferealloc(p,s) _saferealloc((p), (s), __LINE__, __func__)
 #define safecalloc(n,l)   _safecalloc((n), (l), __LINE__, __func__)
@@ -179,6 +181,18 @@ __PURE_FUNC __CONST_FUNC
 ssize_t un2signed (const size_t val) {
   return (ssize_t) (val > (SIZE_MAX / 2) ? SIZE_MAX / 2 : val);
 }
+
+#define define_signed2un_type(type, other) \
+  __PURE_FUNC __CONST_FUNC \
+  other signed2un_ ## type ## 2 ## other (const type val) { \
+    return val < 0 ? 0 : (other) val; \
+  }
+
+#define define_un2signed_type(type, other, type_maxvalue) \
+  __PURE_FUNC __CONST_FUNC \
+  other un2signed_ ## type ## 2 ## other (const type val) { \
+    return (other) ((val) > (type_maxvalue / 2) ? (type_maxvalue) / 2 : val) \
+  } \
 
 __PURE_FUNC __CONST_FUNC
 size_t usub (const size_t a, const size_t b) {
@@ -205,6 +219,29 @@ void _safefree (void* ptr, const uint64_t lineno, const char* const fname) {
   } else {
     free(ptr);
   }
+}
+
+void _safefree_args (const uint64_t lineno, const char* const fname, const size_t argc, ...) {
+  va_list vl;
+  va_start(vl, argc);
+
+  for (size_t i = 0; i < argc; i++) {
+    void* ptr = va_arg(vl, void*);
+
+    if (NULL == ptr) {
+      printf(
+        "You fool! You have tried to free() a null pointer!"
+        " (line %" PRIu64 " func %s, arg #%zu to safefree_args)\n",
+        lineno, fname, i
+      );
+      assert(NULL != ptr);
+    } else {
+      free(ptr);
+    }
+
+  }
+
+  va_end(vl);
 }
 
 // _safemalloc -- allocate memory or die

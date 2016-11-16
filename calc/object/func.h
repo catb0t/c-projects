@@ -36,6 +36,8 @@ void func_destruct (func_t* const func) {
   safefree(func);
 }
 
+define_objtype_dtor_args(func);
+
 char* func_see (const func_t* const f) {
   pfn();
 

@@ -53,4 +53,6 @@ void pair_destruct (pair_t* const pair) {
   safefree(pair);
 }
 
+define_objtype_dtor_args(pair);
+
 // void pair_cons (pair_t* const p, const object_t* cdr) { }

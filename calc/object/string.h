@@ -39,6 +39,8 @@ void string_destruct (string_t* const string) {
   safefree(string);
 }
 
+define_objtype_dtor_args(string);
+
 char* string_see (const string_t* const s) {
   size_t buflen = sizeof (char) * (s->len + 3);
 
