@@ -46,7 +46,7 @@ Test(empty, unzip) {
   cr_assert_str_eq(s4, s2);
 
   safefree_args(4, s, s2, s3, s4);
-
+  
   array_destruct_args(2, a, b);
 
   assoc_destruct(c);

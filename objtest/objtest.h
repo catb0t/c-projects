@@ -1,3 +1,4 @@
+/* BEGIN GENERATED CODE */
 #include "testcommon.h"
 void test (void);
 
@@ -6,7 +7,6 @@ void test (void) {
 //#include <criterion/criterion.h>
 
 //#define NODEBUG
-
 //#include "testcommon.h"
 
 //Test(empty, emptyfromNULL) {
@@ -87,6 +87,36 @@ void test (void) {
   //cr_assert( ok );
 
   array_destruct_args(2, a, b);
+//}
+
+//Test(empty, getref) {
+  a = array_new(NULL, -1);
+
+  array_get_ref(a, -1, &ok);
+
+  //cr_assert( ! ok );
+
+  array_get_ref(a, 8, &ok);
+
+  //cr_assert( ! ok );
+
+  array_destruct(a);
+//}
+
+//Test(empty, getcopy) {
+  a = array_new(NULL, -1);
+
+  oa = array_get_copy(a, -1, &ok);
+  object_destruct(oa);
+
+  //cr_assert( ! ok );
+
+  oa = array_get_copy(a, 8, &ok);
+  object_destruct(oa);
+
+  //cr_assert( ! ok );
+
+  array_destruct(a);
 //}
 
 // NONEMPTY
@@ -258,6 +288,42 @@ void test (void) {
 
   array_destruct_args(2, a, b);
 //}
+
+//Test(nonempty, getref) {
+  a = array_new_from_ssize_t_lit(anums, (sizeof anums) / sizeof (ssize_t), t_realint);
+
+  array_get_ref(a, -1, &ok);
+
+  //cr_assert( ! ok );
+
+  array_get_ref(a, 3, &ok);
+
+  //cr_assert( ok );
+
+  array_get_ref(a, 90, &ok);
+
+  //cr_assert( ! ok );
+
+  array_destruct(a);
+//}
+
+//Test(nonempty, getcopy) {
+  a = array_new_from_ssize_t_lit(anums, (sizeof anums) / sizeof (ssize_t), t_realint);
+
+  array_get_copy(a, -1, &ok);
+
+  //cr_assert( ! ok );
+
+  array_get_copy(a, 3, &ok);
+
+  //cr_assert( ok );
+
+  array_get_copy(a, 90, &ok);
+
+  //cr_assert( ! ok );
+
+  array_destruct(a);
+//}
 //#include <criterion/criterion.h>
 
 //#define NODEBUG
@@ -306,7 +372,7 @@ void test (void) {
   //cr_assert_str_eq(s4, s2);
 
   safefree_args(4, s, s2, s3, s4);
-
+  
   array_destruct_args(2, a, b);
 
   assoc_destruct(c);
@@ -383,4 +449,4 @@ void test (void) {
 
   assoc_destruct(c);
 //}
-}
+} /* END GENERATED CODE */ 

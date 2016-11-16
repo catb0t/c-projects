@@ -4,6 +4,7 @@ OUT_FILENAME := $(FILENAME)
 
 DEBUG_OPTS := -Wall -Wextra -Wfloat-equal -Winline -Wundef -Werror -fverbose-asm -Wint-to-pointer-cast -Wshadow -Wpointer-arith -Wcast-align  -Wcast-qual -Wunreachable-code -Wstrict-overflow=5 -Wwrite-strings -Wconversion --pedantic-errors -ggdb -Wredundant-decls -Werror=maybe-uninitialized
 
+
 MEM_OPTS := -fstack-protector -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer
 
 OPTS := -lm ../fnv-hash/libfnv.a -g
