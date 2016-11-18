@@ -86,13 +86,20 @@ Test(empty, equals) {
 Test(empty, getref) {
   a = array_new(NULL, -1);
 
-  array_get_ref(a, -1, &ok);
+  refa = array_get_ref(a, 0, &ok);
 
   cr_assert( ! ok );
+  cr_assert(NULL == refa);
 
-  array_get_ref(a, 8, &ok);
+  refa = array_get_ref(a, 3, &ok);
 
   cr_assert( ! ok );
+  cr_assert( NULL == refa );
+
+  refa = array_get_ref(a, 90, &ok);
+
+  cr_assert( ! ok );
+  cr_assert( NULL == refa );
 
   array_destruct(a);
 }
@@ -100,15 +107,26 @@ Test(empty, getref) {
 Test(empty, getcopy) {
   a = array_new(NULL, -1);
 
-  oa = array_get_copy(a, -1, &ok);
-  object_destruct(oa);
+  oa = array_get_copy(a, 0, &ok);
 
   cr_assert( ! ok );
+  cr_assert( object_isinstance(t_F, oa) );
 
-  oa = array_get_copy(a, 8, &ok);
   object_destruct(oa);
 
+  oa = array_get_copy(a, 3, &ok);
+
   cr_assert( ! ok );
+  cr_assert( object_isinstance(t_F, oa) );
+
+  object_destruct(oa);
+
+  oa = array_get_copy(a, 90, &ok);
+
+  cr_assert( ! ok );
+  cr_assert( object_isinstance(t_F, oa) );
+
+  object_destruct(oa);
 
   array_destruct(a);
 }
@@ -206,9 +224,9 @@ Test(nonempty, delete) {
 
   ok = array_delete(a, 3);
   cr_assert(ok);
-  ok = array_delete(a, a->idx);
+  ok = array_delete(a, signed2un(a->idx));
   cr_assert(ok);
-  ok = array_delete(a, -1);
+  ok = array_delete(a, 0);
   cr_assert(! ok);
 
   s = array_see(a);
@@ -286,17 +304,20 @@ Test(nonempty, equals) {
 Test(nonempty, getref) {
   a = array_new_from_ssize_t_lit(anums, (sizeof anums) / sizeof (ssize_t), t_realint);
 
-  array_get_ref(a, -1, &ok);
-
-  cr_assert( ! ok );
-
-  array_get_ref(a, 3, &ok);
+  refa = array_get_ref(a, 0, &ok);
 
   cr_assert( ok );
+  cr_assert(NULL != refa);
 
-  array_get_ref(a, 90, &ok);
+  refa = array_get_ref(a, 3, &ok);
+
+  cr_assert( ok );
+  cr_assert(NULL != refa);
+
+  refa = array_get_ref(a, 90, &ok);
 
   cr_assert( ! ok );
+  cr_assert(NULL == refa);
 
   array_destruct(a);
 }
@@ -304,17 +325,26 @@ Test(nonempty, getref) {
 Test(nonempty, getcopy) {
   a = array_new_from_ssize_t_lit(anums, (sizeof anums) / sizeof (ssize_t), t_realint);
 
-  array_get_copy(a, -1, &ok);
-
-  cr_assert( ! ok );
-
-  array_get_copy(a, 3, &ok);
+  oa = array_get_copy(a, 0, &ok);
 
   cr_assert( ok );
+  cr_assert( ! object_isinstance(t_F, oa) );
 
-  array_get_copy(a, 90, &ok);
+  object_destruct(oa);
+
+  oa = array_get_copy(a, 3, &ok);
+
+  cr_assert( ok );
+  cr_assert( ! object_isinstance(t_F, oa) );
+
+  object_destruct(oa);
+
+  oa = array_get_copy(a, 90, &ok);
 
   cr_assert( ! ok );
+  cr_assert( object_isinstance(t_F, oa) );
+
+  object_destruct(oa);
 
   array_destruct(a);
 }

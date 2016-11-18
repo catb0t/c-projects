@@ -46,8 +46,30 @@ Test(empty, unzip) {
   cr_assert_str_eq(s4, s2);
 
   safefree_args(4, s, s2, s3, s4);
-  
+
   array_destruct_args(2, a, b);
+
+  assoc_destruct(c);
+}
+
+Test(empty, getref) {
+  c = assoc_new(NULL, NULL);
+
+  freopen("/dev/null", "w", stderr);
+
+  clock_start();
+  for (__LOOPCOUNT = 0; __LOOPCOUNT < 10; __LOOPCOUNT++) {
+    pair_t** p_refa = assoc_get_ref(c, __LOOPCOUNT, &ok);
+
+    cr_assert( ! ok );
+    cr_assert( NULL == p_refa );
+    (void) p_refa;
+  }
+  clock_stop();
+
+  freopen("/dev/stderr", "w", stderr);
+
+  dbg_prn("get %zu refs from empty assoc took %ld ms", __LOOPCOUNT, msec);
 
   assoc_destruct(c);
 }
@@ -95,7 +117,7 @@ Test(nonempty, append) {
   array_destruct_args(2, a, b),
   assoc_destruct(c);
 
-  object_dtor_args(2, oa, ob);
+  object_destruct_args(2, oa, ob);
 }
 
 Test(nonempty, unzip) {
@@ -122,4 +144,37 @@ Test(nonempty, unzip) {
   array_destruct_args(2, a, b);
 
   assoc_destruct(c);
+}
+
+Test(nonempty, getref) {
+  a = array_new_from_ssize_t_lit(anums, (sizeof anums / sizeof (ssize_t)), t_realint),
+  b = array_new_from_ssize_t_lit(bnums, (sizeof bnums / sizeof (ssize_t)), t_realint);
+
+  c = assoc_new(a, b);
+
+  freopen("/dev/null", "w", stderr);
+
+  clock_start();
+  for (__LOOPCOUNT = 0; __LOOPCOUNT < 10; __LOOPCOUNT++) {
+    pair_t** p_refa = assoc_get_ref(c, __LOOPCOUNT, &ok);
+
+    if ( assoc_isinbounds(c, __LOOPCOUNT) ) {
+      cr_assert( ok );
+      cr_assert( NULL != p_refa );
+
+    } else {
+      cr_assert( ! ok );
+      cr_assert( NULL == p_refa );
+    }
+
+    (void) p_refa;
+  }
+  clock_stop();
+
+  freopen("/dev/stderr", "w", stderr);
+
+  dbg_prn("get %zu refs from nonempty assoc took %ld ms", __LOOPCOUNT, msec);
+
+  assoc_destruct(c);
+  array_destruct_args(2, a, b);
 }

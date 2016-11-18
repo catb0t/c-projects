@@ -33,16 +33,13 @@ hash_t* hash_new_boa (
 ) {
   pfn();
 
-  ssize_t len = un2signed(
-    size_t_min( array_length(keys), array_length(vals) )
-    + 1
-  );
+  size_t len = size_t_min( array_length(keys), array_length(vals) );
 
   printf("minsize: %zd\n", len);
 
   hash_t* hash = hash_new_skele(); // 1
 
-  for (ssize_t i = 0; i < len; i++) {
+  for (size_t i = 0; i < len; i++) {
     object_t
       **k = array_get_ref(keys, i, NULL),
       **v = array_get_ref(vals, i, NULL);
@@ -150,7 +147,9 @@ object_t* hash_get_copy (const hash_t* const h, const object_t* const key, bool*
     if (NULL != ok) {
       *ok = false;
     }
-    object_error(ER_KEYERROR, __func__, false);
+    char* s = object_repr(key);
+    object_error(ER_KEYERROR, false, "no such key %s in hash #%zu", s, h->uid);
+    safefree(s);
     return object_new(t_F, NULL);
   }
 
@@ -172,7 +171,15 @@ object_t* hash_get_copy (const hash_t* const h, const object_t* const key, bool*
   object_destruct(khobj);
 
   if ( (NULL != ok) && (false == *ok) ) {
-    object_error(ER_PTRMATH_BUG, __func__, true);
+    char* s = object_repr(key);
+    object_error(
+      ER_PTRMATH_BUG,
+      true,
+      "getting key %s from hash #%zu",
+      s,
+      h->uid
+    );
+    safefree(s);
     return object_new(t_F, NULL);
   }
 
@@ -207,7 +214,9 @@ object_t** hash_get_ref (const hash_t* const h, const object_t* const key, bool*
     if (NULL != ok) {
       *ok = false;
     }
-    object_error(ER_KEYERROR, "", false);
+    char* s = object_repr(key);
+    object_error(ER_KEYERROR, false, "no such key %s in hash #%zu", s, h->uid);;
+    safefree(s);
     return NULL;
   }
 
@@ -229,7 +238,15 @@ object_t** hash_get_ref (const hash_t* const h, const object_t* const key, bool*
   object_destruct(khobj);
 
   if ( (NULL != ok) && (false == *ok) ) {
-    object_error(ER_PTRMATH_BUG, __func__, true);
+    char* s = object_repr(key);
+    object_error(
+      ER_PTRMATH_BUG,
+      true,
+      "getting key %s from hash #%zu",
+      s,
+      h->uid
+    );
+    safefree(s);
     return NULL;
   }
 
@@ -314,7 +331,7 @@ array_t* hash_getvals (const hash_t* const h) {
   // new empty value store
   array_t* vs = array_new(NULL, -1); // 1
 
-  for (ssize_t i = 0; i < (h->vals->idx); i++) {
+  for (size_t i = 0; i < array_length(h->keys); i++) {
     // get a reference to thisp value's pair's first item
     object_t **car = pair_car_ref( ( *array_get_ref(vs, i, NULL) )->cel );
 
@@ -336,7 +353,7 @@ array_t* hash_getkeys (const hash_t* const h) {
 
   array_t* ks = array_new(NULL, -1);
 
-  for (ssize_t i = 0; i < (h->keys->idx); i++) {
+  for (size_t i = 0; i < array_length(h->keys); i++) {
     array_append(ks, *array_get_ref(h->keys, i, NULL));
   }
 
@@ -388,7 +405,7 @@ bool hash_add (hash_t* h, const object_t* const key, const object_t* const val) 
 
   assoc_append_boa(h->idxs, khobj, newidx);
 
-  object_dtor_args(2, newidx, khobj); // ~1, ~2
+  object_destruct_args(2, newidx, khobj); // ~1, ~2
 
   // looks like everything went ok
   // 1 alloc, 1 free
@@ -446,12 +463,14 @@ bool hash_delete (hash_t* const h, const object_t* const key) {
           proxy_idx = assoc_schreg_1st(h->idxs, khobj, &pair_car_ref);
 
   if ( ! hash_exists(h, key) || ( -1 == keyidx ) || ( -1 == proxy_idx ) ) {
-    object_error(ER_KEYERROR, __func__, false);
+    char* s = object_repr(key);
+    object_error(ER_KEYERROR, false, "no such key %s in hash #%zu", s, h->uid);
+    safefree(s);
     return false;
   }
 
   // delete the key
-  array_delete(h->keys, keyidx);
+  array_delete(h->keys, signed2un(keyidx));
 
   // delete the value
   assoc_delete(h->vals,

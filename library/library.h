@@ -38,7 +38,7 @@ void test (void) {
     array_append(titles, titleobj);
     array_append(fins, compobj);
 
-    object_dtor_args(2, t, titleobj, compobj); // ~5, ~6, ~7
+    object_destruct_args(2, t, titleobj, compobj); // ~5, ~6, ~7
 
     safefree(namebuf), safefree(cmplt); // ~3, ~4
 

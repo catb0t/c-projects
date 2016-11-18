@@ -49,7 +49,7 @@ bool   pair_equals (const pair_t* const a, const pair_t* const b) {
 void pair_destruct (pair_t* const pair) {
   report_dtor(pair);
 
-  object_dtor_args(2, pair->car, pair->cdr);
+  object_destruct_args(2, pair->car, pair->cdr);
   safefree(pair);
 }
 

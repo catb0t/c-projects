@@ -264,47 +264,46 @@ _Static_assert(
   "OBJTYPE_2STRING has too few or too many values"
 );
 
-extern void _object_error (objerror_t error, const char* const info, const bool fatal, const char* const file, const uint64_t line, const char* const func);
+extern void _object_error (objerror_t error, const bool fatal, const char* const file, const uint64_t line, const char* const func, const char* fmt, ...);
 extern bool _obj_failnull (const void* const o, const char* const file, const uint64_t line, const char* const func);
 
 #define object_failnull(o) _obj_failnull((o), __FILE__, __LINE__, __func__)
-#define object_error(error, info, is_fatal) _object_error ((error), (info), (is_fatal), __FILE__, __LINE__, __func__)
+#define object_error(error, is_fatal, fmt, ...) _object_error ((error), (is_fatal), __FILE__, __LINE__, __func__, fmt, __VA_ARGS__)
 
 #define define_min_func(type) \
   static inline __PURE_FUNC __CONST_FUNC type type ## _min (type a, type b) { \
-    pfn(); \
-    \
-    return a < b ? a : b; \
-  } \
-  int NOTHING_MIN ## type
+    pfn(); return a < b ? a : b; } int NOTHING_MIN ## type
 
 define_min_func(size_t);
 
 #define define_objtype_dtor_args(type) \
   void type ## _destruct_args (const size_t argc, ...) { \
-    pfn(); \
-    va_list vl; va_start(vl, argc); \
+    pfn(); va_list vl; va_start(vl, argc); \
     for (size_t i = 0; i < argc; i++) { \
       type ## _t ** v = (typeof(v)) safemalloc( sizeof ( type ## _t *) ); \
       *v = va_arg(vl, type ## _t*); \
       type ## _destruct( *v ); \
       safefree(v); \
-    } \
-    va_end(vl); \
-  } \
-  int _IDONOTEXIST_3 ## type
+    } va_end(vl); \
+  } int _IDONOTEXIST_3 ## type
+
+#define define_isinbounds(type) \
+  bool type ## _isinbounds (const type ## _t * const obj, const size_t idx) { \
+    return idx <= signed2un(obj->idx); \
+  } int ____DONT_FIND_THIS_NAME44##type
 
 // provided by object.h
-object_t*  object_new (const objtype_t valtype, const void* const val);
-object_t* object_copy (const object_t* const obj);
-void**  object_getval (const object_t* const obj);
-char*     object_repr (const object_t* const obj);
-char*    objtype_repr (const objtype_t t);
-bool object_id_equals (const object_t* const a, const object_t* const b);
-bool    object_equals (const object_t* const a, const object_t* const b);
-void  object_destruct (object_t* obj);
-void     object_dtorn (object_t** const obj, const size_t len);
-void object_dtor_args (size_t args, ...);
+object_t*   object_new (const objtype_t valtype, const void* const val);
+object_t*  object_copy (const object_t* const obj);
+void**   object_getval (const object_t* const obj);
+char*      object_repr (const object_t* const obj);
+char*     objtype_repr (const objtype_t t);
+bool object_isinstance (const objtype_t t, const object_t* const o);
+bool  object_id_equals (const object_t* const a, const object_t* const b);
+bool     object_equals (const object_t* const a, const object_t* const b);
+void   object_destruct (object_t* obj);
+void      object_dtorn (object_t** const obj, const size_t len);
+void object_destruct_args (size_t args, ...);
 
 // provided by bool.h
 object_t*   nothing_new (void);
@@ -317,14 +316,15 @@ array_t* array_new_fromcptr (const void* const * const ptr, const size_t len, co
 array_t*       array_new (const object_t* const * const objs, const ssize_t len);
 array_t*      array_copy (const array_t* const a);
 char*          array_see (const array_t* const a);
-object_t* array_get_copy (const array_t* const a, const ssize_t idx, bool* ok);
-object_t** array_get_ref (const array_t* const a, const ssize_t idx, bool* ok);
+object_t* array_get_copy (const array_t* const a, const size_t idx, bool* ok);
+object_t** array_get_ref (const array_t* const a, const size_t idx, bool* ok);
 size_t      array_length (const array_t* const a);
 ssize_t       array_find (const array_t* const a, const object_t* const obj);
+bool    array_isinbounds (const array_t* const a, const size_t idx);
 bool        array_equals (const array_t* const a, const array_t* const b);
 bool       array_isempty (const array_t* const a);
-bool        array_delete (array_t* const a, const ssize_t idx);
-bool        array_insert (array_t* const a, const object_t* const o, const ssize_t idx);
+bool        array_delete (array_t* const a, const size_t idx);
+bool        array_insert (array_t* const a, const object_t* const o, const size_t idx);
 void        array_append (array_t* const a, const object_t* const o);
 void        array_resize (array_t* const a, const size_t new_len);
 void       array_vappend (array_t* const a, const size_t argc, ...);
@@ -339,6 +339,7 @@ void         array_clear (array_t* const a);
 string_t*  string_new (const char* const str);
 string_t* string_copy (const string_t* const s);
 size_t  string_length (const string_t* const s);
+bool string_isinbounds (const string_t* const a, const size_t idx);
 bool   string_isempty (const string_t* const s);
 void  string_destruct (string_t* const s);
 char*      string_see (const string_t* const s);
@@ -391,6 +392,7 @@ size_t      assoc_length (const assoc_t* const a);
 ssize_t     assoc_schreg (const assoc_t* const a, const object_t* const obj, object_t** (* reg_get_func) (pair_t* const p));
 ssize_t assoc_schreg_1st (const assoc_t*  const a, const object_t* const obj, object_t** (* reg_get_func) (pair_t* const p));
 bool        assoc_equals (const assoc_t* const a, const assoc_t* const b);
+bool    assoc_isinbounds (const assoc_t* const a, const size_t idx);
 bool       assoc_isempty (const assoc_t* const a);
 bool        assoc_delete (assoc_t* const a, const size_t idx);
 void        assoc_append (assoc_t* const a, const pair_t* const o);

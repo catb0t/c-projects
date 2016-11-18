@@ -2,7 +2,7 @@ FILENAME := $(shell basename `pwd`)
 ARCH := $(shell uname -m)
 OUT_FILENAME := $(FILENAME)
 
-DEBUG_OPTS := -Wall -Wextra -Wfloat-equal -Winline -Wundef -Werror -fverbose-asm -Wint-to-pointer-cast -Wshadow -Wpointer-arith -Wcast-align  -Wcast-qual -Wunreachable-code -Wstrict-overflow=5 -Wwrite-strings -Wconversion --pedantic-errors -ggdb -Wredundant-decls -Werror=maybe-uninitialized
+DEBUG_OPTS := -Wall -Wextra -Wfloat-equal -Winline -Wundef -Werror -fverbose-asm -Wint-to-pointer-cast -Wshadow -Wpointer-arith -Wcast-align  -Wcast-qual -Wunreachable-code -Wstrict-overflow=5 -Wwrite-strings -Wconversion --pedantic-errors -ggdb -Wredundant-decls
 
 
 MEM_OPTS := -fstack-protector -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer
@@ -20,12 +20,16 @@ ifeq ($(CC), g++)
 	#MEM_OPTS += -static-libasan -static-libtsan -static-liblsan -static-libubsan -lasan -lubsan
 endif
 ifeq ($(CC), gcc)
-  #DEBUG_OPTS += -Wsuggest-attribute=pure -Wsuggest-attribute=const -Wsuggest-attribute=noreturn
-  MEM_OPTS += -static-libasan -static-libtsan -static-liblsan -static-libubsan -lasan -lubsan
+  DEBUG_OPTS +=  -Werror=maybe-uninitialized#-Wsuggest-attribute=pure -Wsuggest-attribute=const -Wsuggest-attribute=noreturn
+  MEM_OPTS += -static-libasan -static-libtsan -static-liblsan -static-libubsan -lasan -lubsan -Werror=maybe-uninitialized
 endif
 ifeq ($(CC), cc)
-  #DEBUG_OPTS += -Wsuggest-attribute=pure -Wsuggest-attribute=const -Wsuggest-attribute=noreturn
-  MEM_OPTS += -static-libasan -static-libtsan -static-liblsan -static-libubsan -lasan -lubsan
+  DEBUG_OPTS +=  -Werror=maybe-uninitialized# -Wsuggest-attribute=pure -Wsuggest-attribute=const -Wsuggest-attribute=noreturn
+	MEM_OPTS += -static-libasan -static-libtsan -static-liblsan -static-libubsan -lasan -lubsan  -Werror=maybe-uninitialized
+endif
+
+ifeq ($(CC), clang)
+	DEBUG_OPTS +=  -Werror=uninitialized -Wno-language-extension-token
 endif
 
 CMD_ARGS ?=
@@ -56,6 +60,6 @@ test:
 	@echo
 
 clean:
-	(rm core *core* a.out 2>/dev/null; echo)
+	(rm core *core* a.out *.o *.gch 2>/dev/null; echo)
 	$(shell find . -type f -executable -regextype sed -iregex '\./[^.]*' | xargs rm)
 	@echo

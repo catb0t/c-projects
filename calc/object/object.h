@@ -24,14 +24,13 @@
 
 /*
   fails permanently if the object is NULL. don't bother checking the
-  return value because it doesn't matter what the return value is.
+  return value because it doesn't matter what the return value is, but it makes
+  it easier to chain in short functions
 */
 inline bool _obj_failnull (const void* const obj, const char* const file, uint64_t line, const char* const func) {
 
   if ( NULL == obj ) {
-    char buf[200];
-    snprintf(buf, 200, "%s:%" PRIu64 ": %s", file, line, func);
-    object_error(ER_NULL_OBJECT, buf, true);
+    object_error(ER_NULL_OBJECT, true, "%s:%" PRIu64 ": %s", file, line, func);
     return false;
   }
 
@@ -84,7 +83,7 @@ object_t* object_new (const objtype_t valtype, const void* const val) {
 
   switch (obj->type) {
     case NUM_OBJTYPES: {
-      object_error(ER_NOT_A_TYPE, __func__, true);
+      object_error(ER_NOT_A_TYPE, true, "", NULL);
       break;
     }
     case t_F: {
@@ -203,13 +202,20 @@ void** object_getval (const object_t* const obj) {
 }
 
 /*
-  destructs an object by calling its type's specific destructor and then freeing the
-  object itself.
+  destructs an object by calling its type's specific destructor and then freeing
+  the object itself.
 
   mutates obj, such that it may be NULL or in an invalid state after a call.
+
+  does nothing when obj is NULL.
 */
 void object_destruct (object_t* const obj) {
   pfn();
+
+  // don't deref a null pointer
+  if (NULL == obj) {
+    return;
+  }
 
   report_dtor(obj);
 
@@ -257,7 +263,7 @@ void object_destruct (object_t* const obj) {
     }
 
     case NUM_OBJTYPES: {
-      object_error(ER_NOT_A_TYPE, __func__, true);
+      object_error(ER_NOT_A_TYPE, true, "", NULL);
       break;
     }
   }
@@ -281,22 +287,7 @@ void object_dtorn (object_t** const objs, const size_t len) {
   rather than calling object_destruct twice or more times for objects in the same
   scope, just call thisp.
 */
-void object_dtor_args (size_t argc, ...) {
-  va_list vl;
-  va_start(vl, argc);
-
-  for (size_t i = 0; i < argc; i++) {
-    // hopefully thisp just takes the address
-    object_t** v = (typeof(v)) safemalloc( sizeof (object_t *) );
-    *v = va_arg(vl, object_t*);
-
-    // 0 allocs, 1 free, but not double free
-    object_destruct( *v );
-    safefree(v);
-  }
-
-  va_end(vl);
-}
+define_objtype_dtor_args(object);
 
 /*
   return an object's typename as a string
@@ -316,11 +307,18 @@ char* objtype_repr (const objtype_t t) {
 /*
   self-explanatory
 */
-void _object_error (objerror_t errt, const char* const info, const bool fatal, const char* const file, const uint64_t line, const char* const func) {
+void _object_error (objerror_t errt, const bool fatal, const char* const file, const uint64_t line, const char* const func, const char* fmt, ...) {
   pfn();
 
-// target may not have file descriptors at all
-#ifndef DONT_HAVE_PRINTSTREAMS
+  va_list vl;
+
+  va_start(vl, fmt);
+
+  size_t fmtlen = safestrnlen(fmt);
+
+  char* buf = (typeof(buf)) safemalloc(sizeof (char) * (fmtlen * 2));
+
+  vsnprintf(buf, fmtlen * 2, fmt, vl);
 
   static const char* const errmsgs[] = {
     [ER_NOT_A_TYPE]  = "NUM_OBJTYPES isn't a real type, dummy. Don't do that.\n"
@@ -346,19 +344,22 @@ void _object_error (objerror_t errt, const char* const info, const bool fatal, c
     freopen("/dev/stdout", "w", stderr);
   }
 
-  fprintf(stderr, "\033[31m \b%s:%" PRIu64 ": %s: %s: %s\033[0m\n", file, line, func, info, errmsgs[errt]);
+  fprintf(stderr, "|\033[31m%s\033[0m|\033[31;1m \b%s:%" PRIu64 ": %s: %s: %s\033[0m\n",
+    fatal ? "FATAL" : "ERROR", file, line, func, buf, errmsgs[errt]);
+
+  safefree(buf);
 
   if ( fatal ) {
     fprintf(
       stderr,
-      "\033[31mThat error was fatal, aborting.\n\n"
+      "\033[31m\nThat error was fatal, aborting.\n\n"
       "I'm melting!\033[0m\n"
     );
     abort();
   }
 
-#endif
 
+  va_end(vl);
 }
 
 /*
@@ -374,13 +375,13 @@ char* object_repr (const object_t* const obj) {
   switch (obj->type) {
     case NUM_OBJTYPES: {
       // you can't repr that, you can't fix stupid
-      object_error(ER_NOT_A_TYPE, __func__, true);
+      object_error(ER_NOT_A_TYPE, true, "", NULL);
       break;
     }
     case t_F: {
       buf = (typeof(buf)) safemalloc(2);
 
-      snprintf(buf, 1, "%s", "t");
+      snprintf(buf, 1, "%s", "f");
       break;
     }
     case t_T: {
@@ -493,7 +494,7 @@ bool object_equals (const object_t* const a, const object_t* const b) {
 
   switch (a->type) {
     case NUM_OBJTYPES: {
-      object_error(ER_NOT_A_TYPE, __func__, true);
+      object_error(ER_NOT_A_TYPE, true, "", NULL);
       return false;
     }
 
@@ -542,6 +543,10 @@ bool object_id_equals (const object_t* const a, const object_t* const b) {
   pfn();
 
   return (a->type == b->type) && (a->uid == b->uid);
+}
+
+bool object_isinstance(const objtype_t t, const object_t* const o) {
+  return NULL == o ? false : o->type == t;
 }
 
 #endif

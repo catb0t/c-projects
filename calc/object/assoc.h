@@ -17,11 +17,11 @@ assoc_t* assoc_new (const array_t* const a, const array_t* const b) {
 
   if ( (NULL != a) && (NULL != b) ) {
 
-    ssize_t idx = un2signed( size_t_min(array_length(a), array_length(b)) );
+    size_t idx = size_t_min(array_length(a), array_length(b));
 
-    assoc->data = (typeof(assoc->data)) safemalloc( sizeof (pair_t*) * signed2un(idx + 1) );
+    assoc->data = (typeof(assoc->data)) safemalloc( sizeof (pair_t*) * (idx + 1) );
 
-    for (ssize_t i = 0; i < idx; i++) {
+    for (size_t i = 0; i < idx; i++) {
       object_t
         **car = array_get_ref(a, i, NULL),
         **cdr = array_get_ref(b, i, NULL);
@@ -91,6 +91,8 @@ size_t assoc_length (const assoc_t* const a) {
   return signed2un(a->idx + 1);
 }
 
+define_isinbounds(assoc);
+
 /*
   mutable reference to a pair at an index in the assoc.
 
@@ -101,13 +103,22 @@ pair_t** assoc_get_ref (const assoc_t* const a, const size_t idx, bool* ok) {
 
   object_failnull(a);
 
-  if (un2signed(idx) > a->idx) {
+  if (NULL != ok) { *ok = true; }
 
-    if (NULL != ok) {
-      *ok = false;
-    }
+  if (assoc_isempty(a) || un2signed(idx) > a->idx) {
 
-    object_error(ER_INDEXERROR, __func__, false);
+    if (NULL != ok) { *ok = false; }
+
+    object_error(
+      ER_INDEXERROR,
+      false,
+      "get elt %zu from highest %zd%s",
+      idx,
+      a->idx,
+      assoc_isempty(a)
+        ? " (get from empty assoc)"
+        : ""
+    );
     return NULL;
   }
 
@@ -195,7 +206,16 @@ bool assoc_delete (assoc_t* const a, const size_t idx) {
       "attempt to delete index %zu but the highest is %zd%s",
       idx, a->idx, assoc_length(a) ? "" : "(delete from empty assoc)"
     );
-    object_error(ER_INDEXERROR, buf, false);
+    object_error(
+      ER_INDEXERROR,
+      false,
+      "attempt to delete index %zu but the highest is %zd%s",
+      idx,
+      a->idx,
+      assoc_length(a)
+        ? ""
+        : " (delete from empty assoc)"
+    );
     return false;
   }
 

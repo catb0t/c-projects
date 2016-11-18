@@ -6,8 +6,8 @@
 
 /*
   returns a newly constructed, unique array object.
-  if objs is NULL or len is -1, an empty array will be returned, instead of building
-  a new one by copying the objects from the first argument.
+  if objs is NULL or len is -1, an empty array will be returned, instead of
+  building a new one by copying the objects from the first argument.
 */
 array_t* array_new (const object_t* const * const objs, const ssize_t len) {
   pfn();
@@ -30,26 +30,20 @@ array_t* array_new (const object_t* const * const objs, const ssize_t len) {
 }
 
 /*
-  makes a function which makes a new array from a heap-alloced C array of scalars (non-pointers)
+  makes a function which makes a new array from a heap-alloced C array of scalars
+  (non-pointers)
 */
 #define define_array_new_fromctype(type) \
   array_t* array_new_from_ ## type ## _lit (const type * const ptr, const size_t len, const objtype_t conv_to); \
-  \
   array_t* array_new_from_ ## type ## _lit (const type * const ptr, const size_t len, const objtype_t conv_to) { \
-    \
     object_t** __UNSHADOW_OBJS = (typeof(__UNSHADOW_OBJS)) safemalloc( sizeof(object_t *) * len ); \
-    \
     for (size_t i = 0; i < len; i++) { __UNSHADOW_OBJS[i] = object_new(conv_to, (const void* const) &( ptr[i] ) ); } \
-    \
     array_t* __UNSHADOW_ARRAY = array_new( (const object_t* const * const) __UNSHADOW_OBJS, un2signed(len)); \
-    \
     object_dtorn(__UNSHADOW_OBJS, len); \
-    \
     return __UNSHADOW_ARRAY; \
   } \
   int ____DONT_FIND_THIS_NAME ## funcname
 
-//array_t* a = array_new( (const object_t * const * const) objs, un2signed(len));object_dtorn(objs, len);
 /*
   makes a new array from an array of pointers to raw C types.
 */
@@ -80,7 +74,10 @@ array_t* array_copy (const array_t* const a) {
 
   object_failnull(a);
 
-  return array_new( (const object_t* const * const) a->data, un2signed(array_length(a)) );
+  return array_new(
+    (const object_t* const * const) a->data,
+    un2signed( array_length(a) )
+  );
 }
 
 /*
@@ -113,17 +110,20 @@ bool array_isempty (const array_t* const a) {
 
   object_failnull(a);
 
-  return ( ! array_length(a) ) || (NULL == a->data);
+  return ( -1 == a->idx ) || (NULL == a->data);
 }
 
 size_t array_length (const array_t* const a) {
   return signed2un(a->idx + 1);
 }
 
+define_isinbounds(array);
+
 /*
-  resize an array to the new size. implemented with saferealloc(2), so if new_idx is
-  smaller than a->idx, the objects past will disappear and their destructors will
-  be called.
+  resize an array to the new size.
+
+  implemented with saferealloc(2), so if new_idx is smaller than a->idx, the
+  objects past will disappear and their destructors will be called.
 */
 void array_resize (array_t* const a, const size_t new_len) {
   pfn();
@@ -139,7 +139,7 @@ void array_resize (array_t* const a, const size_t new_len) {
 
   if (new_len < array_length(a)) {
     for (size_t i = new_len + 1; i < array_length(a); i++) {
-      object_destruct( *array_get_ref(a, un2signed(i), NULL) );
+      object_destruct( *array_get_ref(a, i, NULL) );
     }
   }
 
@@ -161,34 +161,33 @@ void array_resize (array_t* const a, const size_t new_len) {
       ...copying them
     resize the array by -1.
 */
-bool array_delete (array_t* const a, const ssize_t idx) {
+bool array_delete (array_t* const a, const size_t idx) {
   pfn();
 
   object_failnull(a);
 
-  if ( ( idx > a->idx ) || ( array_isempty(a) ) || ( -1 == idx ) ) {
-    char* er = (typeof(er)) safemalloc(100);
-    snprintf(
-      er,
-      99,
-      "delete index %zd but the highest is %zd %s",
+  ssize_t sidx = un2signed(idx);
+
+  if ( ( sidx > a->idx ) || ( array_isempty(a) ) || ( ! idx ) ) {
+    object_error(
+      ER_INDEXERROR,
+      false,
+      "delete index %zd but the highest is %zd%s",
       idx,
       a->idx,
       array_isempty(a)
-        ? "(delete from empty array)"
+        ? " (delete from empty array)"
         : ""
     );
-    object_error(ER_INDEXERROR, er, false);
-    safefree(er);
     return false;
   }
 
   object_destruct( *array_get_ref(a, idx, NULL));
 
-  // if idx and a->idx (that is, if it's the last element) are equal we can just resize
-  if ( idx != a->idx ) {
+  // if idx and a->idx (that is, if it's the last element) are equal just resize
+  if ( sidx != a->idx ) {
     //printf("not equal\n" );
-    for (ssize_t i = idx; i < (a->idx); i++) {
+    for (ssize_t i = sidx; i < (a->idx); i++) {
       // change pointer (?)
       (a->data) [i] = (a->data) [i + 1];
     }
@@ -218,20 +217,24 @@ void array_clear (array_t* const a) {
     shift elements left by one
     put the new element at its index
 */
-bool array_insert (array_t* const a, const object_t* const o, const ssize_t idx) {
+bool array_insert (array_t* const a, const object_t* const o, const size_t idx) {
   pfn();
 
   object_failnull(a);
 
-  if ( (-1 == idx) || (NULL == a->data) || (signed2un(idx) > array_length(a) ) ) {
-    char er[200];
-    snprintf(er, 199, "insert to index %zd of 0, %zu", idx, array_length(a));
-    object_error(ER_INDEXERROR, er, false);
+  if ( idx > signed2un(a->idx) ) {
+    object_error(
+      ER_INDEXERROR,
+      false,
+      "insert to index %zu above highest %zu",
+      idx,
+      array_length(a)
+    );
     return false;
   }
   array_resize(a, array_length(a) + 1);
 
-  for (ssize_t i = a->idx; i > idx; i--) {
+  for (size_t i = signed2un(a->idx); i > idx; i--) {
     // change pointer (?)
     (a->data) [i] = (a->data) [i - 1];
   }
@@ -254,7 +257,6 @@ void array_append (array_t* const a, const object_t* const o) {
   object_failnull(a);
 
   array_resize(a, array_length(a) + 1);
-
   (a->data) [a->idx] = object_copy(o);
 }
 
@@ -308,7 +310,7 @@ void array_concat (array_t** const a, const array_t* const b) {
   array_resize(*a, total_len);
 
   for (size_t i = alen; i < total_len; i++) {
-    (*a)->data[i] = array_get_copy(b, un2signed( udifference(i, alen) ), NULL);
+    (*a)->data[i] = array_get_copy(b, udifference(i, alen), NULL);
   }
 }
 
@@ -362,7 +364,7 @@ char* array_see (const array_t* const a) {
 
   for (size_t i = 0; i < array_length(a); i++) {
     // 'tis but a reference
-    object_t** thisp = array_get_ref(a, un2signed(i), NULL);
+    object_t** thisp = array_get_ref(a, i, NULL);
     char*   strthis = object_repr(*thisp);
     size_t  tlen    = safestrnlen(strthis) + 2;
 
@@ -393,9 +395,9 @@ void array_inspect (const array_t* const a) {
 
   printf("array uid:%zu idx:%zd {\n", a->uid, a->idx);
 
-  for (ssize_t i = 0; i < (a->idx + 1); i++) {
-    char* x = object_repr(*array_get_ref(a, i, NULL));
-    printf("\t%zd: %s\n", i, x);
+  for (size_t i = 0; i < array_length(a); i++) {
+    char* x = object_repr( *array_get_ref(a, i, NULL) );
+    printf("\t%zu: %s\n", i, x);
     safefree(x);
   }
   puts("}\n");
@@ -411,9 +413,9 @@ ssize_t array_find (const array_t* const a, const object_t* const obj) {
 
   object_failnull(a);
 
-  for (ssize_t i = 0; i < a->idx; i++) {
+  for (size_t i = 0; i < array_length(a); i++) {
     if ( object_equals(obj, *array_get_ref(a, i, NULL) )) {
-      return i;
+      return un2signed(i);
     }
   }
 
@@ -423,21 +425,22 @@ ssize_t array_find (const array_t* const a, const object_t* const obj) {
 /*
   copy an element from an array and return it.
 
-  if the array is empty or some error occurred, ok will be false and a new false object will be returned.
+  if the array is empty or some error occurred,
+  ok will be false and **a new false object (t_F) will be returned.**
 
   otherwise, ok will be true and a new object is copy constructed and returned.
 
   if ok is NULL, it will be ignored (useful in loops when it is known that the
   index will never go out of bounds).
 */
-object_t* array_get_copy (const array_t* const a, const ssize_t idx, bool* ok) {
+object_t* array_get_copy (const array_t* const a, const size_t idx, bool* ok) {
   pfn();
 
   object_failnull(a);
 
   if (NULL != ok) { *ok = true; }
 
-  if ( array_isempty(a) || idx > a->idx || -1 == idx ) {
+  if ( array_isempty(a) || ( un2signed(idx) > a->idx ) ) {
     if (NULL != ok) { *ok = false; }
     return nothing_new();
   }
@@ -448,29 +451,37 @@ object_t* array_get_copy (const array_t* const a, const ssize_t idx, bool* ok) {
 /*
   return a reference to an object in an array.
 
-  realistically thisp does little more than add the array's data address to the
-  element's offset.
-
-  if some error occurred, ok will be false and NULL is returned.
+  if the array is empty or some error occurred,
+  ok will be false and **NULL is returned.**
   otherwise, ok is true and a reference to the original object is given.
 
-  if ok is NULL, then it will be ignored (useful in loops when it is known that the
-  index will never go out of bounds).
+  if ok is NULL, then it will be ignored (useful in loops when it is known that
+  the index will never go out of bounds).
 */
-object_t** array_get_ref (const array_t* const a, const ssize_t idx, bool* ok) {
+object_t** array_get_ref (const array_t* const a, const size_t idx, bool* ok) {
   pfn();
 
   object_failnull(a);
 
   if (NULL != ok) { *ok = true; }
 
-  if ( array_isempty(a) || idx > a->idx || -1 == idx ) {
+  if ( array_isempty(a) || un2signed(idx) > a->idx ) {
     if (NULL != ok) { *ok = false; }
+
+    object_error(
+      ER_INDEXERROR,
+      false,
+      "get elt %zu from highest %zd%s",
+      idx,
+      a->idx,
+      array_isempty(a)
+        ? " (get from empty array)"
+        : ""
+    );
     return NULL;
   }
 
-  size_t uidx = signed2un(idx);
-  return &( (a->data) [uidx] );
+  return &( (a->data) [idx] );
 }
 
 /*
@@ -498,8 +509,8 @@ bool array_equals (const array_t* const a, const array_t* const b) {
 
   for (size_t i = 0; i < array_length(a); i++) {
     // 'tis but a reference
-    object_t **oa = array_get_ref(a, un2signed(i), NULL),
-             **ob = array_get_ref(b, un2signed(i), NULL);
+    object_t **oa = array_get_ref(a, i, NULL),
+             **ob = array_get_ref(b, i, NULL);
     if ( ! object_equals(*oa, *ob) ) {
       return false;
     }

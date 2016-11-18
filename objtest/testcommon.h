@@ -1,4 +1,19 @@
+#include <time.h>
+
 #include "../calc/object/object.h"
+
+clock_t start, diff, msec;
+
+#ifndef NODEBUG
+  #define clock_start() start = clock()
+  #define clock_stop() diff = clock() - start; \
+    msec = diff * 1000; \
+    msec /= CLOCKS_PER_SEC; \
+    msec %= 1000;
+#else
+  #define clock_start()
+  #define clock_stop()
+#endif
 
 define_array_new_fromctype(ssize_t);
 
@@ -6,9 +21,11 @@ array_t *a, *b, *ra, *rb;
 
 assoc_t *c, *d;
 
-object_t *oa, *ob;
+object_t *oa, *ob, **refa;
 
 char *s, *s2, *s3, *s4;
+
+size_t __LOOPCOUNT;
 
 bool ok;
 
