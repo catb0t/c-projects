@@ -7,7 +7,7 @@ DEBUG_OPTS := -Wall -Wextra -Wfloat-equal -Winline -Wundef -Werror -fverbose-asm
 
 MEM_OPTS := -fstack-protector -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer
 
-OPTS := -lm ../fnv-hash/libfnv.a -g
+OPTS := -lm ../fnv-hash/libfnv.a -g -fprofile-arcs -ftest-coverage
 ifeq ($(CCPLUS), 1)
 	OPTS += -std=c++14
 	CC := c++
@@ -49,14 +49,14 @@ mem: $(FILES)
 	@echo
 
 test:
-	$(CC) $(CMD_ARGS) _test_array.c -lcriterion ../fnv-hash/libfnv.a -o bin/test_array
-	$(CC) $(CMD_ARGS) _test_assoc.c -lcriterion ../fnv-hash/libfnv.a -o bin/test_assoc
-	$(CC) $(CMD_ARGS) _test_fixwid.c -lcriterion ../fnv-hash/libfnv.a -o bin/test_fixwid
-	$(CC) $(CMD_ARGS) _test_func.c -lcriterion ../fnv-hash/libfnv.a -o bin/test_func
-	$(CC) $(CMD_ARGS) _test_hash.c -lcriterion ../fnv-hash/libfnv.a -o bin/test_hash
-	$(CC) $(CMD_ARGS) _test_object.c -lcriterion ../fnv-hash/libfnv.a -o bin/test_object
-	$(CC) $(CMD_ARGS) _test_pair.c -lcriterion ../fnv-hash/libfnv.a -o bin/test_pair
-	$(CC) $(CMD_ARGS) _test_string.c -lcriterion ../fnv-hash/libfnv.a -o bin/test_string
+	$(CC) $(CMD_ARGS) $(OPTS) _test_array.c -lcriterion ../fnv-hash/libfnv.a -o bin/test_array
+	$(CC) $(CMD_ARGS) $(OPTS) _test_assoc.c -lcriterion ../fnv-hash/libfnv.a -o bin/test_assoc
+	$(CC) $(CMD_ARGS) $(OPTS) _test_fixwid.c -lcriterion ../fnv-hash/libfnv.a -o bin/test_fixwid
+	$(CC) $(CMD_ARGS) $(OPTS) _test_func.c -lcriterion ../fnv-hash/libfnv.a -o bin/test_func
+	$(CC) $(CMD_ARGS) $(OPTS) _test_hash.c -lcriterion ../fnv-hash/libfnv.a -o bin/test_hash
+	$(CC) $(CMD_ARGS) $(OPTS) _test_object.c -lcriterion ../fnv-hash/libfnv.a -o bin/test_object
+	$(CC) $(CMD_ARGS) $(OPTS) _test_pair.c -lcriterion ../fnv-hash/libfnv.a -o bin/test_pair
+	$(CC) $(CMD_ARGS) $(OPTS) _test_string.c -lcriterion ../fnv-hash/libfnv.a -o bin/test_string
 	@echo
 
 clean:

@@ -288,8 +288,8 @@ define_min_func(size_t);
   } int _IDONOTEXIST_3 ## type
 
 #define define_isinbounds(type) \
-  bool type ## _isinbounds (const type ## _t * const obj, const size_t idx) { \
-    return idx <= signed2un(obj->idx); \
+  bool type ## _isinbounds (const type ## _t * const iter, const size_t idx) { \
+    return idx <= signed2un((iter)->idx); \
   } int ____DONT_FIND_THIS_NAME44##type
 
 // provided by object.h
@@ -315,6 +315,8 @@ char* T_see (const T_t* const t);
 array_t* array_new_fromcptr (const void* const * const ptr, const size_t len, const objtype_t outtype);
 array_t*       array_new (const object_t* const * const objs, const ssize_t len);
 array_t*      array_copy (const array_t* const a);
+array_t*    array_concat (const array_t* const a, const array_t* const b);
+array_t*   array_vconcat (const array_t* const a, const size_t argc, ...);
 char*          array_see (const array_t* const a);
 object_t* array_get_copy (const array_t* const a, const size_t idx, bool* ok);
 object_t** array_get_ref (const array_t* const a, const size_t idx, bool* ok);
@@ -328,8 +330,6 @@ bool        array_insert (array_t* const a, const object_t* const o, const size_
 void        array_append (array_t* const a, const object_t* const o);
 void        array_resize (array_t* const a, const size_t new_len);
 void       array_vappend (array_t* const a, const size_t argc, ...);
-void        array_concat (array_t** const a, const array_t* const b);
-void       array_vconcat (array_t** const a, const size_t argc, ...);
 void       array_inspect (const array_t* const a);
 void      array_destruct (array_t* const a);
 void array_destruct_args (const size_t argc, ...);
@@ -365,7 +365,6 @@ bool        hash_exists (const hash_t* const h, const object_t* const key);
 bool        hash_delete (hash_t* const h, const object_t* const key);
 void      hash_destruct (hash_t* const h);
 void hash_destruct_args (const size_t argc, ...);
-void     hash_recompute (hash_t** const h);
 void       hash_inspect (const hash_t* const h);
 void         hash_unzip (const hash_t* const h, array_t** keys, array_t** vals);
 
@@ -385,6 +384,8 @@ void          pair_cons (pair_t* const p, const object_t* cdr);
 // provided by assoc.h
 assoc_t*       assoc_new (const array_t* const a, const array_t* const b);
 assoc_t*      assoc_copy (const assoc_t* const a);
+assoc_t*    assoc_concat (const assoc_t* const a, const assoc_t* const b);
+assoc_t*   assoc_vconcat (const assoc_t* const a, const size_t argc, ...);
 char*          assoc_see (const assoc_t* const a);
 pair_t*   assoc_get_copy (const assoc_t* const a, const size_t idx, bool* ok);
 pair_t**   assoc_get_ref (const assoc_t* const a, const size_t idx, bool* ok);
@@ -401,21 +402,31 @@ void         assoc_unzip (const assoc_t* const a, array_t** keys, array_t** vals
 void        assoc_resize (assoc_t* a, const size_t new_idx);
 void    assoc_append_boa (assoc_t* const a, const object_t* const car, const object_t* const cdr);
 void       assoc_vappend (assoc_t* const a, const size_t argc, ...);
-void           assoc_cat (assoc_t** const a, const assoc_t* const b);
-void          assoc_vcat (assoc_t** const a, const size_t argc, ...);
 void       assoc_inspect (const assoc_t* const a);
 void      assoc_destruct (assoc_t* const a);
 void assoc_destruct_args (const size_t argc, ...);
 void         assoc_clear (assoc_t* const a);
 
 // provided by number.h
-number_t*  number_new (const long double val);
-number_t* number_copy (const number_t* const n);
-char*      number_see (const number_t* const n);
-bool        number_eq (const number_t* const a, const number_t* const b);
-bool        number_gt (const number_t* const a, const number_t* const b);
-bool        number_lt (const number_t* const a, const number_t* const b);
-void  number_destruct (number_t* const n);
+number_t*      number_new (const long double val);
+number_t*     number_copy (const number_t* const n);
+number_t*      number_mul (const number_t* const a, const number_t* const b);
+number_t*      number_add (const number_t* const a, const number_t* const b);
+number_t*      number_sub (const number_t* const a, const number_t* const b);
+number_t*   number_divmod (const number_t* const a, const number_t* const b, number_t** mod_out);
+number_t*      number_pow (const number_t* const n, const number_t* const exp);
+number_t*     number_pmul (const numderlying_t a, const number_t* const b);
+number_t*     number_padd (const numderlying_t a, const number_t* const b);
+number_t*     number_psub (const numderlying_t a, const number_t* const b);
+number_t*  number_pdivmod (const numderlying_t a, const number_t* const b, number_t** mod_out);
+number_t*     number_ppow (const numderlying_t n, const number_t* const exp);
+number_t*     number_powp (const number_t* const n, const numderlying_t* const exp);
+number_t*      number_abs (const number_t* const n);
+char*          number_see (const number_t* const n);
+bool            number_eq (const number_t* const a, const number_t* const b);
+bool            number_gt (const number_t* const a, const number_t* const b);
+bool            number_lt (const number_t* const a, const number_t* const b);
+void      number_destruct (number_t* const n);
 void number_destruct_args (const size_t argc, ...);
 
 // provided by fixdwid.h

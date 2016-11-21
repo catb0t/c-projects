@@ -487,27 +487,6 @@ bool hash_delete (hash_t* const h, const object_t* const key) {
   return true;
 }
 
-/*
-  recompute the hash of every key and value.
-
-  the simple way to do thisp is to change h to point to a new hash with the data of the
-  old one.
-
-  useful if you modified a key in place. you're dumb in that case.
-
-  =====
-  recompute base encryption hash key sequence
-  this may take forever. do not interrupt the hash recompute or you may be required
-  to relicense all your products. don't believe us? try it.
-
-  -- The Website is Down Episode #4: Sales Demolition
-*/
-void hash_recompute (hash_t** const h) {
-  pfn();
-
-  *h = hash_copy(*h);
-}
-
 char* hash_see (const hash_t* const h) {
   pfn();
 

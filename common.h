@@ -88,7 +88,7 @@
 #endif
 
 #ifdef DEBUG
-  #define dbg_prn(fmt, ...) printf("|\033[35;1mDEBUG\033[0m|" fmt, __VA_ARGS__)
+  #define dbg_prn(fmt, ...) fflush(stdout); printf("|\033[35;1mDEBUG\033[0m|" fmt, __VA_ARGS__)
 
   #define _printfunc(file, line, func) printf("\n|\033[36;1mCALLF\033[0m|\033[30;1m%s#%d:\033[36;1m%s\033[0m\n", \
     file, line, func)
@@ -171,6 +171,8 @@ void*   _safecalloc (const size_t nmemb, const size_t len, uint64_t lineno, cons
 #define safemalloc(x)     _safemalloc((x), __LINE__, __func__)
 #define saferealloc(p,s) _saferealloc((p), (s), __LINE__, __func__)
 #define safecalloc(n,l)   _safecalloc((n), (l), __LINE__, __func__)
+
+#define fdredir(fd, file) freopen(file, "w", fd)
 
 __PURE_FUNC __CONST_FUNC
 size_t signed2un (const ssize_t val) {

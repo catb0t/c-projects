@@ -286,38 +286,37 @@ void array_vappend (array_t* const a, const size_t argc, ...) {
 /*
   concatenate two array_ts
 */
-void array_concat (array_t** const a, const array_t* const b) {
+array_t* array_concat (const array_t* const a, const array_t* const b) {
   pfn();
 
   object_failnull(a);
 
-  if ( array_isempty(*a) && array_isempty(b) ) {
-    return;
+  if ( array_isempty(a) && array_isempty(b) ) {
+    return array_new(NULL, -1);
   }
 
-  else if ( array_isempty(*a) || array_isempty(b) ) {
+  else if ( array_isempty(a) || array_isempty(b) ) {
 
-    if ( array_isempty(*a) ) {
-      *a = array_copy(b);
+    if ( array_isempty(a) ) {
+      return array_copy(b);
     }
 
-    return;
+    return array_copy(a);
   }
 
-  size_t alen = array_length(*a),
-         total_len = alen + array_length(b);
+  array_t* c = array_copy(a);
 
-  array_resize(*a, total_len);
-
-  for (size_t i = alen; i < total_len; i++) {
-    (*a)->data[i] = array_get_copy(b, udifference(i, alen), NULL);
+  for (size_t i = 0; i < array_length(b); i++) {
+    array_append(c, *array_get_ref(b, i, NULL) );
   }
+
+  return c;
 }
 
 /*
   variadic version of array_cat
 */
-void array_vconcat (array_t** const a, const size_t argc, ...) {
+array_t* array_vconcat (const array_t* const a, const size_t argc, ...) {
   pfn();
 
   object_failnull(a);
@@ -325,16 +324,20 @@ void array_vconcat (array_t** const a, const size_t argc, ...) {
   va_list vl;
   va_start(vl, argc);
 
+  array_t* c = array_copy(a);
+
   for (size_t i = 0; i < argc; i++) {
     // hopefully thisp just takes the address
     array_t** v = (typeof(v)) safemalloc( sizeof (array_t *) );
     *v = va_arg(vl, array_t*);
 
-    array_concat(a, *v);
+    array_concat(c, *v);
     safefree(v);
   }
 
   va_end(vl);
+
+  return c;
 }
 
 /*

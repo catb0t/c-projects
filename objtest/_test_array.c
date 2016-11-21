@@ -65,12 +65,12 @@ Test(empty, clear) {
 Test(empty, concat) {
   a = array_new(NULL, -1), b = array_copy(a); // 1, 2
 
-  array_concat(&a, b);
+  ra = array_concat(a, b); // 3
 
-  s = array_see(a); // 3
+  s = array_see(ra); // 4
   cr_assert_str_eq(s, "{ }");
 
-  safefree(s), array_destruct_args(2, a, b); // ~1, ~2, ~3
+  safefree(s), array_destruct_args(3, a, b, ra); // ~1, ~2, ~3, ~4
 }
 
 Test(empty, equals) {
@@ -86,20 +86,21 @@ Test(empty, equals) {
 Test(empty, getref) {
   a = array_new(NULL, -1);
 
-  refa = array_get_ref(a, 0, &ok);
+  freopen("/dev/null", "w", stderr);
 
-  cr_assert( ! ok );
-  cr_assert(NULL == refa);
+  clock_start();
+  for (__LOOPCOUNT = 0; __LOOPCOUNT < GETTER_LOOP_LENGTH; __LOOPCOUNT++) {
+    object_t** obj_ra = array_get_ref(a, __LOOPCOUNT, &ok);
 
-  refa = array_get_ref(a, 3, &ok);
+    cr_assert( ! ok );
+    cr_assert( NULL == obj_ra );
+    (void) obj_ra;
+  }
+  clock_stop();
 
-  cr_assert( ! ok );
-  cr_assert( NULL == refa );
+  freopen("/dev/stderr", "w", stderr);
 
-  refa = array_get_ref(a, 90, &ok);
-
-  cr_assert( ! ok );
-  cr_assert( NULL == refa );
+  dbg_prn("get %zu refs from empty array took %ld ms", __LOOPCOUNT, msec);
 
   array_destruct(a);
 }
@@ -107,26 +108,21 @@ Test(empty, getref) {
 Test(empty, getcopy) {
   a = array_new(NULL, -1);
 
-  oa = array_get_copy(a, 0, &ok);
+  freopen("/dev/null", "w", stderr);
 
-  cr_assert( ! ok );
-  cr_assert( object_isinstance(t_F, oa) );
+  clock_start();
+  for (__LOOPCOUNT = 0; __LOOPCOUNT < GETTER_LOOP_LENGTH; __LOOPCOUNT++) {
+    object_t* obj_a = array_get_copy(a, __LOOPCOUNT, &ok);
 
-  object_destruct(oa);
+    cr_assert( ! ok );
+    cr_assert( object_isinstance(t_F, obj_a) );
+    object_destruct(obj_a);
+  }
+  clock_stop();
 
-  oa = array_get_copy(a, 3, &ok);
+  freopen("/dev/stderr", "w", stderr);
 
-  cr_assert( ! ok );
-  cr_assert( object_isinstance(t_F, oa) );
-
-  object_destruct(oa);
-
-  oa = array_get_copy(a, 90, &ok);
-
-  cr_assert( ! ok );
-  cr_assert( object_isinstance(t_F, oa) );
-
-  object_destruct(oa);
+  dbg_prn("get %zu copies from empty array took %ld ms", __LOOPCOUNT, msec);
 
   array_destruct(a);
 }
@@ -210,12 +206,12 @@ Test(nonempty, concat2ssize) {
   ra = array_new_from_ssize_t_lit(anums, (sizeof anums / sizeof (ssize_t)), t_realint),
   rb = array_new_from_ssize_t_lit(bnums, (sizeof bnums / sizeof (ssize_t)), t_realint);
 
-  array_concat(&ra, rb);
+  a = array_concat(ra, rb);
 
-  s = array_see(ra);
+  s = array_see(a);
   dbg_prn("concat is: %s\n", s);
   cr_assert_str_eq(s, "{ 1 -3 5 -7 9 -11 -2 4 -6 8 -10 12 }");
-  safefree(s), array_destruct(ra), array_destruct(rb);
+  safefree(s), array_destruct_args(3, ra, rb, a);
 }
 
 Test(nonempty, delete) {
@@ -273,13 +269,13 @@ Test(nonempty, concat2) {
   a = array_new_from_ssize_t_lit(anums, (sizeof anums) / sizeof (ssize_t), t_realint),
   b = array_new_from_ssize_t_lit(bnums, (sizeof bnums) / sizeof (ssize_t), t_realint);
 
-  array_concat(&a, b);
+  ra = array_concat(a, b);
 
-  s = array_see(a);
+  s = array_see(ra);
   dbg_prn("concat is: %s", s);
   cr_assert_str_eq(s, "{ 1 -3 5 -7 9 -11 -2 4 -6 8 -10 12 }");
 
-  safefree(s), array_destruct_args(2, a, b);
+  safefree(s), array_destruct_args(3, a, b, ra);
 }
 
 Test(nonempty, equals) {
@@ -304,20 +300,28 @@ Test(nonempty, equals) {
 Test(nonempty, getref) {
   a = array_new_from_ssize_t_lit(anums, (sizeof anums) / sizeof (ssize_t), t_realint);
 
-  refa = array_get_ref(a, 0, &ok);
+  fdredir(stderr, "/dev/null");
 
-  cr_assert( ok );
-  cr_assert(NULL != refa);
+  clock_start();
+  for (__LOOPCOUNT = 0; __LOOPCOUNT < GETTER_LOOP_LENGTH; __LOOPCOUNT++) {
+    object_t** obj_ra = array_get_ref(a, __LOOPCOUNT, &ok);
 
-  refa = array_get_ref(a, 3, &ok);
+    if ( array_isinbounds(a, __LOOPCOUNT) ) {
+      cr_assert( ok );
+      cr_assert( NULL != obj_ra );
 
-  cr_assert( ok );
-  cr_assert(NULL != refa);
+    } else {
+      cr_assert( ! ok );
+      cr_assert( NULL == obj_ra );
+    }
 
-  refa = array_get_ref(a, 90, &ok);
+    (void) obj_ra;
+  }
+  clock_stop();
 
-  cr_assert( ! ok );
-  cr_assert(NULL == refa);
+  fdredir(stderr, "/dev/stderr");
+
+  dbg_prn("get %zu refs from nonempty array took %ld ms", __LOOPCOUNT, msec);
 
   array_destruct(a);
 }
@@ -325,26 +329,28 @@ Test(nonempty, getref) {
 Test(nonempty, getcopy) {
   a = array_new_from_ssize_t_lit(anums, (sizeof anums) / sizeof (ssize_t), t_realint);
 
-  oa = array_get_copy(a, 0, &ok);
+  fdredir(stderr, "/dev/null");
 
-  cr_assert( ok );
-  cr_assert( ! object_isinstance(t_F, oa) );
+  clock_start();
+  for (__LOOPCOUNT = 0; __LOOPCOUNT < GETTER_LOOP_LENGTH; __LOOPCOUNT++) {
+    object_t* obj_a = array_get_copy(a, __LOOPCOUNT, &ok);
 
-  object_destruct(oa);
+    if ( array_isinbounds(a, __LOOPCOUNT) ) {
+      cr_assert( ok );
+      cr_assert( ! object_isinstance(t_F, obj_a) );
 
-  oa = array_get_copy(a, 3, &ok);
+    } else {
+      cr_assert( ! ok );
+      cr_assert( object_isinstance(t_F, obj_a) );
+    }
 
-  cr_assert( ok );
-  cr_assert( ! object_isinstance(t_F, oa) );
+    object_destruct(obj_a);
+  }
+  clock_stop();
 
-  object_destruct(oa);
+  fdredir(stderr, "/dev/stderr");
 
-  oa = array_get_copy(a, 90, &ok);
-
-  cr_assert( ! ok );
-  cr_assert( object_isinstance(t_F, oa) );
-
-  object_destruct(oa);
+  dbg_prn("get %zu copies from empty array took %ld ms", __LOOPCOUNT, msec);
 
   array_destruct(a);
 }

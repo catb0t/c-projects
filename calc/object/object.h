@@ -314,11 +314,13 @@ void _object_error (objerror_t errt, const bool fatal, const char* const file, c
 
   va_start(vl, fmt);
 
-  size_t fmtlen = safestrnlen(fmt);
+  size_t fmtlen = safestrnlen(fmt) * 2;
 
-  char* buf = (typeof(buf)) safemalloc(sizeof (char) * (fmtlen * 2));
+  char* buf = (typeof(buf)) safemalloc(sizeof (char) * fmtlen);
 
-  vsnprintf(buf, fmtlen * 2, fmt, vl);
+  vsnprintf(buf, fmtlen, fmt, vl);
+
+  va_end(vl);
 
   static const char* const errmsgs[] = {
     [ER_NOT_A_TYPE]  = "NUM_OBJTYPES isn't a real type, dummy. Don't do that.\n"
@@ -340,8 +342,8 @@ void _object_error (objerror_t errt, const bool fatal, const char* const file, c
     if (NULL == stdout) {
       return;
     }
-    // i think this is correct
-    freopen("/dev/stdout", "w", stderr);
+
+    fdredir(stderr, "/dev/stdout");
   }
 
   fprintf(stderr, "|\033[31m%s\033[0m|\033[31;1m \b%s:%" PRIu64 ": %s: %s: %s\033[0m\n",
@@ -358,8 +360,6 @@ void _object_error (objerror_t errt, const bool fatal, const char* const file, c
     abort();
   }
 
-
-  va_end(vl);
 }
 
 /*
@@ -549,4 +549,4 @@ bool object_isinstance(const objtype_t t, const object_t* const o) {
   return NULL == o ? false : o->type == t;
 }
 
-#endif
+#endif // STACK ?

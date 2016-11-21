@@ -15,6 +15,8 @@ clock_t start, diff, msec;
   #define clock_stop()
 #endif
 
+#define GETTER_LOOP_LENGTH 100
+
 define_array_new_fromctype(ssize_t);
 
 array_t *a, *b, *ra, *rb;

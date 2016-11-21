@@ -77,13 +77,13 @@ char * strsep (char **stringp, const char *delim) {
 /* Duplicate S, returning an identical malloc'd string.  */
 char * strndup (const char *s, size_t const n) {
   size_t len = strnlen (s, n);
-  char *new  = malloc (len + 1);
+  char *news = (char *) malloc (len + 1);
 
-  if (new == NULL) {
+  if (news == NULL) {
     return NULL;
   }
 
-  new[len] = '\0';
-  return (char *) memcpy (new, s, len);
+  news[len] = '\0';
+  return (char *) memcpy (news, s, len);
 
 }

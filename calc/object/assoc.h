@@ -131,7 +131,13 @@ pair_t** assoc_get_ref (const assoc_t* const a, const size_t idx, bool* ok) {
 pair_t* assoc_get_copy (const assoc_t* const a, const size_t idx, bool* ok) {
   pfn();
 
-  return pair_copy( *assoc_get_ref(a, idx, ok) );
+  pair_t** p = assoc_get_ref(a, idx, ok);
+
+  if (NULL == p) {
+    return pair_new(NULL, NULL);
+  }
+
+  return pair_copy( *p );
 }
 
 /*

@@ -58,7 +58,7 @@ Test(empty, getref) {
   freopen("/dev/null", "w", stderr);
 
   clock_start();
-  for (__LOOPCOUNT = 0; __LOOPCOUNT < 10; __LOOPCOUNT++) {
+  for (__LOOPCOUNT = 0; __LOOPCOUNT < GETTER_LOOP_LENGTH; __LOOPCOUNT++) {
     pair_t** p_refa = assoc_get_ref(c, __LOOPCOUNT, &ok);
 
     cr_assert( ! ok );
@@ -68,6 +68,30 @@ Test(empty, getref) {
   clock_stop();
 
   freopen("/dev/stderr", "w", stderr);
+
+  dbg_prn("get %zu refs from empty assoc took %ld ms", __LOOPCOUNT, msec);
+
+  assoc_destruct(c);
+}
+
+Test(empty, getcopy) {
+  c = assoc_new(NULL, NULL);
+
+  fdredir(stderr, "/dev/null");
+
+  clock_start();
+  for (__LOOPCOUNT = 0; __LOOPCOUNT < GETTER_LOOP_LENGTH; __LOOPCOUNT++) {
+    pair_t *p_copy     = assoc_get_copy(c, __LOOPCOUNT, &ok),
+           *empty_pair = pair_new(NULL, NULL);
+
+    cr_assert( ! ok );
+    cr_assert( pair_equals(p_copy, empty_pair) );
+    (void) p_copy, (void) empty_pair;
+    pair_destruct_args(2, p_copy, empty_pair);
+  }
+  clock_stop();
+
+  fdredir(stderr, "/dev/stderr");
 
   dbg_prn("get %zu refs from empty assoc took %ld ms", __LOOPCOUNT, msec);
 
@@ -155,7 +179,7 @@ Test(nonempty, getref) {
   freopen("/dev/null", "w", stderr);
 
   clock_start();
-  for (__LOOPCOUNT = 0; __LOOPCOUNT < 10; __LOOPCOUNT++) {
+  for (__LOOPCOUNT = 0; __LOOPCOUNT < GETTER_LOOP_LENGTH; __LOOPCOUNT++) {
     pair_t** p_refa = assoc_get_ref(c, __LOOPCOUNT, &ok);
 
     if ( assoc_isinbounds(c, __LOOPCOUNT) ) {
@@ -176,5 +200,39 @@ Test(nonempty, getref) {
   dbg_prn("get %zu refs from nonempty assoc took %ld ms", __LOOPCOUNT, msec);
 
   assoc_destruct(c);
+  array_destruct_args(2, a, b);
+}
+
+Test(nonempty, getcopy) {
+  a = array_new_from_ssize_t_lit(anums, (sizeof anums / sizeof (ssize_t)), t_realint),
+  b = array_new_from_ssize_t_lit(bnums, (sizeof bnums / sizeof (ssize_t)), t_realint);
+
+  c = assoc_new(a, b);
+
+  fdredir(stderr, "/dev/null");
+
+  clock_start();
+  for (__LOOPCOUNT = 0; __LOOPCOUNT < GETTER_LOOP_LENGTH; __LOOPCOUNT++) {
+    pair_t *p_copy     = assoc_get_copy(c, __LOOPCOUNT, &ok),
+           *empty_pair = pair_new(NULL, NULL);
+
+    if ( assoc_isinbounds(c, __LOOPCOUNT) ) {
+      cr_assert( ok );
+      cr_assert( ! pair_equals(p_copy, empty_pair) );
+    } else {
+      cr_assert( ! ok );
+      cr_assert( pair_equals(p_copy, empty_pair) );
+    }
+
+    pair_destruct_args(2, p_copy, empty_pair);
+  }
+  clock_stop();
+
+  fdredir(stderr, "/dev/stderr");
+
+  dbg_prn("get %zu refs from empty assoc took %ld ms", __LOOPCOUNT, msec);
+
+  assoc_destruct(c);
+
   array_destruct_args(2, a, b);
 }
