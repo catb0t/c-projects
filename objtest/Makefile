@@ -1,4 +1,4 @@
-FILENAME := $(shell basename `pwd`)
+	FILENAME := $(shell basename `pwd`)
 ARCH := $(shell uname -m)
 OUT_FILENAME := $(FILENAME)
 
@@ -7,7 +7,7 @@ DEBUG_OPTS := -Wall -Wextra -Wfloat-equal -Winline -Wundef -Werror -fverbose-asm
 
 MEM_OPTS := -fstack-protector -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer
 
-OPTS := -lm ../fnv-hash/libfnv.a -g -fprofile-arcs -ftest-coverage
+OPTS := -lm ../fnv-hash/libfnv.a -g #-fprofile-arcs -ftest-coverage
 ifeq ($(CCPLUS), 1)
 	OPTS += -std=c++14
 	CC := c++
@@ -58,6 +58,9 @@ test:
 	$(CC) $(CMD_ARGS) $(OPTS) _test_pair.c -lcriterion ../fnv-hash/libfnv.a -o bin/test_pair
 	$(CC) $(CMD_ARGS) $(OPTS) _test_string.c -lcriterion ../fnv-hash/libfnv.a -o bin/test_string
 	@echo
+
+arm: $(FILES)
+	arm-linux-gnueabi-gcc $(FILENAME).c $(CMD_ARGS) -static -march=armv7-a $(DEBUG_OPTS) $(OPTS) -o ./bin/arm_$(OUT_FILENAME)
 
 clean:
 	(rm core *core* a.out *.o *.gch 2>/dev/null; echo)

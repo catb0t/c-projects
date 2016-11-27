@@ -131,6 +131,7 @@ char*     vstrncat_c (const size_t argc, ...);
 char* make_empty_str (void);
 void       str_chomp (char* str);
 char*         readln (const size_t len);
+char*   input_prompt (const char* const prompt, const size_t len, const char* const other);
 char*    str_reverse (const char* const str);
 char*       str_copy (const char* const str);
 char*     str_repeat (const char* const str, const size_t times,     size_t* out_len);
@@ -188,13 +189,15 @@ ssize_t un2signed (const size_t val) {
   __PURE_FUNC __CONST_FUNC \
   other signed2un_ ## type ## 2 ## other (const type val) { \
     return val < 0 ? 0 : (other) val; \
-  }
+  } \
+  int __IAMALSONOTHING ## type ## other
 
 #define define_un2signed_type(type, other, type_maxvalue) \
   __PURE_FUNC __CONST_FUNC \
   other un2signed_ ## type ## 2 ## other (const type val) { \
     return (other) ((val) > (type_maxvalue / 2) ? (type_maxvalue) / 2 : val) \
   } \
+  int __IAMNOTHING ## type ## other
 
 __PURE_FUNC __CONST_FUNC
 size_t usub (const size_t a, const size_t b) {
@@ -297,7 +300,7 @@ void free_ptr_array (void** ptr, const size_t len) {
 }
 
 char* strchr_c (const char* const str, const char c) {
-  char* nw = (typeof(nw)) strndup (str, safestrnlen(str));
+  char* nw = (typeof(nw)) strndup(str, safestrnlen(str));
   while ( (++*nw) != c);
   return nw;
 }
@@ -436,28 +439,49 @@ char* readln (const size_t len) {
   pfn();
 
   char
-    *ret,
-    *buf = (typeof(buf)) safemalloc( sizeof(char) * len );
+    *buf = (typeof(buf)) safemalloc( sizeof(char) * len ),
+    *ret = fgets(buf, len > INT_MAX ? INT_MAX : (int) len, stdin);
 
-  ret = fgets(buf, len > INT_MAX ? INT_MAX : (int) len, stdin);
-
-  if ( ret == NULL ) {
+  if ( NULL == ret ) {
     safefree(buf);
-    char*  out = (typeof(out)) safemalloc(2);
-    snprintf(out, 2, "%c", '\04');
-    return out;
+    buf = (typeof(buf)) safemalloc(2);
+    snprintf(buf, 2, "%c", '\4');
+
+  } else {
+    str_chomp(buf);
   }
 
-  str_chomp(buf);
+  assert(NULL != buf);
 
   return buf;
 }
 
-char* str_copy (const char* str) {
+char* input_prompt (const char* const prompt, const size_t len, char const* const retry_prt) {
+  printf("%s", prompt);
+
+  char* buf;
+
+  const char* const retry = NULL == retry_prt ? "Retry (bad input): " : retry_prt;
+
+  while ( true ) {
+
+    buf = readln(len);
+
+    if (4 == buf[0]) { safefree(buf); return make_empty_str(); }
+    if ( buf[0] ) { return buf; }
+
+    safefree(buf);
+
+    printf("%s", retry);
+
+  }
+}
+
+char* str_copy (const char* const str) {
   pfn();
 
   size_t len = safestrnlen(str);
-  char*  newp = (typeof(newp)) safemalloc(sizeof (char) * len);
+  char* newp = (typeof(newp)) safemalloc(sizeof (char) * len);
 
   for (size_t i = 0; i < len; i++) {
     newp[i] = str[i];
@@ -471,6 +495,11 @@ char** str_split (
         size_t* out_len
 ) {
   pfn();
+
+  if (! str[0]) {
+    errno = EINVAL;
+    return NULL;
+  }
 
   char delim_str[2],
        *scopy = strndup(str, MAX_STR_LEN);
