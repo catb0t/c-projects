@@ -204,7 +204,7 @@ bool assoc_delete (assoc_t* const a, const size_t idx) {
 
   object_failnull(a);
 
-  if ( idx > signed2un(a->idx) ) {
+  if ( assoc_isempty(a) || idx > assoc_length(a) ) {
     char buf[200];
     snprintf(
       buf,

@@ -6,17 +6,28 @@
 #endif
 
 number_t* deg2rad (const number_t* const degrees) {
-  number_t *out = number_copy(degrees);
+  MAKE_NUMBER_PI;
 
-  out = number_pmul(MATH_PI, out);
-
-  out = number_pdivmod(180, out, NULL);
-
-  return out;
+  number_t *halfCirc = number_new(180),
+                *fin = degrad_conv_compose(degrees, halfCirc, pi);
+  number_destruct_args(2, pi, halfCirc);
+  return fin;
 }
 
 number_t* rad2deg (const number_t* const radians) {
-  number_t* out = number_copy(radians);
+  MAKE_NUMBER_PI;
 
-  out = number_pmul(180, out);
+  number_t *halfCirc = number_new(180),
+                *fin = degrad_conv_compose(radians, pi, halfCirc);
+  number_destruct_args(2, pi, halfCirc);
+  return fin;
+}
+
+number_t* degrad_conv_compose (const number_t* const val, const number_t* const op_a, const number_t* const op_b) {
+  number_t
+    *imd = number_mul(val, op_a),
+    *fin = number_divmod(imd, op_b, NULL);
+
+  number_destruct(imd);
+  return fin;
 }

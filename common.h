@@ -74,6 +74,8 @@
 
 #endif
 
+#undef strdup
+
 #ifdef GCC_COMPAT
   #pragma GCC poison strcpy strdup sprintf gets atoi // poison unsafe functions
 
@@ -173,7 +175,7 @@ void*   _safecalloc (const size_t nmemb, const size_t len, uint64_t lineno, cons
 #define saferealloc(p,s) _saferealloc((p), (s), __LINE__, __func__)
 #define safecalloc(n,l)   _safecalloc((n), (l), __LINE__, __func__)
 
-#define fdredir(fd, file) freopen(file, "w", fd)
+#define fdredir(fd, file) fd = freopen(file, "w", fd)
 
 __PURE_FUNC __CONST_FUNC
 size_t signed2un (const ssize_t val) {

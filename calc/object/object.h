@@ -490,7 +490,7 @@ bool object_equals (const object_t* const a, const object_t* const b) {
 
   }
 
-  bool same;
+  bool same = false;
 
   switch (a->type) {
     case NUM_OBJTYPES: {
