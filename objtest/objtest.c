@@ -377,6 +377,14 @@ void test (void) {
   safefree(s), assoc_destruct(c);
 //}
 
+//Test(empty, isempty) {
+  c = assoc_new(NULL, NULL); // 1
+  //cr_assert(assoc_isempty(c));
+  //cr_assert(assoc_length(c) == 0);
+
+  assoc_destruct(c); // ~1
+//}
+
 //Test(empty, append) {
   c = assoc_new(NULL, NULL);
 
@@ -414,6 +422,15 @@ void test (void) {
   array_destruct_args(2, a, b);
 
   assoc_destruct(c);
+//}
+
+//Test(empty, deletefails) {
+  c = assoc_new(NULL, NULL); // 1
+
+  ok = assoc_delete(c, 0);
+  //cr_assert(! ok);
+
+  assoc_destruct(c); // ~1
 //}
 
 //Test(empty, getref) {
