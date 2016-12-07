@@ -69,6 +69,22 @@ Test(empty, deletefails) {
   assoc_destruct(c); // ~1
 }
 
+Test(empty, clear) {
+  a = array_new(NULL, -1); // 1
+
+  s = array_see(a); // 2
+  cr_assert_str_eq(s, "{ }");
+  safefree(s); // ~2
+
+  array_clear(a);
+
+  s = array_see(a); // 3
+  cr_assert_str_eq(s, "{ }");
+
+  safefree(s), array_destruct(a); // ~1, ~3
+}
+
+
 Test(empty, getref) {
   c = assoc_new(NULL, NULL);
 

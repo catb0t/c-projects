@@ -544,7 +544,8 @@ char** str_split (
     size_t i;
     char* token;
 
-    for (i = 0;
+    for (
+      i = 0;
       (token = strsep(&scopy, delim_str)) != NULL;
       i++
     ) {
