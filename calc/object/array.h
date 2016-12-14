@@ -42,12 +42,13 @@ array_t* array_new (const object_t* const * const objs, const ssize_t len) {
     object_dtorn(__UNSHADOW_OBJS, len); \
     return __UNSHADOW_ARRAY; \
   } \
-  int ____DONT_FIND_THIS_NAME ## funcname
+  int ____DONT_FIND_THIS_NAME ## type
 
 /*
   makes a new array from an array of pointers to raw C types.
 */
 array_t* array_new_fromcptr (const void* const * const ptr, const size_t len, const objtype_t conv_to) {
+  pfn();
 
   object_t** objs = (typeof(objs)) safemalloc( sizeof(object_t *) * len);
 
@@ -168,7 +169,7 @@ bool array_delete (array_t* const a, const size_t idx) {
 
   ssize_t sidx = un2signed(idx);
 
-  if ( ( sidx > a->idx ) || ( array_isempty(a) ) || ( ! idx ) ) {
+  if ( idx > array_length(a) || array_isempty(a) ) {
     object_error(
       ER_INDEXERROR,
       false,
@@ -290,6 +291,7 @@ array_t* array_concat (const array_t* const a, const array_t* const b) {
   pfn();
 
   object_failnull(a);
+  object_failnull(b);
 
   if ( array_isempty(a) && array_isempty(b) ) {
     return array_new(NULL, -1);

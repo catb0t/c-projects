@@ -129,7 +129,7 @@ Test(empty, getcopy) {
 
 // NONEMPTY
 
-Test(nonempty, fromboa) {
+Test(nonempty, boa) {
 
   size_t objslen = 2;
 
@@ -196,24 +196,6 @@ Test(nonempty, copy) {
   safefree_args(2, s, s2);
 }
 
-Test(nonempty, concat2ssize) {
-
-  _Static_assert(
-    (sizeof anums / sizeof (ssize_t)) == (sizeof bnums / sizeof (ssize_t)),
-    "literal arrays should have same lengths"
-  );
-
-  ra = array_new_from_ssize_t_lit(anums, (sizeof anums / sizeof (ssize_t)), t_realint),
-  rb = array_new_from_ssize_t_lit(bnums, (sizeof bnums / sizeof (ssize_t)), t_realint);
-
-  a = array_concat(ra, rb);
-
-  s = array_see(a);
-  dbg_prn("concat is: %s\n", s);
-  cr_assert_str_eq(s, "{ 1 -3 5 -7 9 -11 -2 4 -6 8 -10 12 }");
-  safefree(s), array_destruct_args(3, ra, rb, a);
-}
-
 Test(nonempty, delete) {
 
   a = array_new_from_ssize_t_lit(anums, (sizeof anums) / sizeof (ssize_t), t_realint);
@@ -223,11 +205,11 @@ Test(nonempty, delete) {
   ok = array_delete(a, signed2un(a->idx));
   cr_assert(ok);
   ok = array_delete(a, 0);
-  cr_assert(! ok);
+  cr_assert(ok);
 
   s = array_see(a);
   dbg_prn("delete2: %s\n", s);
-  cr_assert_str_eq(s, "{ 1 -3 5 9 }");
+  cr_assert_str_eq(s, "{ -3 5 9 }");
 
   safefree(s), array_destruct(a);
 }
@@ -265,7 +247,7 @@ Test(nonempty, insert) {
   array_destruct(a), object_destruct(go);
 }
 
-Test(nonempty, concat2) {
+Test(nonempty, concat) {
   a = array_new_from_ssize_t_lit(anums, (sizeof anums) / sizeof (ssize_t), t_realint),
   b = array_new_from_ssize_t_lit(bnums, (sizeof bnums) / sizeof (ssize_t), t_realint);
 

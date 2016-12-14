@@ -10,16 +10,16 @@
 assoc_t* assoc_new (const array_t* const a, const array_t* const b) {
   pfn();
 
-  assoc_t* assoc = (typeof(assoc)) safemalloc(sizeof (assoc_t) );
+  assoc_t* assoc = alloc(assoc_t, 1);
 
   assoc->idx  = -1;
   assoc->data = NULL;
 
-  if ( (NULL != a) && (NULL != b) ) {
+  if ( a && b ) {
 
     size_t idx = size_t_min(array_length(a), array_length(b));
 
-    assoc->data = (typeof(assoc->data)) safemalloc( sizeof (pair_t*) * (idx + 1) );
+    assoc->data = alloc(pair_t*, idx + 1);
 
     for (size_t i = 0; i < idx; i++) {
       object_t
@@ -35,6 +35,31 @@ assoc_t* assoc_new (const array_t* const a, const array_t* const b) {
   return assoc;
 }
 
+#define define_assoc_new_fromctype(type) \
+  assoc_t* assoc_new_from_ ## type ## _lit (const type * const, const type * const, const size_t, const objtype_t, const objtype_t);  \
+  assoc_t* assoc_new_from_ ## type ## _lit (const type * const ct_cars, const type * const ct_cdrs, const size_t len, const objtype_t car_to, const objtype_t cdr_to) {\
+    pfn(); assoc_t* out = assoc_new(NULL, NULL); \
+    for (size_t i = 0; i < len; i++) { \
+      object_t *a = object_new(car_to, &( ct_cars[i] )), *b = object_new(cdr_to, &( ct_cdrs[i] )); \
+      assoc_append_boa(out, a, b); object_destruct_args(2, a, b); \
+    } return out; \
+  } int ____DONT_FIND_THIS_NAME_ASSOC ## type
+
+/*
+  makes a new assoc from a c array of pointer types
+*/
+assoc_t* assoc_new_fromcptr (const void * const * const ct_car, const void * const * const ct_cdr, const size_t len, const objtype_t car_conv_to, const objtype_t cdr_conv_to) {
+
+  assoc_t* out = assoc_new(NULL, NULL);
+
+  for (size_t i = 0; i < len; i++) {
+    object_t *a = object_new(car_conv_to, ct_car[i]), *b = object_new(cdr_conv_to, ct_cdr[i]);
+    assoc_append_boa(out, a, b);
+    object_destruct_args(2, a, b);
+  }
+
+  return out;
+}
 /*
   copies one assoc's data to a new one's; does not copy identity
 */
@@ -45,7 +70,10 @@ assoc_t* assoc_copy (const assoc_t* const asc) {
 
   array_t *a, *b;
   assoc_unzip(asc, &a, &b);
-  return assoc_new(a, b);
+  assoc_t* c = assoc_new(a, b);
+  array_destruct_args(2, a, b);
+
+  return c;
 }
 
 void assoc_destruct (assoc_t* const assoc) {
@@ -76,15 +104,20 @@ define_objtype_dtor_args(assoc);
 void assoc_unzip (const assoc_t* a, array_t** car, array_t** cdr) {
   pfn();
 
-  *car = array_new(NULL, -1),
-  *cdr = array_new(NULL, -1);
+  object_failnull(a);
 
-  for (size_t i = 0; i < assoc_length(a); i++) {
-    pair_t** p = assoc_get_ref(a, i, NULL);
-    array_append(*car, *pair_car_ref( *p ) ),
-    array_append(*cdr, *pair_cdr_ref( *p ) );
+  if ( car && cdr ) {
+
+    *car = array_new(NULL, -1),
+    *cdr = array_new(NULL, -1);
+
+    for (size_t i = 0; i < assoc_length(a); i++) {
+      pair_t** p = assoc_get_ref(a, i, NULL);
+      array_append(*car, *pair_car_ref( *p ) ),
+      array_append(*cdr, *pair_cdr_ref( *p ) );
+    }
+
   }
-
 }
 
 size_t assoc_length (const assoc_t* const a) {
@@ -197,6 +230,38 @@ void assoc_resize (assoc_t* const a, const size_t new_len) {
 }
 
 /*
+  concatenate two assoc_ts
+*/
+assoc_t* assoc_concat (const assoc_t* const a, const assoc_t* const b) {
+  pfn();
+
+  object_failnull(a);
+  object_failnull(b);
+
+  if ( assoc_isempty(a) && assoc_isempty(b) ) {
+    return assoc_new(NULL, NULL);
+  }
+
+  else if ( assoc_isempty(a) || assoc_isempty(b) ) {
+
+    if ( assoc_isempty(a) ) {
+      return assoc_copy(b);
+    }
+
+    return assoc_copy(a);
+  }
+
+  assoc_t* c = assoc_copy(a);
+
+  for (size_t i = 0; i < assoc_length(b); i++) {
+    assoc_append(c, *assoc_get_ref(b, i, NULL) );
+  }
+
+  return c;
+}
+
+
+/*
   delete a pair from an assoc by index
 */
 bool assoc_delete (assoc_t* const a, const size_t idx) {
@@ -205,13 +270,6 @@ bool assoc_delete (assoc_t* const a, const size_t idx) {
   object_failnull(a);
 
   if ( assoc_isempty(a) || idx > assoc_length(a) ) {
-    char buf[200];
-    snprintf(
-      buf,
-      199,
-      "attempt to delete index %zu but the highest is %zd%s",
-      idx, a->idx, assoc_length(a) ? "" : "(delete from empty assoc)"
-    );
     object_error(
       ER_INDEXERROR,
       false,
@@ -249,7 +307,7 @@ char* assoc_see (const assoc_t* const a) {
 
   object_failnull(a);
 
-  char *outbuf = (typeof(outbuf)) safemalloc(7),
+  char *outbuf = alloc(char, 7),
        *bufptr = outbuf;
 
   str_append(bufptr, 4, "%s ", "a{");

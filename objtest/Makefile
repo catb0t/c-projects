@@ -39,7 +39,7 @@ FILES := $(FILENAME).c $(FILENAME).h
 all: normal mem test
 
 normal: $(FILES)
-	./makememtest.sh
+	#./makememtest.sh
 	$(CC) $(FILENAME).c $(CMD_ARGS) $(DEBUG_OPTS) $(OPTS) -o ./bin/$(OUT_FILENAME)
 	@echo
 

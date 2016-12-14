@@ -18,10 +18,11 @@ clock_t start, diff, msec;
 #define GETTER_LOOP_LENGTH 100
 
 define_array_new_fromctype(ssize_t);
+define_assoc_new_fromctype(ssize_t);
 
 array_t *a, *b, *ra, *rb;
 
-assoc_t *c, *d;
+assoc_t *c, *d, *rc, *rd;
 
 object_t *oa, *ob, **refa;
 

@@ -383,6 +383,7 @@ void          pair_cons (pair_t* const p, const object_t* cdr);
 
 // provided by assoc.h
 assoc_t*       assoc_new (const array_t* const a, const array_t* const b);
+assoc_t* assoc_new_fromcptr (const void * const * const ct_car, const void * const * const ct_cdr, const size_t len, const objtype_t car_conv_to, const objtype_t cdr_conv_to);
 assoc_t*      assoc_copy (const assoc_t* const a);
 assoc_t*    assoc_concat (const assoc_t* const a, const assoc_t* const b);
 assoc_t*   assoc_vconcat (const assoc_t* const a, const size_t argc, ...);

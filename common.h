@@ -175,6 +175,8 @@ void*   _safecalloc (const size_t nmemb, const size_t len, uint64_t lineno, cons
 #define saferealloc(p,s) _saferealloc((p), (s), __LINE__, __func__)
 #define safecalloc(n,l)   _safecalloc((n), (l), __LINE__, __func__)
 
+#define alloc(type, count) (type *) safemalloc(sizeof (type) * count)
+
 #define fdredir(fd, file) fd = freopen(file, "w", fd)
 
 __PURE_FUNC __CONST_FUNC
@@ -203,7 +205,6 @@ ssize_t un2signed (const size_t val) {
 
 __PURE_FUNC __CONST_FUNC
 size_t usub (const size_t a, const size_t b) {
-
   return signed2un(un2signed(a) - un2signed(b));
 }
 
@@ -302,7 +303,7 @@ void free_ptr_array (void** ptr, const size_t len) {
 }
 
 char* strchr_c (const char* const str, const char c) {
-  char* nw = (typeof(nw)) strndup(str, safestrnlen(str));
+  char* nw = strndup(str, safestrnlen(str));
   while ( (++*nw) != c);
   return nw;
 }
@@ -311,7 +312,7 @@ char* strncat_c (const char* const a, const char* const b, const size_t maxlen) 
   size_t tlen   = safestrnlen(a) + safestrnlen(b),
          outlen = (tlen > maxlen ? maxlen : tlen) - 1;
 
-  char* outbuf = (typeof(outbuf)) safemalloc(sizeof (char) * outlen);
+  char* outbuf = alloc(char, outlen);
 
   snprintf(outbuf, outlen, "%s%s", a, b);
 
@@ -326,11 +327,11 @@ char*       vstrncat (const size_t argc, ...) {
   va_start(vl, argc);
 
   size_t tlen = 0;
-  char** outbuf = (typeof(outbuf)) safemalloc(sizeof (char *) * argc);
+  char** outbuf = alloc(char *, argc);
 
   for (size_t i = 0; i < argc; i++) {
     // hopefully thisp just takes the address
-    char** v = (typeof(v)) safemalloc( sizeof (char *) );
+    char** v = alloc(char *, 1);
     *v       = va_arg(vl, char*);
     size_t l = safestrnlen(*v);
 
@@ -353,7 +354,7 @@ char*     vstrncat_c (const size_t argc, ...) {
   va_start(vl, argc);
 
   size_t tlen = 0;
-  char** outbuf = (typeof(outbuf)) safemalloc(sizeof (char *) * argc);
+  char** outbuf = alloc(char *, argc);
 
   for (size_t i = 0; i < argc; i++) {
     // hopefully thisp just takes the address
@@ -446,7 +447,7 @@ char* readln (const size_t len) {
 
   if ( NULL == ret ) {
     safefree(buf);
-    buf = (typeof(buf)) safemalloc(2);
+    buf = alloc(char, 2);
     snprintf(buf, 2, "%c", '\4');
 
   } else {
@@ -483,7 +484,7 @@ char* str_copy (const char* const str) {
   pfn();
 
   size_t len = safestrnlen(str);
-  char* newp = (typeof(newp)) safemalloc(sizeof (char) * len);
+  char* newp = alloc(char, len);
 
   for (size_t i = 0; i < len; i++) {
     newp[i] = str[i];
@@ -509,14 +510,14 @@ char** str_split (
   snprintf(delim_str, 2, "%c", delim);
 
 
-  size_t len = safestrnlen(str);
+  size_t       len = safestrnlen(str);
   size_t num_delim = str_count(str, delim_str);
 
   char** newp;
 
   if (0 == num_delim) {
     // no separator found
-    newp      = (typeof(newp)) safemalloc( sizeof (char *) );
+    newp      = alloc(char *, 1);
     newp[0]   = scopy;
     *out_len = 1;
 
@@ -539,7 +540,7 @@ char** str_split (
     // separators found, alloc two more
     size_t num_pieces = num_delim + 1;
 
-     newp = (typeof(newp)) safemalloc( sizeof (char *) * num_pieces );
+     newp = alloc(char *, num_pieces);
 
     size_t i;
     char* token;
@@ -574,7 +575,7 @@ char*     str_rm (
   size_t len_str = safestrnlen(str);
   // malloc one more than exactly enough for the newp string
   const size_t len_newp = ( ( ( sizeof(char) * len_str ) - str_count(str, omit) ) );
-  char*             newp = (typeof(newp)) safemalloc( len_newp + 1 );
+  char*            newp = alloc(char, len_newp + 1);
 
   char c[3];
 
@@ -622,8 +623,8 @@ char*  str_repeat (
   size_t in_len = safestrnlen(in_str);
   *out_len = in_len * times;
 
-  char *out = (typeof(out)) safemalloc( 1 + *out_len ),
-       *bufptr = out;
+  char *out = alloc(char, 1 + *out_len),
+    *bufptr = out;
 
   for (size_t i = 0; i < *out_len; i++) {
     str_append(bufptr, in_len + 1, "%s", in_str);
@@ -686,7 +687,7 @@ uint64_t pow_uint64 (const uint64_t in, const uint64_t power) {
 char* concat_lines (char** string_lines, const size_t lines_len, const size_t total_len) {
   pfn();
 
-  char *output = (typeof(output)) safemalloc( (sizeof (char) * total_len) + 1),
+  char *output = alloc(char, total_len + 1),
        *bufptr = output;
 
   for (size_t i = 0; i < lines_len; i++) {
@@ -705,7 +706,7 @@ char* concat_lines (char** string_lines, const size_t lines_len, const size_t to
 char* make_empty_str (void) {
   pfn();
 
-  char*  out = (typeof(out)) safemalloc(1);
+  char*  out = alloc(char, 1);
   snprintf(out, 1, "%s", "");
   return out;
 }

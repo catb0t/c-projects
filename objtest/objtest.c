@@ -137,7 +137,7 @@ void test (void) {
 
 // NONEMPTY
 
-//Test(nonempty, fromboa) {
+//Test(nonempty, boa) {
 
   size_t objslen = 2;
 
@@ -204,7 +204,7 @@ void test (void) {
   safefree_args(2, s, s2);
 //}
 
-//Test(nonempty, concat2ssize) {
+//Test(nonempty, concat) {
 
   _Static_assert(
     (sizeof anums / sizeof (ssize_t)) == (sizeof bnums / sizeof (ssize_t)),
@@ -231,11 +231,11 @@ void test (void) {
   ok = array_delete(a, signed2un(a->idx));
   //cr_assert(ok);
   ok = array_delete(a, 0);
-  //cr_assert(! ok);
+  //cr_assert(ok);
 
   s = array_see(a);
   dbg_prn("delete2: %s\n", s);
-  //cr_assert_str_eq(s, "{ 1 -3 5 9 }");
+  //cr_assert_str_eq(s, "{ -3 5 9 }");
 
   safefree(s), array_destruct(a);
 //}
@@ -367,7 +367,7 @@ void test (void) {
 //#define NODEBUG
 //#include "testcommon.h"
 
-//Test(empty, boa) {
+//Test(empty, emptyfromNULL) {
   c = assoc_new(NULL, NULL);
 
   s = assoc_see(c);
@@ -433,6 +433,44 @@ void test (void) {
   assoc_destruct(c); // ~1
 //}
 
+//Test(empty, concat) {
+  c = assoc_new(NULL, NULL), d = assoc_copy(c);
+
+  rc = assoc_concat(c, d);
+
+  s = assoc_see(rc);
+  //cr_assert_str_eq(s, "a{ }");
+  safefree(s);
+
+  assoc_destruct_args(3, rc, c, d);
+//}
+
+//Test(empty, equals) {
+  c = assoc_new(NULL, NULL), d = assoc_copy(c);
+
+  ok = assoc_equals(c, d);
+
+  //cr_assert( ok );
+
+  assoc_destruct_args(2, c, d);
+//}
+
+//Test(empty, clear) {
+  a = array_new(NULL, -1); // 1
+
+  s = array_see(a); // 2
+  //cr_assert_str_eq(s, "{ }");
+  safefree(s); // ~2
+
+  array_clear(a);
+
+  s = array_see(a); // 3
+  //cr_assert_str_eq(s, "{ }");
+
+  safefree(s), array_destruct(a); // ~1, ~3
+//}
+
+
 //Test(empty, getref) {
   c = assoc_new(NULL, NULL);
 
@@ -495,6 +533,74 @@ void test (void) {
   assoc_destruct(c);
 //}
 
+//Test(nonempty, fromcptrptr) {
+
+  c = assoc_new_fromcptr(
+    (const void* const * const) (const char* const * const) literal,
+    (const void* const * const) (const char* const * const) literal,
+    (26 / 3) + 1,
+    t_realchar, t_realchar
+  );
+
+  s = assoc_see(c);
+  //cr_assert_str_eq(s, "a{ { \"abc\" . \"abc\" } { \"def\" . \"def\" } { \"ghi\" . \"ghi\" } { \"jkl\" . \"jkl\" } { \"mno\" . \"mno\" } { \"pqr\" . \"pqr\" } { \"stu\" . \"stu\" } { \"vwx\" . \"vwx\" } { \"yz\" . \"yz\" } }");
+  safefree(s), assoc_destruct(c);
+//}
+
+//Test(nonempty, fromcliteralssize) {
+
+  c = assoc_new_from_ssize_t_lit(anums, bnums, (sizeof anums / sizeof (ssize_t)), t_realint, t_realint);
+
+  s = assoc_see(c);
+  dbg_prn("fromptr is %s\n", s);
+
+  //cr_assert_str_eq(s, "a{ { 1 . -2 } { -3 . 4 } { 5 . -6 } { -7 . 8 } { 9 . -10 } { -11 . 12 } }");
+
+  safefree(s), assoc_destruct(c);
+//}
+
+//Test(nonempty, copy) {
+  c = assoc_new_from_ssize_t_lit(anums, bnums, (sizeof anums / sizeof (ssize_t)), t_realint, t_realint);
+
+  d = assoc_copy(c);
+  s = assoc_see(c), s2 = assoc_see(d);
+  //cr_assert_str_eq(s, s2);
+
+  //cr_assert_neq(c->uid, d->uid);
+  assoc_destruct_args(2, c, d);
+  safefree_args(2, s, s2);
+//}
+
+//Test(nonempty, concat) {
+  c = assoc_new_from_ssize_t_lit(anums, bnums, (sizeof anums / sizeof (ssize_t)), t_realint, t_realint),
+  d = assoc_new_from_ssize_t_lit(anums, bnums, (sizeof anums / sizeof (ssize_t)), t_realint, t_realint);
+
+  rc = assoc_concat(c, d);
+
+  s = assoc_see(rc);
+
+  //cr_assert_str_eq(s, "a{ { 1 . -2 } { -3 . 4 } { 5 . -6 } { -7 . 8 } { 9 . -10 } { -11 . 12 } { 1 . -2 } { -3 . 4 } { 5 . -6 } { -7 . 8 } { 9 . -10 } { -11 . 12 } }");
+
+  safefree(s), assoc_destruct_args(3, rc, d, c);
+//}
+
+//Test(nonempty, delete) {
+  c = assoc_new_from_ssize_t_lit(anums, bnums, (sizeof anums / sizeof (ssize_t)) - 2, t_realint, t_realint);
+
+  ok = assoc_delete(c, 3);
+  //cr_assert(ok);
+  ok = assoc_delete(c, signed2un(c->idx));
+  //cr_assert(ok);
+  ok = assoc_delete(c, 0);
+  //cr_assert(ok);
+
+  s = assoc_see(c);
+  dbg_prn("delete2: %s\n  ", s);
+  //cr_assert_str_eq(s, "a{ { -3 . 4 } }");
+
+  safefree(s), assoc_destruct(c);
+//}
+
 //Test(nonempty, append) {
   a = array_new_from_ssize_t_lit(anums, 2, t_realint),
   b = array_new_from_ssize_t_lit(bnums, 2, t_realint);
@@ -507,8 +613,8 @@ void test (void) {
 
   safefree(s);
 
-  oa = object_new(t_realint, anums + 5),
-  ob = object_new(t_realint, bnums + 5);
+  oa = object_new(t_realint, &( anums[5] )),
+  ob = object_new(t_realint, &( bnums[5] ));
 
   assoc_append_boa(c, oa, ob);
 
