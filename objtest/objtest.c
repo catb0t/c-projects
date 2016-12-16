@@ -12,7 +12,7 @@ void test (void) {
 //#include "testcommon.h"
 
 //Test(empty, emptyfromNULL) {
-  a = array_new(NULL, -1); // 1
+  a = array_new(NULL, 0); // 1
 
   s = array_see(a); // 2
   dbg_prn("empty array looks like: %s\n", s);
@@ -23,7 +23,7 @@ void test (void) {
 
 //Test(empty, isempty) {
 
-  a = array_new(NULL, -1); // 1
+  a = array_new(NULL, 0); // 1
   //cr_assert(array_isempty(a));
   //cr_assert(array_length(a) == 0);
 
@@ -31,7 +31,7 @@ void test (void) {
 //}
 
 //Test(empty, append) {
-  a = array_new(NULL, -1); // 1
+  a = array_new(NULL, 0); // 1
 
   oa = object_new(t_realchar, (const void* const ) "const void* const val"); // 2
 
@@ -46,8 +46,14 @@ void test (void) {
   safefree(s), array_destruct(a), object_destruct(oa); // ~1, ~2, ~3
 //}
 
+//Test(empty, insert) {
+  a = array_new(NULL, 0);
+
+
+//}
+
 //Test(empty, deletefails) {
-  a = array_new(NULL, -1); // 1
+  a = array_new(NULL, 0); // 1
 
   ok = array_delete(a, 0);
   //cr_assert(! ok);
@@ -56,7 +62,7 @@ void test (void) {
 //}
 
 //Test(empty, clear) {
-  a = array_new(NULL, -1); // 1
+  a = array_new(NULL, 0); // 1
 
   s = array_see(a); // 2
   //cr_assert_str_eq(s, "{ }");
@@ -71,7 +77,7 @@ void test (void) {
 //}
 
 //Test(empty, concat) {
-  a = array_new(NULL, -1), b = array_copy(a); // 1, 2
+  a = array_new(NULL, 0), b = array_copy(a); // 1, 2
 
   ra = array_concat(a, b); // 3
 
@@ -82,7 +88,7 @@ void test (void) {
 //}
 
 //Test(empty, equals) {
-  a = array_new(NULL, -1), b = array_copy(a);
+  a = array_new(NULL, 0), b = array_copy(a);
 
   ok = array_equals(a, b);
 
@@ -92,9 +98,9 @@ void test (void) {
 //}
 
 //Test(empty, getref) {
-  a = array_new(NULL, -1);
+  a = array_new(NULL, 0);
 
-  freopen("/dev/null", "w", stderr);
+  stderr = freopen("/dev/null", "w", stderr);
 
   clock_start();
   for (__LOOPCOUNT = 0; __LOOPCOUNT < GETTER_LOOP_LENGTH; __LOOPCOUNT++) {
@@ -106,7 +112,7 @@ void test (void) {
   }
   clock_stop();
 
-  freopen("/dev/stderr", "w", stderr);
+  stderr = freopen("/dev/stderr", "w", stderr);
 
   dbg_prn("get %zu refs from empty array took %ld ms", __LOOPCOUNT, msec);
 
@@ -114,9 +120,9 @@ void test (void) {
 //}
 
 //Test(empty, getcopy) {
-  a = array_new(NULL, -1);
+  a = array_new(NULL, 0);
 
-  freopen("/dev/null", "w", stderr);
+  stderr = freopen("/dev/null", "w", stderr);
 
   clock_start();
   for (__LOOPCOUNT = 0; __LOOPCOUNT < GETTER_LOOP_LENGTH; __LOOPCOUNT++) {
@@ -128,7 +134,7 @@ void test (void) {
   }
   clock_stop();
 
-  freopen("/dev/stderr", "w", stderr);
+  stderr = freopen("/dev/stderr", "w", stderr);
 
   dbg_prn("get %zu copies from empty array took %ld ms", __LOOPCOUNT, msec);
 
@@ -148,7 +154,7 @@ void test (void) {
   objs[0] = object_new(t_realint, &i);
   objs[1] = object_new(t_realint, &j);
 
-  a = array_new( (const object_t* const * const) objs, un2signed(objslen));
+  a = array_new( (const object_t* const * const) objs, objslen);
   object_dtorn(objs, 2);
 
   s = array_see(a);
@@ -204,24 +210,6 @@ void test (void) {
   safefree_args(2, s, s2);
 //}
 
-//Test(nonempty, concat) {
-
-  _Static_assert(
-    (sizeof anums / sizeof (ssize_t)) == (sizeof bnums / sizeof (ssize_t)),
-    "literal arrays should have same lengths"
-  );
-
-  ra = array_new_from_ssize_t_lit(anums, (sizeof anums / sizeof (ssize_t)), t_realint),
-  rb = array_new_from_ssize_t_lit(bnums, (sizeof bnums / sizeof (ssize_t)), t_realint);
-
-  a = array_concat(ra, rb);
-
-  s = array_see(a);
-  dbg_prn("concat is: %s\n", s);
-  //cr_assert_str_eq(s, "{ 1 -3 5 -7 9 -11 -2 4 -6 8 -10 12 }");
-  safefree(s), array_destruct_args(3, ra, rb, a);
-//}
-
 //Test(nonempty, delete) {
 
   a = array_new_from_ssize_t_lit(anums, (sizeof anums) / sizeof (ssize_t), t_realint);
@@ -273,7 +261,7 @@ void test (void) {
   array_destruct(a), object_destruct(go);
 //}
 
-//Test(nonempty, concat2) {
+//Test(nonempty, concat) {
   a = array_new_from_ssize_t_lit(anums, (sizeof anums) / sizeof (ssize_t), t_realint),
   b = array_new_from_ssize_t_lit(bnums, (sizeof bnums) / sizeof (ssize_t), t_realint);
 
@@ -398,9 +386,24 @@ void test (void) {
   assoc_destruct(c);
 //}
 
+//Test(empty, insert) {
+  c = assoc_new(NULL, NULL);
+
+  oa = object_new(t_realchar, (const void* const ) "const void* const val"),
+  ob = object_new(t_realuint, (const void* const ) (anums + 2));
+
+  p = pair_new(oa, ob);
+
+  ok = assoc_insert(c, p, 7);
+
+  pair_destruct(p);
+
+
+//}
+
 //Test(empty, unzip) {
-  a = array_new(NULL, -1),
-  b = array_new(NULL, -1);
+  a = array_new(NULL, 0),
+  b = array_copy(a);
 
   s3 = array_see(a), s4 = array_see(b);
 
@@ -456,7 +459,7 @@ void test (void) {
 //}
 
 //Test(empty, clear) {
-  a = array_new(NULL, -1); // 1
+  a = array_new(NULL, 0); // 1
 
   s = array_see(a); // 2
   //cr_assert_str_eq(s, "{ }");
@@ -474,7 +477,7 @@ void test (void) {
 //Test(empty, getref) {
   c = assoc_new(NULL, NULL);
 
-  freopen("/dev/null", "w", stderr);
+  stderr = freopen("/dev/null", "w", stderr);
 
   clock_start();
   for (__LOOPCOUNT = 0; __LOOPCOUNT < GETTER_LOOP_LENGTH; __LOOPCOUNT++) {
@@ -486,7 +489,7 @@ void test (void) {
   }
   clock_stop();
 
-  freopen("/dev/stderr", "w", stderr);
+  stderr = freopen("/dev/stderr", "w", stderr);
 
   dbg_prn("get %zu refs from empty assoc took %ld ms", __LOOPCOUNT, msec);
 
@@ -601,6 +604,17 @@ void test (void) {
   safefree(s), assoc_destruct(c);
 //}
 
+//Test(nonempty, clear) {
+  c = assoc_new_from_ssize_t_lit(anums, bnums, (sizeof anums / sizeof (ssize_t)) - 2, t_realint, t_realint);
+
+  assoc_clear(c);
+
+  s = assoc_see(c);
+  //cr_assert_str_eq(s, "a{ }");
+
+  safefree(s), assoc_destruct(c);
+//}
+
 //Test(nonempty, append) {
   a = array_new_from_ssize_t_lit(anums, 2, t_realint),
   b = array_new_from_ssize_t_lit(bnums, 2, t_realint);
@@ -629,6 +643,10 @@ void test (void) {
   assoc_destruct(c);
 
   object_destruct_args(2, oa, ob);
+//}
+
+//Test(nonempty, insert) {
+
 //}
 
 //Test(nonempty, unzip) {
@@ -663,7 +681,7 @@ void test (void) {
 
   c = assoc_new(a, b);
 
-  freopen("/dev/null", "w", stderr);
+  stderr = freopen("/dev/null", "w", stderr);
 
   clock_start();
   for (__LOOPCOUNT = 0; __LOOPCOUNT < GETTER_LOOP_LENGTH; __LOOPCOUNT++) {
@@ -682,7 +700,7 @@ void test (void) {
   }
   clock_stop();
 
-  freopen("/dev/stderr", "w", stderr);
+  stderr = freopen("/dev/stderr", "w", stderr);
 
   dbg_prn("get %zu refs from nonempty assoc took %ld ms", __LOOPCOUNT, msec);
 

@@ -28,6 +28,8 @@ object_t *oa, *ob, **refa;
 
 char *s, *s2, *s3, *s4;
 
+pair_t *p, *p1, *p2;
+
 size_t __LOOPCOUNT;
 
 bool ok;

@@ -4,7 +4,7 @@
 #include "testcommon.h"
 
 Test(empty, emptyfromNULL) {
-  a = array_new(NULL, -1); // 1
+  a = array_new(NULL, 0); // 1
 
   s = array_see(a); // 2
   dbg_prn("empty array looks like: %s\n", s);
@@ -15,7 +15,7 @@ Test(empty, emptyfromNULL) {
 
 Test(empty, isempty) {
 
-  a = array_new(NULL, -1); // 1
+  a = array_new(NULL, 0); // 1
   cr_assert(array_isempty(a));
   cr_assert(array_length(a) == 0);
 
@@ -23,7 +23,7 @@ Test(empty, isempty) {
 }
 
 Test(empty, append) {
-  a = array_new(NULL, -1); // 1
+  a = array_new(NULL, 0); // 1
 
   oa = object_new(t_realchar, (const void* const ) "const void* const val"); // 2
 
@@ -38,8 +38,14 @@ Test(empty, append) {
   safefree(s), array_destruct(a), object_destruct(oa); // ~1, ~2, ~3
 }
 
+Test(empty, insert) {
+  a = array_new(NULL, 0);
+
+
+}
+
 Test(empty, deletefails) {
-  a = array_new(NULL, -1); // 1
+  a = array_new(NULL, 0); // 1
 
   ok = array_delete(a, 0);
   cr_assert(! ok);
@@ -48,7 +54,7 @@ Test(empty, deletefails) {
 }
 
 Test(empty, clear) {
-  a = array_new(NULL, -1); // 1
+  a = array_new(NULL, 0); // 1
 
   s = array_see(a); // 2
   cr_assert_str_eq(s, "{ }");
@@ -63,7 +69,7 @@ Test(empty, clear) {
 }
 
 Test(empty, concat) {
-  a = array_new(NULL, -1), b = array_copy(a); // 1, 2
+  a = array_new(NULL, 0), b = array_copy(a); // 1, 2
 
   ra = array_concat(a, b); // 3
 
@@ -74,7 +80,7 @@ Test(empty, concat) {
 }
 
 Test(empty, equals) {
-  a = array_new(NULL, -1), b = array_copy(a);
+  a = array_new(NULL, 0), b = array_copy(a);
 
   ok = array_equals(a, b);
 
@@ -84,9 +90,9 @@ Test(empty, equals) {
 }
 
 Test(empty, getref) {
-  a = array_new(NULL, -1);
+  a = array_new(NULL, 0);
 
-  freopen("/dev/null", "w", stderr);
+  stderr = freopen("/dev/null", "w", stderr);
 
   clock_start();
   for (__LOOPCOUNT = 0; __LOOPCOUNT < GETTER_LOOP_LENGTH; __LOOPCOUNT++) {
@@ -98,7 +104,7 @@ Test(empty, getref) {
   }
   clock_stop();
 
-  freopen("/dev/stderr", "w", stderr);
+  stderr = freopen("/dev/stderr", "w", stderr);
 
   dbg_prn("get %zu refs from empty array took %ld ms", __LOOPCOUNT, msec);
 
@@ -106,9 +112,9 @@ Test(empty, getref) {
 }
 
 Test(empty, getcopy) {
-  a = array_new(NULL, -1);
+  a = array_new(NULL, 0);
 
-  freopen("/dev/null", "w", stderr);
+  stderr = freopen("/dev/null", "w", stderr);
 
   clock_start();
   for (__LOOPCOUNT = 0; __LOOPCOUNT < GETTER_LOOP_LENGTH; __LOOPCOUNT++) {
@@ -120,7 +126,7 @@ Test(empty, getcopy) {
   }
   clock_stop();
 
-  freopen("/dev/stderr", "w", stderr);
+  stderr = freopen("/dev/stderr", "w", stderr);
 
   dbg_prn("get %zu copies from empty array took %ld ms", __LOOPCOUNT, msec);
 
@@ -140,7 +146,7 @@ Test(nonempty, boa) {
   objs[0] = object_new(t_realint, &i);
   objs[1] = object_new(t_realint, &j);
 
-  a = array_new( (const object_t* const * const) objs, un2signed(objslen));
+  a = array_new( (const object_t* const * const) objs, objslen);
   object_dtorn(objs, 2);
 
   s = array_see(a);

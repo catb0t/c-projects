@@ -18,7 +18,7 @@ hash_t* hash_new_skele (void) {
 
   hash_t*  hash = (typeof(hash)) safemalloc( sizeof(hash_t) );
 
-  hash->keys     = array_new(NULL, -1);
+  hash->keys     = array_new(NULL, 0);
   hash->vals     = assoc_new(NULL, NULL);
   hash->idxs     = assoc_new(NULL, NULL);
 
@@ -86,9 +86,10 @@ bool   hash_isempty (const hash_t* const h) {
 
   object_failnull(h);
 
-  return 0 == hash_length(h);
+  return ! hash_length(h);
 }
 
+pure const_func
 size_t hash_length (const hash_t* const h) {
   pfn();
 
@@ -116,7 +117,7 @@ hashkey_t hash_obj (const object_t* const obj) {
   return hval;
 }
 
-static inline object_t* hash_val_asobject (const object_t* const obj) {
+static /*inline*/ object_t* hash_val_asobject (const object_t* const obj) {
   pfn();
 
   object_failnull(obj);
@@ -329,7 +330,7 @@ array_t* hash_getvals (const hash_t* const h) {
   object_failnull(h);
 
   // new empty value store
-  array_t* vs = array_new(NULL, -1); // 1
+  array_t* vs = array_new(NULL, 0); // 1
 
   for (size_t i = 0; i < array_length(h->keys); i++) {
     // get a reference to thisp value's pair's first item
@@ -351,7 +352,7 @@ array_t* hash_getkeys (const hash_t* const h) {
 
   object_failnull(h);
 
-  array_t* ks = array_new(NULL, -1);
+  array_t* ks = array_new(NULL, 0);
 
   for (size_t i = 0; i < array_length(h->keys); i++) {
     array_append(ks, *array_get_ref(h->keys, i, NULL));
@@ -470,7 +471,9 @@ bool hash_delete (hash_t* const h, const object_t* const key) {
   }
 
   // delete the key
-  array_delete(h->keys, signed2un(keyidx));
+  bool ok = array_delete(h->keys, signed2un(keyidx));
+
+  assert( ok ); // shouldn't ever fail
 
   // delete the value
   assoc_delete(h->vals,

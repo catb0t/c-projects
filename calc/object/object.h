@@ -27,9 +27,9 @@
   return value because it doesn't matter what the return value is, but it makes
   it easier to chain in short functions
 */
-inline bool _obj_failnull (const void* const obj, const char* const file, uint64_t line, const char* const func) {
+bool _obj_failnull (const void* const obj, const char* const file, uint64_t line, const char* const func) {
 
-  if ( NULL == obj ) {
+  if ( unlikely(NULL == obj) ) {
     object_error(ER_NULL_OBJECT, true, "%s:%" PRIu64 ": %s", file, line, func);
     return false;
   }

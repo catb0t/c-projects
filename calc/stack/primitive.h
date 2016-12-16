@@ -33,7 +33,7 @@ void stack_destruct (stack_t* stk) {
   safefree(stk->data), safefree(stk);
 }
 
-__PURE_FUNC
+pure
 bool stack_isempty (const stack_t* stk) {
   pfn();
 
@@ -176,7 +176,7 @@ number_t stack_pop (stack_t* stk) {
   size_t stack_size() > INITIAL_STACKSIZE (the value will wrap on a
   two's complement system).
 */
-__PURE_FUNC
+pure
 size_t stack_size (const stack_t* stk) {
   pfn();
 
@@ -244,7 +244,7 @@ char* stack_see (const stack_t* stk) {
   get_stackop: return the index of the operator string pointed to
   by *op in stack_ops, or -1 if the operator is not defined.
 */
-__PURE_FUNC __CONST_FUNC
+pure const_func
 ssize_t      get_stackop (const char* const op) {
   pfn();
 
@@ -260,7 +260,7 @@ ssize_t      get_stackop (const char* const op) {
   perform_op: currently a no-op. will call the function with the
   name pointed by *op on the stack pointed to by *stk.
 */
-__PURE_FUNC __CONST_FUNC
+pure const_func
 void      perform_op (stack_t* stk, const char* const op) {
   pfn();
 

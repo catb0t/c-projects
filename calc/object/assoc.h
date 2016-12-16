@@ -108,8 +108,8 @@ void assoc_unzip (const assoc_t* a, array_t** car, array_t** cdr) {
 
   if ( car && cdr ) {
 
-    *car = array_new(NULL, -1),
-    *cdr = array_new(NULL, -1);
+    *car = array_new(NULL, 0),
+    *cdr = array_copy(*car);
 
     for (size_t i = 0; i < assoc_length(a); i++) {
       pair_t** p = assoc_get_ref(a, i, NULL);
@@ -136,11 +136,11 @@ pair_t** assoc_get_ref (const assoc_t* const a, const size_t idx, bool* ok) {
 
   object_failnull(a);
 
-  if (NULL != ok) { *ok = true; }
+  if (ok) { *ok = true; }
 
   if (assoc_isempty(a) || un2signed(idx) > a->idx) {
 
-    if (NULL != ok) { *ok = false; }
+    if (ok) { *ok = false; }
 
     object_error(
       ER_INDEXERROR,
@@ -197,6 +197,56 @@ void assoc_append (assoc_t* const a, const pair_t* const b) {
 
   assoc_resize(a, assoc_length(a) + 1);
   (a->data) [a->idx] = pair_copy(b);
+}
+
+warn_unused
+bool assoc_insert (assoc_t* const a, const pair_t* const p, const size_t idx) {
+  pfn();
+
+  object_failnull(a), object_failnull(p);
+
+  const size_t len = assoc_length(a);
+
+  if (idx > len) {
+    object_error(
+      ER_INDEXERROR,
+      false,
+      "insert to index %zu above highest %zu%s",
+      idx,
+      len,
+      len ? " (insert to empty assoc)" : ""
+    );
+    return false;
+  }
+
+  assoc_resize(a, len + 1);
+
+  for (size_t i = usub(assoc_length(a), 1); i > idx; i--) {
+    // change pointer (?)
+    (a->data) [i] = (a->data) [i - 1];
+  }
+
+  (a->data) [idx] = pair_copy(p);
+  return true;
+}
+
+warn_unused
+bool assoc_insert_boa (assoc_t* const a, const object_t* const car, const object_t* const cdr, const size_t idx) {
+  pair_t* const p = pair_new(car, cdr);
+
+  bool res = assoc_insert(a, p, idx);
+
+  pair_destruct(p);
+
+  return res;
+}
+
+void assoc_clear (assoc_t* const a) {
+  pfn();
+
+  object_failnull(a);
+
+  assoc_resize(a, 0);
 }
 
 /*
@@ -269,14 +319,19 @@ bool assoc_delete (assoc_t* const a, const size_t idx) {
 
   object_failnull(a);
 
-  if ( assoc_isempty(a) || idx > assoc_length(a) ) {
+  size_t len = assoc_length(a);
+
+  if (
+    assoc_isempty(a)
+    || idx > len
+  ) {
     object_error(
       ER_INDEXERROR,
       false,
       "attempt to delete index %zu but the highest is %zd%s",
       idx,
       a->idx,
-      assoc_length(a)
+      len
         ? ""
         : " (delete from empty assoc)"
     );
@@ -286,8 +341,8 @@ bool assoc_delete (assoc_t* const a, const size_t idx) {
   pair_destruct( *assoc_get_ref(a, idx, NULL));
 
   // if idx and a->idx are equal (that is, if it's the last element) we can just resize
-  if ( idx != signed2un(a->idx) ) {
-    for (size_t i = idx; i < signed2un(a->idx); i++) {
+  if ( idx != assoc_length(a) ) {
+    for (size_t i = idx; i < len; i++) {
       // change pointer (?)
       (a->data) [i] = (a->data) [i + 1];
     }

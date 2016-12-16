@@ -69,7 +69,7 @@ static char char_inrange (char n, char min, char max) {
   return (n >= min) && (n <= max);
 }
 
-__PURE_FUNC __CONST_FUNC
+pure const_func
 srcchar_t get_srcobj_type (const char c) {
   pfn();
 

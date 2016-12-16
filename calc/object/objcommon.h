@@ -271,7 +271,7 @@ extern bool _obj_failnull (const void* const o, const char* const file, const ui
 #define object_error(error, is_fatal, fmt, ...) _object_error ((error), (is_fatal), __FILE__, __LINE__, __func__, fmt, __VA_ARGS__)
 
 #define define_min_func(type) \
-  static inline __PURE_FUNC __CONST_FUNC type type ## _min (type a, type b) { \
+  static inline warn_unused pure const_func type type ## _min (type a, type b) { \
     pfn(); return a < b ? a : b; } int NOTHING_MIN ## type
 
 define_min_func(size_t);
@@ -313,7 +313,7 @@ char* T_see (const T_t* const t);
 
 // provided by array.h
 array_t* array_new_fromcptr (const void* const * const ptr, const size_t len, const objtype_t outtype);
-array_t*       array_new (const object_t* const * const objs, const ssize_t len);
+array_t*       array_new (const object_t* const * const objs, const size_t len);
 array_t*      array_copy (const array_t* const a);
 array_t*    array_concat (const array_t* const a, const array_t* const b);
 array_t*   array_vconcat (const array_t* const a, const size_t argc, ...);
@@ -336,13 +336,13 @@ void array_destruct_args (const size_t argc, ...);
 void         array_clear (array_t* const a);
 
 // provided by string.h
-string_t*  string_new (const char* const str);
-string_t* string_copy (const string_t* const s);
-size_t  string_length (const string_t* const s);
-bool string_isinbounds (const string_t* const a, const size_t idx);
-bool   string_isempty (const string_t* const s);
-void  string_destruct (string_t* const s);
-char*      string_see (const string_t* const s);
+string_t*      string_new (const char* const str);
+string_t*     string_copy (const string_t* const s);
+size_t      string_length (const string_t* const s);
+bool    string_isinbounds (const string_t* const a, const size_t idx);
+bool       string_isempty (const string_t* const s);
+void      string_destruct (string_t* const s);
+char*          string_see (const string_t* const s);
 void string_destruct_args (const size_t argc, ...);
 
 // provided by hash.h
@@ -397,8 +397,9 @@ bool        assoc_equals (const assoc_t* const a, const assoc_t* const b);
 bool    assoc_isinbounds (const assoc_t* const a, const size_t idx);
 bool       assoc_isempty (const assoc_t* const a);
 bool        assoc_delete (assoc_t* const a, const size_t idx);
+bool        assoc_insert (assoc_t* const a, const pair_t* const p, const size_t idx);
+bool    assoc_insert_boa (assoc_t* const a, const object_t* const c, const object_t* const b, const size_t idx);
 void        assoc_append (assoc_t* const a, const pair_t* const o);
-void        assoc_insert (assoc_t* const a, const object_t* const o, const ssize_t idx);
 void         assoc_unzip (const assoc_t* const a, array_t** keys, array_t** vals);
 void        assoc_resize (assoc_t* a, const size_t new_idx);
 void    assoc_append_boa (assoc_t* const a, const object_t* const car, const object_t* const cdr);

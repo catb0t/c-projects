@@ -78,17 +78,22 @@
 
 #ifdef GCC_COMPAT
   #pragma GCC poison strcpy strdup sprintf gets atoi // poison unsafe functions
-
-  #ifndef NOGLIBC
-    #define __PURE_FUNC  __attribute_pure__
-    #define __CONST_FUNC __attribute_const__
-
-  #else
-    #define __PURE_FUNC
-    #define __CONST_FUNC
-  #endif
 #endif
 
+#define pure  __attribute_pure__
+#define const_func __attribute_const__
+#define warn_unused __attribute__((warn_unused_result))
+#define likely(x) (__builtin_expect(!!(x), 1))
+#define unlikely(x) (__builtin_expect(!!(x), 0))
+
+/*
+#define pure
+#define const_func
+#define warn_unused
+#define likely(x)
+#define unlikely(x)
+
+*/
 #ifdef DEBUG
   #define dbg_prn(fmt, ...) fflush(stdout); printf("|\033[35;1mDEBUG\033[0m|" fmt, __VA_ARGS__)
 
@@ -179,36 +184,36 @@ void*   _safecalloc (const size_t nmemb, const size_t len, uint64_t lineno, cons
 
 #define fdredir(fd, file) fd = freopen(file, "w", fd)
 
-__PURE_FUNC __CONST_FUNC
+pure const_func
 size_t signed2un (const ssize_t val) {
   return val < 0 ? 0 : (size_t) val;
 }
 
-__PURE_FUNC __CONST_FUNC
+pure const_func
 ssize_t un2signed (const size_t val) {
   return (ssize_t) (val > (SIZE_MAX / 2) ? SIZE_MAX / 2 : val);
 }
 
 #define define_signed2un_type(type, other) \
-  __PURE_FUNC __CONST_FUNC \
+  pure const_func \
   other signed2un_ ## type ## 2 ## other (const type val) { \
     return val < 0 ? 0 : (other) val; \
   } \
   int __IAMALSONOTHING ## type ## other
 
 #define define_un2signed_type(type, other, type_maxvalue) \
-  __PURE_FUNC __CONST_FUNC \
+  pure const_func \
   other un2signed_ ## type ## 2 ## other (const type val) { \
     return (other) ((val) > (type_maxvalue / 2) ? (type_maxvalue) / 2 : val) \
   } \
   int __IAMNOTHING ## type ## other
 
-__PURE_FUNC __CONST_FUNC
+pure const_func
 size_t usub (const size_t a, const size_t b) {
   return signed2un(un2signed(a) - un2signed(b));
 }
 
-__PURE_FUNC __CONST_FUNC
+pure const_func
 size_t  udifference (const size_t x, const size_t y) {
   return (x < y ? y - x : x - y);
 }
@@ -592,7 +597,7 @@ char*     str_rm (
   return newp;
 }
 
-__PURE_FUNC
+pure
 size_t str_count (
   const char*   haystack,
   const char*   needles
@@ -634,7 +639,7 @@ char*  str_repeat (
 }
 
 // safestrnlen -- find the length of a string, defaulting to SHORT_INSTR, without segfaulting
-__PURE_FUNC
+pure
 size_t safestrnlen (const char* const str) {
   pfn();
 
@@ -642,7 +647,7 @@ size_t safestrnlen (const char* const str) {
   return str != NULL? strnlen(str, SHORT_INSTR) : 0;
 }
 
-__PURE_FUNC
+pure
 bool isEOL (const char* str) {
   pfn();
 
@@ -673,7 +678,7 @@ bool getuint64 (uint64_t* dest) {
   return true;
 }
 
-__CONST_FUNC __PURE_FUNC
+const_func pure
 uint64_t pow_uint64 (const uint64_t in, const uint64_t power) {
   pfn();
 
