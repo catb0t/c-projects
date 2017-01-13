@@ -40,8 +40,11 @@ assoc_t* assoc_new (const array_t* const a, const array_t* const b) {
   assoc_t* assoc_new_from_ ## type ## _lit (const type * const ct_cars, const type * const ct_cdrs, const size_t len, const objtype_t car_to, const objtype_t cdr_to) {\
     pfn(); assoc_t* out = assoc_new(NULL, NULL); \
     for (size_t i = 0; i < len; i++) { \
-      object_t *a = object_new(car_to, &( ct_cars[i] )), *b = object_new(cdr_to, &( ct_cdrs[i] )); \
-      assoc_append_boa(out, a, b); object_destruct_args(2, a, b); \
+      object_t \
+        *a = object_new(car_to, &( ct_cars[i] )), \
+        *b = object_new(cdr_to, &( ct_cdrs[i] )); \
+      assoc_append_boa(out, a, b); \
+      object_destruct_args(2, a, b); \
     } return out; \
   } int ____DONT_FIND_THIS_NAME_ASSOC ## type
 
@@ -166,7 +169,7 @@ pair_t* assoc_get_copy (const assoc_t* const a, const size_t idx, bool* ok) {
 
   pair_t** p = assoc_get_ref(a, idx, ok);
 
-  if (NULL == p) {
+  if (NULL == p || ( ! ok )) {
     return pair_new(NULL, NULL);
   }
 
@@ -279,6 +282,94 @@ void assoc_resize (assoc_t* const a, const size_t new_len) {
   a->idx = un2signed(new_len) - 1;
 }
 
+warn_unused
+assoc_t* assoc_clearv2 (const assoc_t* const a) {
+  pfn();
+
+  object_failnull(a);
+
+  return assoc_resizev2(a, 0);
+}
+
+warn_unused
+assoc_t* assoc_resizev2 (const assoc_t* const a, const size_t new_len) {
+  pfn();
+
+  object_failnull(a);
+
+  assoc_t* out = assoc_new(NULL, NULL);
+
+  const size_t len_a = assoc_length(a);
+
+  if ( ! new_len ) {
+    // points to a region of memory of size zero aligned to pair_t* (aka pointer)
+    return out;
+  }
+
+  for (size_t i = 0; i < new_len; i++) {
+    assoc_append(out, *assoc_get_ref(a, i, NULL));
+  }
+
+  if (new_len < len_a) {
+    return out;
+  }
+
+  for (size_t i = 0; i < len_a; i++) {
+    assoc_append(out, *assoc_get_ref(a, i, NULL));
+  }
+
+  if (assoc_length(out) < len_a) {
+    const size_t diff = len_a - assoc_length(out);
+    for (size_t i = 0; i < diff; i++) {
+      pair_t* p = pair_new(NULL, NULL);
+      assoc_append(out, p);
+      pair_destruct(p);
+    }
+  }
+
+  return out;
+}
+
+
+void assoc_resizev3 (assoc_t* const a, const size_t new_len) {
+  pfn();
+
+  object_failnull(a);
+
+  const size_t old_len = assoc_length(a);
+
+  // nothing to be done
+  if ( ! (old_len + new_len) ) {
+    return;
+  }
+
+  // just shrink
+  if ( ! new_len ) {
+    for (size_t i = 0; i < old_len; i++) {
+      pair_destruct( *assoc_get_ref(a, i, NULL))
+    }
+    a->data = (typeof(a->data)) saferealloc(a->data, 0);
+    a->idx  = -1;
+    return;
+  }
+
+  if ( (! old_len) && new_len) {
+    for (size_t i = 0; i < new_len; i++) {
+      assoc_append_boa(a, NULL, NULL);
+    }
+    return;
+  }
+
+  // otherwise both are > 0
+
+  if (new_len < old_len) {
+    for (size_t i = old_len - 1; i > new_len + 1; i--) {
+
+    }
+  }
+
+}
+
 /*
   concatenate two assoc_ts
 */
@@ -319,11 +410,11 @@ bool assoc_delete (assoc_t* const a, const size_t idx) {
 
   object_failnull(a);
 
-  size_t len = assoc_length(a);
+  const size_t olen = assoc_length(a), nlen = udifference(olen, 1);
 
   if (
     assoc_isempty(a)
-    || idx > len
+    || idx > olen
   ) {
     object_error(
       ER_INDEXERROR,
@@ -331,7 +422,7 @@ bool assoc_delete (assoc_t* const a, const size_t idx) {
       "attempt to delete index %zu but the highest is %zd%s",
       idx,
       a->idx,
-      len
+      olen
         ? ""
         : " (delete from empty assoc)"
     );
@@ -341,12 +432,11 @@ bool assoc_delete (assoc_t* const a, const size_t idx) {
   pair_destruct( *assoc_get_ref(a, idx, NULL));
 
   // if idx and a->idx are equal (that is, if it's the last element) we can just resize
-  if ( idx != assoc_length(a) ) {
-    for (size_t i = idx; i < len; i++) {
+  if (idx != iter_highest_idx(a)) {
+    for (size_t i = idx; i < nlen; i++) {
       // change pointer (?)
       (a->data) [i] = (a->data) [i + 1];
     }
-
   }
 
   assoc_resize(a, assoc_length(a) - 1);

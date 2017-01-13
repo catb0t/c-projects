@@ -49,7 +49,14 @@ void test (void) {
 //Test(empty, insert) {
   a = array_new(NULL, 0);
 
+  oa = object_new(t_realint, (const void * const) anums);
+  ok = array_insert(a, oa, 0);
+  //cr_assert(ok);
+  s = array_see(a);
+  printf("s is %s\n", s);
+  //cr_assert_str_eq(s, "{ 1 }");
 
+  object_destruct(oa), array_destruct(a), safefree(s);
 //}
 
 //Test(empty, deletefails) {
@@ -57,7 +64,10 @@ void test (void) {
 
   ok = array_delete(a, 0);
   //cr_assert(! ok);
+  s = array_see(a);
+  //cr_assert_str_eq(s, "{ }");
 
+  safefree(s);
   array_destruct(a); // ~1
 //}
 
@@ -398,7 +408,9 @@ void test (void) {
 
   pair_destruct(p);
 
+  object_destruct_args(2, oa, ob);
 
+  assoc_destruct(c);
 //}
 
 //Test(empty, unzip) {
@@ -609,8 +621,18 @@ void test (void) {
 
   assoc_clear(c);
 
+  //cr_assert(assoc_length(c) == 0);
+
   s = assoc_see(c);
   //cr_assert_str_eq(s, "a{ }");
+
+  ok = true;
+
+  p  = assoc_get_copy(c, 2, &ok),
+  p1 = pair_new(NULL, NULL);
+
+  //cr_assert( ! ok );
+  //cr_assert( pair_equals(p, p1) );
 
   safefree(s), assoc_destruct(c);
 //}

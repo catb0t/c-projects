@@ -292,6 +292,10 @@ define_min_func(size_t);
     return idx <= signed2un((iter)->idx); \
   } int ____DONT_FIND_THIS_NAME44##type
 
+#define iter_isinbounds(iterable, idx) (idx <= signed2un((iter)->idx))
+
+#define iter_highest_idx(iterable) signed2un((iterable)->idx)
+
 // provided by object.h
 object_t*   object_new (const objtype_t valtype, const void* const val);
 object_t*  object_copy (const object_t* const obj);
@@ -387,6 +391,8 @@ assoc_t* assoc_new_fromcptr (const void * const * const ct_car, const void * con
 assoc_t*      assoc_copy (const assoc_t* const a);
 assoc_t*    assoc_concat (const assoc_t* const a, const assoc_t* const b);
 assoc_t*   assoc_vconcat (const assoc_t* const a, const size_t argc, ...);
+assoc_t*  assoc_resizev2 (const assoc_t* const a, const size_t new_len);
+assoc_t*   assoc_clearv2 (const assoc_t* const a);
 char*          assoc_see (const assoc_t* const a);
 pair_t*   assoc_get_copy (const assoc_t* const a, const size_t idx, bool* ok);
 pair_t**   assoc_get_ref (const assoc_t* const a, const size_t idx, bool* ok);
@@ -408,6 +414,7 @@ void       assoc_inspect (const assoc_t* const a);
 void      assoc_destruct (assoc_t* const a);
 void assoc_destruct_args (const size_t argc, ...);
 void         assoc_clear (assoc_t* const a);
+void assoc_resizev3 (assoc_t* const a, const size_t new_len);
 
 // provided by number.h
 number_t*      number_new (const long double val);

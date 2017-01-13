@@ -41,7 +41,14 @@ Test(empty, append) {
 Test(empty, insert) {
   a = array_new(NULL, 0);
 
+  oa = object_new(t_realint, (const void * const) anums);
+  ok = array_insert(a, oa, 0);
+  cr_assert(ok);
+  s = array_see(a);
+  printf("s is %s\n", s);
+  cr_assert_str_eq(s, "{ 1 }");
 
+  object_destruct(oa), array_destruct(a), safefree(s);
 }
 
 Test(empty, deletefails) {
@@ -49,7 +56,10 @@ Test(empty, deletefails) {
 
   ok = array_delete(a, 0);
   cr_assert(! ok);
+  s = array_see(a);
+  cr_assert_str_eq(s, "{ }");
 
+  safefree(s);
   array_destruct(a); // ~1
 }
 

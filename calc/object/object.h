@@ -512,7 +512,7 @@ bool object_equals (const object_t* const a, const object_t* const b) {
       char *fa = object_repr(a),
            *fb = object_repr(b);
       same = strcmp(fa, fb) == 0;
-      safefree(fa), safefree(fa);
+      safefree(fa), safefree(fb);
       break;
     }
 

@@ -46,7 +46,9 @@ Test(empty, insert) {
 
   pair_destruct(p);
 
+  object_destruct_args(2, oa, ob);
 
+  assoc_destruct(c);
 }
 
 Test(empty, unzip) {
@@ -257,10 +259,22 @@ Test(nonempty, clear) {
 
   assoc_clear(c);
 
+  cr_assert(assoc_length(c) == 0);
+
   s = assoc_see(c);
   cr_assert_str_eq(s, "a{ }");
 
+  ok = true;
+
+  p  = assoc_get_copy(c, 2, &ok),
+  p1 = pair_new(NULL, NULL);
+
+  cr_assert( ! ok );
+  cr_assert( pair_equals(p, p1) );
+
   safefree(s), assoc_destruct(c);
+
+  pair_destruct_args(2, p, p1);
 }
 
 Test(nonempty, append) {
