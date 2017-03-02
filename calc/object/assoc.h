@@ -217,7 +217,7 @@ bool assoc_insert (assoc_t* const a, const pair_t* const p, const size_t idx) {
       "insert to index %zu above highest %zu%s",
       idx,
       len,
-      len ? " (insert to empty assoc)" : ""
+      len ? "" : " (insert to empty assoc)"
     );
     return false;
   }
@@ -346,7 +346,7 @@ void assoc_resizev3 (assoc_t* const a, const size_t new_len) {
   // just shrink
   if ( ! new_len ) {
     for (size_t i = 0; i < old_len; i++) {
-      pair_destruct( *assoc_get_ref(a, i, NULL))
+      pair_destruct( *assoc_get_ref(a, i, NULL));
     }
     a->data = (typeof(a->data)) saferealloc(a->data, 0);
     a->idx  = -1;
@@ -419,12 +419,10 @@ bool assoc_delete (assoc_t* const a, const size_t idx) {
     object_error(
       ER_INDEXERROR,
       false,
-      "attempt to delete index %zu but the highest is %zd%s",
+      "attempt to delete index %zu above highest %zd%s",
       idx,
       a->idx,
-      olen
-        ? ""
-        : " (delete from empty assoc)"
+      olen ? "" : " (delete from empty assoc)"
     );
     return false;
   }

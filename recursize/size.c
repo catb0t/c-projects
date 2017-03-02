@@ -18,7 +18,7 @@ int main (void) {
   object_t* asobj = object_new(t_array, a);
   array_destruct(a);
 
-  array_t* b = array_new(NULL, -1);
+  array_t* b = array_new(NULL, 0);
 
   for (size_t j = 0; j < 10; j++) {
     array_append(b, asobj);
@@ -31,7 +31,7 @@ int main (void) {
   asobj = object_new(t_array, b);
   array_destruct(b);
 
-  array_t* c = array_new(NULL, -1);
+  array_t* c = array_new(NULL, 0);
 
   for (size_t i = 0; i < 100; i++) {
     array_append(c, asobj);
@@ -42,7 +42,7 @@ int main (void) {
   printf("Recursive size of c: %zu\n", get_recursize(c));
 
 
-  array_t* d = array_new(NULL, -1);
+  array_t* d = array_new(NULL, 0);
 
   asobj = object_new(t_array, c);
 
@@ -54,7 +54,7 @@ int main (void) {
 
   object_destruct(asobj);
 
-  printf("Recursive size of c: %zu\n", get_recursize(d));
+  printf("Recursive size of d: %zu\n", get_recursize(d));
 
   array_destruct(d);
 

@@ -53,7 +53,7 @@ void test (void) {
   ok = array_insert(a, oa, 0);
   //cr_assert(ok);
   s = array_see(a);
-  printf("s is %s\n", s);
+  dbg_prn("s is %s\n", s);
   //cr_assert_str_eq(s, "{ 1 }");
 
   object_destruct(oa), array_destruct(a), safefree(s);
@@ -635,6 +635,8 @@ void test (void) {
   //cr_assert( pair_equals(p, p1) );
 
   safefree(s), assoc_destruct(c);
+
+  pair_destruct_args(2, p, p1);
 //}
 
 //Test(nonempty, append) {
@@ -668,7 +670,59 @@ void test (void) {
 //}
 
 //Test(nonempty, insert) {
+  c = assoc_new(NULL, NULL);
 
+  oa = object_new(t_realint, &( anums[5] )),
+  ob = object_new(t_realint, &( bnums[5] ));
+
+  p = pair_new(oa, ob);
+
+  object_destruct_args(2, oa, ob);
+
+  ok = assoc_insert(c, p, 0); // ok -- at end
+
+  s = assoc_see(c);
+  dbg_prn("s = %s\n", s);
+  safefree(s);
+  pair_destruct(p);
+
+  //cr_assert( ok );
+
+  oa = object_new(t_realint, &( anums[5] )),
+  ob = object_new(t_realint, &( bnums[5] ));
+
+  p = pair_new(oa, ob);
+
+  object_destruct_args(2, oa, ob);
+
+  ok = assoc_insert(c, p, 2); // past end = NOT OK
+
+  s = assoc_see(c);
+  dbg_prn("2. s = %s\n", s);
+  safefree(s);
+
+  pair_destruct(p);
+
+  //cr_assert( ! ok );
+
+  oa = object_new(t_realint, &( anums[4] )),
+  ob = object_new(t_realint, &( bnums[4] ));
+
+  p = pair_new(oa, ob);
+
+  object_destruct_args(2, oa, ob);
+
+  ok = assoc_insert(c, p, 0); // before end = OK
+
+  s = assoc_see(c);
+  dbg_prn("3. s = %s\n", s);
+  safefree(s);
+
+  pair_destruct(p);
+
+  //cr_assert( ok );
+
+  assoc_destruct(c);
 //}
 
 //Test(nonempty, unzip) {

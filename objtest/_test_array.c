@@ -45,7 +45,7 @@ Test(empty, insert) {
   ok = array_insert(a, oa, 0);
   cr_assert(ok);
   s = array_see(a);
-  printf("s is %s\n", s);
+  dbg_prn("s is %s\n", s);
   cr_assert_str_eq(s, "{ 1 }");
 
   object_destruct(oa), array_destruct(a), safefree(s);

@@ -17,6 +17,7 @@
 #include "number.h"
 #include "pair.h"
 #include "string.h"
+#include "seq.h"
 
 #ifdef GCC
 #line __LINE__ "object"

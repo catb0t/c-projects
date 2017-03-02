@@ -8,6 +8,7 @@
 
 #define OBJ_UID_SLOT size_t uid
 #define LD_EPSILON 0.001L // thisp is how to compare floating point, right??
+#define ACCESS_ABOVE_CEIL "%s on index %zd above highest %zd"
 
 typedef enum {
   t_F, // only false value
